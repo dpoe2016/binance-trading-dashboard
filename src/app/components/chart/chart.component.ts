@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
 import { BinanceService } from '../../services/binance.service';
 
 @Component({
@@ -74,30 +74,15 @@ export class ChartComponent implements OnInit, OnDestroy {
       },
     });
 
-    // Add candlestick series using the v5.x addSeries method
-    try {
-      // Try the new v5 API first
-      this.candlestickSeries = (this.chart as any).addSeries?.('Candlestick', {
-        upColor: '#22c55e',
-        downColor: '#ef4444',
-        borderVisible: false,
-        wickUpColor: '#22c55e',
-        wickDownColor: '#ef4444',
-      });
-
-      // Fallback to legacy method if new API doesn't exist
-      if (!this.candlestickSeries) {
-        this.candlestickSeries = (this.chart as any).addCandlestickSeries({
-          upColor: '#22c55e',
-          downColor: '#ef4444',
-          borderVisible: false,
-          wickUpColor: '#22c55e',
-          wickDownColor: '#ef4444',
-        });
-      }
-    } catch (error) {
-      console.error('Error creating chart series:', error);
-    }
+    // Add candlestick series using the correct v5.x API
+    // In v5.x, you must pass the SeriesDefinition (CandlestickSeries) as the first parameter
+    this.candlestickSeries = this.chart.addSeries(CandlestickSeries, {
+      upColor: '#22c55e',
+      downColor: '#ef4444',
+      borderVisible: false,
+      wickUpColor: '#22c55e',
+      wickDownColor: '#ef4444',
+    });
 
     // Handle window resize
     window.addEventListener('resize', this.handleResize.bind(this));
