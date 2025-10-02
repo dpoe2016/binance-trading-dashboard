@@ -47,5 +47,8 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Generated environment files (contain API keys from .env)
+src/environments/
+
 # API Keys and Secrets (NEVER COMMIT THESE!)
-# Note: API keys should be loaded via window.ENV_CONFIG or secure backend
+# Note: API keys are loaded from .env file and generated into src/environments/

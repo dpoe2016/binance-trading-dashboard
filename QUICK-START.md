@@ -9,38 +9,46 @@
 3. Klicke auf **"Generate HMAC_SHA256 Key"**
 4. Kopiere deinen **API Key** und **Secret Key**
 
-### Schritt 2: API Keys eintragen
+### Schritt 2: .env Datei erstellen und ausfüllen
 
-Öffne die Datei: **`src/env-config.js`**
+1. **Kopiere die Beispieldatei:**
+   ```bash
+   cp .env.example .env
+   ```
 
-Ändere diese Zeilen:
+2. **Öffne die .env Datei** und ändere diese Zeilen:
+   ```bash
+   # Ändere den Trading Mode:
+   TRADING_MODE=testnet
 
-```javascript
-window.ENV_CONFIG = {
-  // ✅ ÄNDERE DIES ZU 'testnet':
-  TRADING_MODE: 'testnet',  // ← von 'demo' zu 'testnet' ändern
-
-  // ✅ TRAGE DEINE TESTNET KEYS EIN:
-  BINANCE_TESTNET_API_KEY: 'dein_testnet_api_key_hier',
-  BINANCE_TESTNET_API_SECRET: 'dein_testnet_secret_hier'
-};
-```
+   # Trage deine Testnet Keys ein:
+   BINANCE_TESTNET_API_KEY=dein_testnet_api_key_hier
+   BINANCE_TESTNET_API_SECRET=dein_testnet_secret_hier
+   ```
 
 **Beispiel mit echten Keys:**
-```javascript
-window.ENV_CONFIG = {
-  TRADING_MODE: 'testnet',
-
-  BINANCE_TESTNET_API_KEY: 'abc123xyz789example',
-  BINANCE_TESTNET_API_SECRET: 'def456uvw012secretexample'
-};
-```
-
-### Schritt 3: App starten
-
 ```bash
-ng serve
+TRADING_MODE=testnet
+
+BINANCE_TESTNET_API_KEY=abc123xyz789example
+BINANCE_TESTNET_API_SECRET=def456uvw012secretexample
 ```
+
+### Schritt 3: Proxy Server starten (für echte API-Calls)
+
+Um CORS-Probleme zu vermeiden, verwende den Proxy Server:
+
+**Terminal 1 - Proxy Server:**
+```bash
+npm run proxy
+```
+
+**Terminal 2 - Angular App:**
+```bash
+npm start
+```
+
+Das war's! Die App liest automatisch deine .env Datei und generiert die nötigen Konfigurationsdateien.
 
 Öffne: **http://localhost:4200**
 
@@ -48,7 +56,17 @@ ng serve
 
 ## ✅ Erfolgskontrolle
 
-### In der Browser-Console solltest du sehen:
+### Beim Starten der App solltest du in der Konsole sehen:
+
+```
+✅ Loaded .env file
+📋 Trading Mode: testnet
+✅ Generated src/environments/environment.ts
+✅ Generated src/environments/environment.prod.ts
+🧪 Running in TESTNET mode
+```
+
+### In der Browser-Console (F12) solltest du sehen:
 
 ```
 🧪 Testnet mode activated - using real Binance Testnet API
@@ -63,7 +81,7 @@ ng serve
 🎮 Demo mode activated - using mock data
 ```
 
-**→ Du hast `TRADING_MODE` noch nicht auf `'testnet'` geändert!**
+**→ Du hast `TRADING_MODE` in der .env Datei noch nicht auf `testnet` geändert!**
 
 ---
 
@@ -71,10 +89,12 @@ ng serve
 
 - [ ] Testnet Account erstellt auf https://testnet.binance.vision/
 - [ ] API Keys generiert
-- [ ] `src/env-config.js` geöffnet
-- [ ] `TRADING_MODE: 'testnet'` eingetragen
-- [ ] API Keys eingetragen (ohne Anführungszeichen im String)
-- [ ] App mit `ng serve` gestartet
+- [ ] `.env.example` zu `.env` kopiert: `cp .env.example .env`
+- [ ] `.env` Datei geöffnet
+- [ ] `TRADING_MODE=testnet` eingetragen
+- [ ] API Keys eingetragen (ohne Anführungszeichen!)
+- [ ] App mit `npm start` gestartet
+- [ ] Konsole beim Start überprüft (sollte "Testnet mode" zeigen)
 - [ ] Browser-Console überprüft (F12)
 
 ---
@@ -82,49 +102,69 @@ ng serve
 ## 🔧 Häufige Fehler
 
 ### 1. App zeigt noch Demo Mode
-**Problem:** `TRADING_MODE` steht noch auf `'demo'`
+**Problem:** `TRADING_MODE` steht noch auf `demo` in der .env Datei
 
 **Lösung:**
-```javascript
-TRADING_MODE: 'testnet',  // ✅ Richtig
-// NICHT:
-TRADING_MODE: 'demo',     // ❌ Falsch
+```bash
+# In .env Datei:
+TRADING_MODE=testnet  # ✅ Richtig
+# NICHT:
+TRADING_MODE=demo     # ❌ Falsch
 ```
 
-### 2. API Keys funktionieren nicht
+### 2. .env Datei existiert nicht
+**Problem:** Du hast vergessen, .env.example zu .env zu kopieren
+
+**Lösung:**
+```bash
+cp .env.example .env
+```
+
+### 3. API Keys funktionieren nicht
 **Problem:** Keys falsch kopiert oder Leerzeichen
 
 **Lösung:**
-```javascript
-// ✅ Richtig - Keys in Anführungszeichen:
-BINANCE_TESTNET_API_KEY: 'abc123xyz',
+```bash
+# ✅ Richtig - Keys OHNE Anführungszeichen in .env:
+BINANCE_TESTNET_API_KEY=abc123xyz
+BINANCE_TESTNET_API_SECRET=def456uvw
 
-// ❌ Falsch - Leerzeichen oder fehlerhafte Zeichen:
-BINANCE_TESTNET_API_KEY: 'abc123xyz ',  // Leerzeichen am Ende
-BINANCE_TESTNET_API_KEY: abc123xyz,     // Fehlende Anführungszeichen
+# ❌ Falsch - Leerzeichen oder Anführungszeichen:
+BINANCE_TESTNET_API_KEY="abc123xyz"  # Keine Anführungszeichen!
+BINANCE_TESTNET_API_KEY=abc123xyz   # Kein Leerzeichen am Ende!
 ```
 
-### 3. App muss neu geladen werden
-**Problem:** Änderungen in `env-config.js` werden nicht übernommen
+### 4. Änderungen in .env werden nicht übernommen
+**Problem:** Server muss neu gestartet werden
 
 **Lösung:**
-1. Browser **komplett neu laden** (Strg+Shift+R / Cmd+Shift+R)
-2. Oder: Server stoppen und neu starten:
+1. Server stoppen (Strg+C)
+2. Server neu starten:
    ```bash
-   Strg+C  # Server stoppen
-   ng serve  # Neu starten
+   npm start
    ```
+3. Die .env Datei wird automatisch beim Start gelesen
 
-### 4. CORS-Fehler
+**Alternativ:** Nur die Umgebungsdateien neu generieren:
+```bash
+npm run generate-env
+```
+
+### 5. CORS-Fehler
 **Problem:** Browser blockiert API-Calls
 
-**Temporäre Lösung für Development:**
-1. Installiere Chrome Extension: "CORS Unblock"
-2. Aktiviere die Extension
-3. Lade die Seite neu
+**Lösung:** Verwende den Proxy Server!
+1. Stelle sicher, dass `USE_PROXY=true` in der .env Datei steht
+2. Starte den Proxy Server in einem separaten Terminal:
+   ```bash
+   npm run proxy
+   ```
+3. Starte die Angular App:
+   ```bash
+   npm start
+   ```
 
-**Dauerhafte Lösung:**
-- Backend-Proxy verwenden (siehe API-SETUP.md)
+Der Proxy Server leitet die Requests an Binance weiter und vermeidet CORS-Probleme.
 
 ---
 
@@ -137,9 +177,10 @@ Nach erfolgreichem Testnet-Setup:
 3. **Teste Trading** mit Test-USDT
 
 Später für **Live-Trading**:
-- Ändere `TRADING_MODE: 'live'`
-- Trage Live API Keys ein
-- ⚠️ **NUR nach ausgiebigen Tests!**
+1. Ändere in .env: `TRADING_MODE=live`
+2. Trage Live API Keys ein
+3. Server neu starten: `npm start`
+4. ⚠️ **NUR nach ausgiebigen Tests!**
 
 ---
 
@@ -151,10 +192,22 @@ Später für **Live-Trading**:
 
 ---
 
-## ⚠️ Wichtig
+## 💡 Wichtige Hinweise
 
-- **.env Datei wird NICHT verwendet** - nur `src/env-config.js` zählt!
+- **Die .env Datei wird NICHT in Git committed** (steht in .gitignore)
 - **Testnet Keys ≠ Live Keys** - nicht verwechseln!
-- **Git committed diese Datei** - Keine echten Keys eintragen wenn du pushen willst!
+- **Nach Änderungen in .env:** Server neu starten!
+- **Automatische Generierung:** `npm start` führt automatisch `npm run generate-env` aus
+- **Manuelle Generierung möglich:** `npm run generate-env`
 
-Für Produktion: Verwende Environment Variables oder Backend-Proxy!
+---
+
+## 🔍 Wie es funktioniert
+
+1. Du bearbeitest die **.env** Datei (im Projektroot)
+2. Beim Start führt `npm start` automatisch `npm run generate-env` aus
+3. Das Script liest die .env Datei und erstellt **src/environments/environment.ts**
+4. Die Angular App importiert die Konfiguration aus dieser generierten Datei
+5. Der BinanceService nutzt die Konfiguration für API-Calls
+
+**Wichtig:** Die Dateien in `src/environments/` sind **auto-generiert** und sollten nicht manuell bearbeitet werden!

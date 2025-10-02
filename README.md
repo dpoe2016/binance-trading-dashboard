@@ -65,31 +65,31 @@ Keine Konfiguration nötig! Verwendet Mock-Daten.
 ### 🧪 Testnet-Modus (Empfohlen zum Testen)
 1. Erstelle einen Account auf https://testnet.binance.vision/
 2. Generiere API Keys
-3. Bearbeite `src/env-config.js`:
-```javascript
-window.ENV_CONFIG = {
-  TRADING_MODE: 'testnet',
-  BINANCE_TESTNET_API_KEY: 'DEIN_TESTNET_API_KEY',
-  BINANCE_TESTNET_API_SECRET: 'DEIN_TESTNET_API_SECRET'
-};
+3. Erstelle eine `.env` Datei:
+```bash
+cp .env.example .env
+```
+4. Bearbeite `.env`:
+```bash
+TRADING_MODE=testnet
+BINANCE_TESTNET_API_KEY=DEIN_TESTNET_API_KEY
+BINANCE_TESTNET_API_SECRET=DEIN_TESTNET_API_SECRET
 ```
 
 ### 💰 Live-Modus (⚠️ Nur für Produktion!)
 1. API Keys von https://www.binance.com/en/my/settings/api-management
 2. **WICHTIG:** Withdrawal-Berechtigung NIEMALS aktivieren!
 3. IP-Whitelist aktivieren
-4. Bearbeite `src/env-config.js`:
-```javascript
-window.ENV_CONFIG = {
-  TRADING_MODE: 'live',
-  BINANCE_API_KEY: 'DEIN_LIVE_API_KEY',
-  BINANCE_API_SECRET: 'DEIN_LIVE_API_SECRET'
-};
+4. Bearbeite `.env`:
+```bash
+TRADING_MODE=live
+BINANCE_API_KEY=DEIN_LIVE_API_KEY
+BINANCE_API_SECRET=DEIN_LIVE_API_SECRET
 ```
 
 📖 **Detaillierte Setup-Anleitung:** Siehe [SETUP.md](SETUP.md)
 
-**⚠️ WICHTIG: API Keys in `src/env-config.js` bearbeiten. Diese Datei wird MIT committed (enthält nur Beispielwerte)!**
+**⚠️ WICHTIG: Die `.env` Datei wird NICHT in Git committed (steht in .gitignore)!**
 
 ## Development Server
 
@@ -109,9 +109,11 @@ Navigiere zu `http://localhost:4200/`. Die Anwendung lädt automatisch neu, wenn
 
 **Für echte Testnet-Daten:**
 
-1. **Bearbeite:** `src/env-config.js`
-2. **Ändere:** `TRADING_MODE: 'demo'` → `TRADING_MODE: 'testnet'`
-3. **Trage API Keys ein** (von https://testnet.binance.vision/)
+1. **Erstelle .env Datei:** `cp .env.example .env`
+2. **Bearbeite:** `.env`
+3. **Ändere:** `TRADING_MODE=demo` → `TRADING_MODE=testnet`
+4. **Trage API Keys ein** (von https://testnet.binance.vision/)
+5. **Starte neu:** `npm start`
 
 **Siehe:** [QUICK-START.md](QUICK-START.md) für detaillierte Anleitung
 

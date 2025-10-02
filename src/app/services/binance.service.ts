@@ -14,6 +14,8 @@ export class BinanceService {
   private baseUrl = environment.binance.apiUrl;
   private wsUrl = environment.binance.wsUrl;
   private tradingMode = environment.tradingMode;
+  private useProxy = environment.useProxy;
+  private proxyUrl = environment.proxyUrl;
 
   private accountBalances$ = new BehaviorSubject<AccountBalance[]>([]);
   private positions$ = new BehaviorSubject<Position[]>([]);
@@ -90,12 +92,21 @@ export class BinanceService {
     // Testnet or Live mode - fetch real data
     try {
       const timestamp = Date.now();
-      const signature = this.generateSignature(`timestamp=${timestamp}`);
-      const url = `${this.baseUrl}/api/v3/account?timestamp=${timestamp}&signature=${signature}`;
+      let url: string;
+      let headers: HttpHeaders;
 
-      const headers = new HttpHeaders({
-        'X-MBX-APIKEY': this.apiKey
-      });
+      if (this.useProxy) {
+        // Use proxy server (no signature needed, proxy handles it)
+        url = `${this.proxyUrl}/api/v3/account?timestamp=${timestamp}`;
+        headers = new HttpHeaders();
+      } else {
+        // Direct API call (requires signature)
+        const signature = this.generateSignature(`timestamp=${timestamp}`);
+        url = `${this.baseUrl}/api/v3/account?timestamp=${timestamp}&signature=${signature}`;
+        headers = new HttpHeaders({
+          'X-MBX-APIKEY': this.apiKey
+        });
+      }
 
       const response: any = await this.http.get(url, { headers }).toPromise();
 
@@ -130,12 +141,21 @@ export class BinanceService {
     // Testnet or Live mode - fetch real futures positions
     try {
       const timestamp = Date.now();
-      const signature = this.generateSignature(`timestamp=${timestamp}`);
-      const url = `${this.baseUrl}/fapi/v2/positionRisk?timestamp=${timestamp}&signature=${signature}`;
+      let url: string;
+      let headers: HttpHeaders;
 
-      const headers = new HttpHeaders({
-        'X-MBX-APIKEY': this.apiKey
-      });
+      if (this.useProxy) {
+        // Use proxy server
+        url = `${this.proxyUrl}/fapi/v2/positionRisk?timestamp=${timestamp}`;
+        headers = new HttpHeaders();
+      } else {
+        // Direct API call
+        const signature = this.generateSignature(`timestamp=${timestamp}`);
+        url = `${this.baseUrl}/fapi/v2/positionRisk?timestamp=${timestamp}&signature=${signature}`;
+        headers = new HttpHeaders({
+          'X-MBX-APIKEY': this.apiKey
+        });
+      }
 
       const response: any = await this.http.get(url, { headers }).toPromise();
 
@@ -169,12 +189,21 @@ export class BinanceService {
     try {
       const timestamp = Date.now();
       const queryParams = symbol ? `symbol=${symbol}&timestamp=${timestamp}` : `timestamp=${timestamp}`;
-      const signature = this.generateSignature(queryParams);
-      const url = `${this.baseUrl}/api/v3/openOrders?${queryParams}&signature=${signature}`;
+      let url: string;
+      let headers: HttpHeaders;
 
-      const headers = new HttpHeaders({
-        'X-MBX-APIKEY': this.apiKey
-      });
+      if (this.useProxy) {
+        // Use proxy server
+        url = `${this.proxyUrl}/api/v3/openOrders?${queryParams}`;
+        headers = new HttpHeaders();
+      } else {
+        // Direct API call
+        const signature = this.generateSignature(queryParams);
+        url = `${this.baseUrl}/api/v3/openOrders?${queryParams}&signature=${signature}`;
+        headers = new HttpHeaders({
+          'X-MBX-APIKEY': this.apiKey
+        });
+      }
 
       const response: any = await this.http.get(url, { headers }).toPromise();
 
