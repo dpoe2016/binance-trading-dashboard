@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable, interval } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AccountBalance, Position, Order, Candle, AccountStats } from '../models/trading.model';
 import { environment } from '../config/environment.config';
+import * as CryptoJS from 'crypto-js';
 
 @Injectable({
   providedIn: 'root'
@@ -31,13 +32,16 @@ export class BinanceService {
       this.wsUrl = environment.testnet.wsUrl;
       this.apiKey = environment.testnet.apiKey;
       this.apiSecret = environment.testnet.apiSecret;
+      console.log('🧪 Testnet mode activated - using real Binance Testnet API');
     } else if (this.tradingMode === 'live') {
       this.baseUrl = environment.binance.apiUrl;
       this.wsUrl = environment.binance.wsUrl;
       this.apiKey = environment.binance.apiKey;
       this.apiSecret = environment.binance.apiSecret;
+      console.log('💰 Live mode activated - using real Binance API');
     } else {
       // Demo mode - use mock data
+      console.log('🎮 Demo mode activated - using mock data');
       this.loadMockData();
     }
   }
@@ -77,10 +81,38 @@ export class BinanceService {
   }
 
   async refreshAccountBalances(): Promise<void> {
-    // In production, this would call the real Binance API
-    // For now, using mock data
-    console.log('Refreshing account balances...');
-    this.updateAccountStats();
+    if (this.tradingMode === 'demo') {
+      // Demo mode - data already loaded in loadMockData()
+      console.log('Demo mode: Using mock account balances');
+      return;
+    }
+
+    // Testnet or Live mode - fetch real data
+    try {
+      const timestamp = Date.now();
+      const signature = this.generateSignature(`timestamp=${timestamp}`);
+      const url = `${this.baseUrl}/api/v3/account?timestamp=${timestamp}&signature=${signature}`;
+
+      const headers = new HttpHeaders({
+        'X-MBX-APIKEY': this.apiKey
+      });
+
+      const response: any = await this.http.get(url, { headers }).toPromise();
+
+      if (response && response.balances) {
+        const balances = response.balances.filter((b: any) =>
+          parseFloat(b.free) > 0 || parseFloat(b.locked) > 0
+        );
+        this.accountBalances$.next(balances);
+        console.log(`✅ Loaded ${balances.length} account balances from ${this.tradingMode} API`);
+      }
+
+      this.updateAccountStats();
+    } catch (error) {
+      console.error('Error fetching account balances:', error);
+      // On error, clear the balances to avoid showing stale data
+      this.accountBalances$.next([]);
+    }
   }
 
   // Positions (Futures)
@@ -89,9 +121,36 @@ export class BinanceService {
   }
 
   async refreshPositions(): Promise<void> {
-    // In production, this would call the real Binance API
-    console.log('Refreshing positions...');
-    this.updateAccountStats();
+    if (this.tradingMode === 'demo') {
+      // Demo mode - data already loaded in loadMockData()
+      console.log('Demo mode: Using mock positions');
+      return;
+    }
+
+    // Testnet or Live mode - fetch real futures positions
+    try {
+      const timestamp = Date.now();
+      const signature = this.generateSignature(`timestamp=${timestamp}`);
+      const url = `${this.baseUrl}/fapi/v2/positionRisk?timestamp=${timestamp}&signature=${signature}`;
+
+      const headers = new HttpHeaders({
+        'X-MBX-APIKEY': this.apiKey
+      });
+
+      const response: any = await this.http.get(url, { headers }).toPromise();
+
+      if (response && Array.isArray(response)) {
+        const positions = response.filter((p: any) => parseFloat(p.positionAmt) !== 0);
+        this.positions$.next(positions);
+        console.log(`✅ Loaded ${positions.length} positions from ${this.tradingMode} API`);
+      }
+
+      this.updateAccountStats();
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+      // Clear positions on error (might not have futures enabled)
+      this.positions$.next([]);
+    }
   }
 
   // Open Orders
@@ -100,9 +159,36 @@ export class BinanceService {
   }
 
   async refreshOpenOrders(symbol?: string): Promise<void> {
-    // In production, this would call the real Binance API
-    console.log('Refreshing open orders...', symbol);
-    this.updateAccountStats();
+    if (this.tradingMode === 'demo') {
+      // Demo mode - no open orders in demo
+      console.log('Demo mode: No open orders');
+      return;
+    }
+
+    // Testnet or Live mode - fetch real open orders
+    try {
+      const timestamp = Date.now();
+      const queryParams = symbol ? `symbol=${symbol}&timestamp=${timestamp}` : `timestamp=${timestamp}`;
+      const signature = this.generateSignature(queryParams);
+      const url = `${this.baseUrl}/api/v3/openOrders?${queryParams}&signature=${signature}`;
+
+      const headers = new HttpHeaders({
+        'X-MBX-APIKEY': this.apiKey
+      });
+
+      const response: any = await this.http.get(url, { headers }).toPromise();
+
+      if (response && Array.isArray(response)) {
+        this.openOrders$.next(response);
+        console.log(`✅ Loaded ${response.length} open orders from ${this.tradingMode} API`);
+      }
+
+      this.updateAccountStats();
+    } catch (error) {
+      console.error('Error fetching open orders:', error);
+      // Clear orders on error
+      this.openOrders$.next([]);
+    }
   }
 
   // Account Statistics
@@ -216,5 +302,17 @@ export class BinanceService {
       this.refreshPositions();
       this.refreshOpenOrders();
     });
+  }
+
+  // Generate HMAC SHA256 signature for authenticated requests
+  private generateSignature(queryString: string): string {
+    if (!this.apiSecret) {
+      console.warn('⚠️ API Secret not configured - cannot authenticate requests');
+      return '';
+    }
+
+    // Generate HMAC SHA256 signature using crypto-js
+    const signature = CryptoJS.HmacSHA256(queryString, this.apiSecret).toString();
+    return signature;
   }
 }
