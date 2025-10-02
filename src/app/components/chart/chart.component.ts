@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, CandlestickData, CandlestickSeriesPartialOptions } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
 import { BinanceService } from '../../services/binance.service';
 
 @Component({
@@ -16,7 +16,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   @Input() symbol: string = 'BTCUSDT';
 
   private chart?: IChartApi;
-  private candlestickSeries?: any;
+  private candlestickSeries?: ISeriesApi<'Candlestick'>;
   private priceUpdateCleanup?: () => void;
 
   selectedSymbol: string = 'BTCUSDT';
@@ -56,11 +56,12 @@ export class ChartComponent implements OnInit, OnDestroy {
   private initChart(): void {
     const container = this.chartContainer.nativeElement;
 
+    // Create chart with proper configuration
     this.chart = createChart(container, {
       width: container.clientWidth,
       height: 500,
       layout: {
-        background: { color: '#ffffff' },
+        background: { type: 'solid' as any, color: '#ffffff' },
         textColor: '#333',
       },
       grid: {
@@ -73,14 +74,30 @@ export class ChartComponent implements OnInit, OnDestroy {
       },
     });
 
-    // In lightweight-charts v5.x, use addSeries instead of addCandlestickSeries
-    this.candlestickSeries = this.chart.addSeries('Candlestick' as any, {
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderVisible: false,
-      wickUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
-    });
+    // Add candlestick series using the v5.x addSeries method
+    try {
+      // Try the new v5 API first
+      this.candlestickSeries = (this.chart as any).addSeries?.('Candlestick', {
+        upColor: '#22c55e',
+        downColor: '#ef4444',
+        borderVisible: false,
+        wickUpColor: '#22c55e',
+        wickDownColor: '#ef4444',
+      });
+
+      // Fallback to legacy method if new API doesn't exist
+      if (!this.candlestickSeries) {
+        this.candlestickSeries = (this.chart as any).addCandlestickSeries({
+          upColor: '#22c55e',
+          downColor: '#ef4444',
+          borderVisible: false,
+          wickUpColor: '#22c55e',
+          wickDownColor: '#ef4444',
+        });
+      }
+    } catch (error) {
+      console.error('Error creating chart series:', error);
+    }
 
     // Handle window resize
     window.addEventListener('resize', this.handleResize.bind(this));
