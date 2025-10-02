@@ -101,6 +101,22 @@ ng serve
 
 Navigiere zu `http://localhost:4200/`. Die Anwendung lädt automatisch neu, wenn du Änderungen an den Quelldateien vornimmst.
 
+---
+
+## ⚡ Testnet-Modus aktivieren
+
+**Standard:** Die App läuft im **Demo-Modus** mit Mock-Daten.
+
+**Für echte Testnet-Daten:**
+
+1. **Bearbeite:** `src/env-config.js`
+2. **Ändere:** `TRADING_MODE: 'demo'` → `TRADING_MODE: 'testnet'`
+3. **Trage API Keys ein** (von https://testnet.binance.vision/)
+
+**Siehe:** [QUICK-START.md](QUICK-START.md) für detaillierte Anleitung
+
+---
+
 ## Projektstruktur
 
 ```
