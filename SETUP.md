@@ -1,5 +1,19 @@
 # Binance Trading System - Setup Anleitung
 
+---
+
+## ⚠️ RECHTLICHER HINWEIS
+
+**Durch die Nutzung dieser Software akzeptieren Sie:**
+- Der Autor übernimmt KEINE Haftung für Trading-Verluste
+- Alle Trades erfolgen auf EIGENES RISIKO
+- Diese Software dient ausschließlich Bildungszwecken
+- Siehe [LICENSE](LICENSE) für vollständige rechtliche Hinweise
+
+**Investiere niemals mehr, als du bereit bist zu verlieren!**
+
+---
+
 ## 🚀 Schnellstart
 
 ### 1. Dependencies installieren

@@ -2,6 +2,34 @@
 
 Ein modernes Handelssystem für Kryptowährungen auf Binance, gebaut mit Angular 20.
 
+---
+
+## ⚠️ HAFTUNGSAUSSCHLUSS / DISCLAIMER
+
+**WICHTIGER HINWEIS:** Dieses Projekt dient ausschließlich zu **Bildungs- und Demonstrationszwecken**.
+
+### Rechtliche Hinweise:
+
+- Der Autor übernimmt **KEINE Verantwortung** für finanzielle Verluste oder Schäden, die durch die Nutzung dieser Software entstehen
+- Alle Trades erfolgen auf **EIGENES RISIKO**
+- Trading mit Kryptowährungen birgt **ERHEBLICHE RISIKEN** und kann zum **TOTALVERLUST** des eingesetzten Kapitals führen
+- Diese Software wird **"AS IS"** ohne jegliche Garantien bereitgestellt
+- **KEINE ANLAGEBERATUNG:** Diese Software stellt keine Finanz- oder Anlageberatung dar
+- Der Nutzer trägt die **volle Verantwortung** für alle durchgeführten Handelsentscheidungen
+- Es wird empfohlen, vor der Nutzung einen qualifizierten Finanzberater zu konsultieren
+
+### Nutzungsbedingungen:
+
+Durch die Nutzung dieser Software akzeptieren Sie, dass:
+- Sie volljährig sind und die Berechtigung haben, in Ihrem Land mit Kryptowährungen zu handeln
+- Sie die Risiken des Kryptohandels vollständig verstehen
+- Sie ausschließlich Kapital einsetzen, dessen Verlust Sie sich leisten können
+- Der Autor von jeglicher Haftung freigestellt wird
+
+**Investiere niemals Geld, das du dir nicht leisten kannst zu verlieren!**
+
+---
+
 ## Features
 
 - **Dashboard**: Übersicht über Kontostände, Positionen, offene Orders und Statistiken
@@ -186,7 +214,13 @@ ng test
 
 ## Lizenz
 
-Dieses Projekt dient ausschließlich zu Bildungszwecken. Verwendung auf eigene Gefahr.
+Dieses Projekt ist unter der MIT-Lizenz mit Trading-Disclaimer lizenziert. Siehe [LICENSE](LICENSE) für Details.
+
+**Zusammenfassung:**
+- ✅ Freie Nutzung, Modifikation und Distribution
+- ⚠️ Keine Gewährleistung oder Garantie
+- ⚠️ Autor übernimmt keine Haftung für Trading-Verluste
+- ⚠️ Nutzung erfolgt ausschließlich auf eigenes Risiko
 
 ## Support
 
