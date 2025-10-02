@@ -73,7 +73,8 @@ export class ChartComponent implements OnInit, OnDestroy {
       },
     });
 
-    this.candlestickSeries = (this.chart as any).addCandlestickSeries({
+    // In lightweight-charts v5.x, use addSeries instead of addCandlestickSeries
+    this.candlestickSeries = this.chart.addSeries('Candlestick' as any, {
       upColor: '#22c55e',
       downColor: '#ef4444',
       borderVisible: false,
