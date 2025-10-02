@@ -1,0 +1,133 @@
+<div class="strategy-manager">
+  <div class="header">
+    <h2>Strategieverwaltung</h2>
+    <button class="btn-add" (click)="toggleAddForm()">
+      {{ showAddForm ? 'Abbrechen' : '+ Neue Strategie' }}
+    </button>
+  </div>
+
+  <!-- Add Strategy Form -->
+  <div class="add-form" *ngIf="showAddForm">
+    <h3>Neue Handelsstrategie erstellen</h3>
+
+    <div class="form-group">
+      <label for="name">Name *</label>
+      <input type="text" id="name" [(ngModel)]="newStrategy.name" placeholder="z.B. RSI Oversold/Overbought">
+    </div>
+
+    <div class="form-group">
+      <label for="description">Beschreibung</label>
+      <textarea id="description" [(ngModel)]="newStrategy.description" rows="2" placeholder="Beschreiben Sie Ihre Strategie..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="symbol">Symbol *</label>
+        <select id="symbol" [(ngModel)]="newStrategy.symbol">
+          <option *ngFor="let sym of symbols" [value]="sym">{{ sym }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="timeframe">Zeitrahmen</label>
+        <select id="timeframe" [(ngModel)]="newStrategy.timeframe">
+          <option *ngFor="let tf of timeframes" [value]="tf">{{ tf }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="quantity">Menge</label>
+        <input type="text" id="quantity" [(ngModel)]="newStrategy.quantity" placeholder="0.001">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" [(ngModel)]="newStrategy.usePineScript">
+        Pine Script verwenden
+      </label>
+    </div>
+
+    <div class="form-group" *ngIf="newStrategy.usePineScript">
+      <label for="pineScript">Pine Script Code</label>
+      <textarea id="pineScript" [(ngModel)]="newStrategy.pineScript" rows="10" placeholder="Geben Sie Ihren Pine Script Code ein..."></textarea>
+      <button class="btn-example" (click)="usePineScriptExample()">Beispiel laden</button>
+    </div>
+
+    <div class="form-group" *ngIf="!newStrategy.usePineScript">
+      <label>
+        <input type="checkbox" [(ngModel)]="newStrategy.useRSI">
+        RSI-basierte Strategie (Kaufen bei RSI < 30, Verkaufen bei RSI > 70)
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" [(ngModel)]="newStrategy.autoExecute">
+        Automatische Ausführung (Trades werden automatisch platziert)
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-cancel" (click)="toggleAddForm()">Abbrechen</button>
+      <button class="btn-save" (click)="addStrategy()">Strategie speichern</button>
+    </div>
+  </div>
+
+  <!-- Strategies List -->
+  <div class="strategies-list">
+    <div class="strategy-card" *ngFor="let strategy of strategies">
+      <div class="strategy-header">
+        <div class="strategy-title">
+          <h3>{{ strategy.name }}</h3>
+          <span class="status-badge" [class.active]="strategy.isActive" [class.inactive]="!strategy.isActive">
+            {{ strategy.isActive ? 'Aktiv' : 'Inaktiv' }}
+          </span>
+        </div>
+        <div class="strategy-actions">
+          <button class="btn-toggle" (click)="toggleStrategy(strategy.id, !strategy.isActive)">
+            {{ strategy.isActive ? 'Stoppen' : 'Starten' }}
+          </button>
+          <button class="btn-delete" (click)="deleteStrategy(strategy.id)">Löschen</button>
+        </div>
+      </div>
+
+      <div class="strategy-body">
+        <p class="description" *ngIf="strategy.description">{{ strategy.description }}</p>
+
+        <div class="strategy-details">
+          <div class="detail-item">
+            <span class="label">Symbol:</span>
+            <span class="value">{{ strategy.symbol }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Zeitrahmen:</span>
+            <span class="value">{{ strategy.timeframe }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Letzte Ausführung:</span>
+            <span class="value">{{ formatDate(strategy.lastExecuted) }}</span>
+          </div>
+        </div>
+
+        <div class="pine-script-indicator" *ngIf="strategy.pineScript">
+          <span class="indicator-badge">Pine Script aktiviert</span>
+        </div>
+
+        <div class="strategy-parameters">
+          <strong>Parameter:</strong>
+          <ul>
+            <li *ngFor="let param of strategy.parameters | keyvalue">
+              {{ param.key }}: {{ param.value }}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="no-strategies" *ngIf="strategies.length === 0 && !showAddForm">
+      <p>Keine Strategien vorhanden. Erstellen Sie Ihre erste Handelsstrategie!</p>
+      <button class="btn-add-large" (click)="toggleAddForm()">+ Strategie erstellen</button>
+    </div>
+  </div>
+</div>

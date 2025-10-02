@@ -1,0 +1,204 @@
+<div class="dashboard">
+  <div class="header">
+    <h1>Binance Trading Dashboard</h1>
+    <button class="btn-refresh" (click)="refreshData()">Aktualisieren</button>
+  </div>
+
+  <!-- Account Statistics -->
+  <div class="stats-grid" *ngIf="accountStats">
+    <div class="stat-card">
+      <h3>Gesamtguthaben</h3>
+      <p class="stat-value">{{ formatNumber(accountStats.totalBalance, 2) }} USDT</p>
+    </div>
+    <div class="stat-card">
+      <h3>Verfügbar</h3>
+      <p class="stat-value">{{ formatNumber(accountStats.availableBalance, 2) }} USDT</p>
+    </div>
+    <div class="stat-card">
+      <h3>Unrealisierter P&L</h3>
+      <p class="stat-value" [class.positive]="accountStats.unrealizedPnL > 0" [class.negative]="accountStats.unrealizedPnL < 0">
+        {{ formatNumber(accountStats.unrealizedPnL, 2) }} USDT
+      </p>
+    </div>
+    <div class="stat-card">
+      <h3>Positionen</h3>
+      <p class="stat-value">{{ accountStats.positionCount }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Offene Orders</h3>
+      <p class="stat-value">{{ accountStats.openOrdersCount }}</p>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- Account Balances -->
+    <div class="section">
+      <h2>Kontostände</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Verfügbar</th>
+              <th>Gesperrt</th>
+              <th>Gesamt</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let balance of balances">
+              <td><strong>{{ balance.asset }}</strong></td>
+              <td>{{ formatNumber(balance.free, 8) }}</td>
+              <td>{{ formatNumber(balance.locked, 8) }}</td>
+              <td>{{ formatNumber(toNumber(balance.free) + toNumber(balance.locked), 8) }}</td>
+            </tr>
+            <tr *ngIf="balances.length === 0">
+              <td colspan="4" class="no-data">Keine Guthaben verfügbar</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Positions -->
+    <div class="section">
+      <h2>Positionen</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Menge</th>
+              <th>Einstiegspreis</th>
+              <th>Aktueller Preis</th>
+              <th>P&L</th>
+              <th>Hebel</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let position of positions">
+              <td><strong>{{ position.symbol }}</strong></td>
+              <td>{{ formatNumber(position.positionAmt, 4) }}</td>
+              <td>{{ formatNumber(position.entryPrice, 2) }}</td>
+              <td>{{ formatNumber(position.markPrice, 2) }}</td>
+              <td [class.positive]="toNumber(position.unRealizedProfit) > 0" [class.negative]="toNumber(position.unRealizedProfit) < 0">
+                {{ formatNumber(position.unRealizedProfit, 2) }}
+              </td>
+              <td>{{ position.leverage }}x</td>
+            </tr>
+            <tr *ngIf="positions.length === 0">
+              <td colspan="6" class="no-data">Keine offenen Positionen</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Open Orders -->
+    <div class="section">
+      <h2>Offene Orders</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Typ</th>
+              <th>Seite</th>
+              <th>Preis</th>
+              <th>Menge</th>
+              <th>Status</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of openOrders">
+              <td><strong>{{ order.symbol }}</strong></td>
+              <td>{{ order.type }}</td>
+              <td [class.buy]="order.side === 'BUY'" [class.sell]="order.side === 'SELL'">{{ order.side }}</td>
+              <td>{{ formatNumber(order.price, 2) }}</td>
+              <td>{{ formatNumber(order.origQty, 4) }}</td>
+              <td>{{ order.status }}</td>
+              <td>
+                <button class="btn-cancel" (click)="cancelOrder(order.symbol, order.orderId)">Stornieren</button>
+              </td>
+            </tr>
+            <tr *ngIf="openOrders.length === 0">
+              <td colspan="7" class="no-data">Keine offenen Orders</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Active Strategies -->
+    <div class="section">
+      <h2>Handelsstrategien</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Symbol</th>
+              <th>Zeitrahmen</th>
+              <th>Status</th>
+              <th>Letzte Ausführung</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let strategy of strategies">
+              <td><strong>{{ strategy.name }}</strong></td>
+              <td>{{ strategy.symbol }}</td>
+              <td>{{ strategy.timeframe }}</td>
+              <td>
+                <span class="status-badge" [class.active]="strategy.isActive" [class.inactive]="!strategy.isActive">
+                  {{ strategy.isActive ? 'Aktiv' : 'Inaktiv' }}
+                </span>
+              </td>
+              <td>{{ strategy.lastExecuted ? formatDate(strategy.lastExecuted) : 'Nie' }}</td>
+              <td>
+                <button class="btn-toggle" (click)="toggleStrategy(strategy.id, !strategy.isActive)">
+                  {{ strategy.isActive ? 'Stoppen' : 'Starten' }}
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="strategies.length === 0">
+              <td colspan="6" class="no-data">Keine Strategien definiert</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Signals -->
+    <div class="section">
+      <h2>Letzte Signale</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Zeit</th>
+              <th>Symbol</th>
+              <th>Aktion</th>
+              <th>Preis</th>
+              <th>Menge</th>
+              <th>Grund</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let signal of signals">
+              <td>{{ formatDate(signal.timestamp) }}</td>
+              <td><strong>{{ signal.symbol }}</strong></td>
+              <td [class.buy]="signal.action === 'BUY'" [class.sell]="signal.action === 'SELL'">{{ signal.action }}</td>
+              <td>{{ formatNumber(signal.price, 2) }}</td>
+              <td>{{ formatNumber(signal.quantity, 4) }}</td>
+              <td>{{ signal.reason }}</td>
+            </tr>
+            <tr *ngIf="signals.length === 0">
+              <td colspan="6" class="no-data">Keine Signale vorhanden</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

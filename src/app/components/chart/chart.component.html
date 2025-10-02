@@ -1,0 +1,21 @@
+<div class="chart-wrapper">
+  <div class="chart-controls">
+    <div class="control-group">
+      <label for="symbol">Symbol:</label>
+      <select id="symbol" [(ngModel)]="selectedSymbol" (change)="onSymbolChange()">
+        <option *ngFor="let sym of symbols" [value]="sym">{{ sym }}</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="interval">Zeitrahmen:</label>
+      <select id="interval" [(ngModel)]="selectedInterval" (change)="onIntervalChange()">
+        <option *ngFor="let int of intervals" [value]="int.value">{{ int.label }}</option>
+      </select>
+    </div>
+
+    <button class="btn-refresh" (click)="loadChartData()">Aktualisieren</button>
+  </div>
+
+  <div class="chart-container" #chartContainer></div>
+</div>

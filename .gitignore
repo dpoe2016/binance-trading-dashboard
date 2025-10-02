@@ -41,3 +41,11 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# API Keys and Secrets (NEVER COMMIT THESE!)
+# Note: API keys should be loaded via window.ENV_CONFIG or secure backend

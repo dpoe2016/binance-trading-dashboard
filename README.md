@@ -1,59 +1,197 @@
-# BinanceTradingSystem
+# Binance Trading System
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.3.
+Ein modernes Handelssystem für Kryptowährungen auf Binance, gebaut mit Angular 20.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- **Dashboard**: Übersicht über Kontostände, Positionen, offene Orders und Statistiken
+- **Chart-Visualisierung**: Interaktive Candlestick-Charts mit TradingView Lightweight Charts
+- **Handelsstrategien**: Definiere und führe automatisierte Handelsstrategien aus
+- **Pine Script Support**: Grundlegende Unterstützung für Pine Script basierte Strategien
+- **Technische Indikatoren**: RSI, SMA, EMA und mehr
+- **Echtzeit-Updates**: Live-Preisdaten und automatische Aktualisierung der Kontoinformationen
+
+## Voraussetzungen
+
+- Node.js (v18 oder höher)
+- npm oder yarn
+- Binance API Schlüssel (API Key und Secret)
+
+## Installation
+
+1. Repository klonen oder Projektordner öffnen:
+```bash
+cd binance-trading-system
+```
+
+2. Dependencies installieren:
+```bash
+npm install
+```
+
+3. **API Konfiguration (3 Modi verfügbar):**
+
+### 🎮 Demo-Modus (Standard - Empfohlen zum Starten)
+Keine Konfiguration nötig! Verwendet Mock-Daten.
+
+### 🧪 Testnet-Modus (Empfohlen zum Testen)
+1. Erstelle einen Account auf https://testnet.binance.vision/
+2. Generiere API Keys
+3. Bearbeite `src/env-config.js`:
+```javascript
+window.ENV_CONFIG = {
+  TRADING_MODE: 'testnet',
+  BINANCE_TESTNET_API_KEY: 'DEIN_TESTNET_API_KEY',
+  BINANCE_TESTNET_API_SECRET: 'DEIN_TESTNET_API_SECRET'
+};
+```
+
+### 💰 Live-Modus (⚠️ Nur für Produktion!)
+1. API Keys von https://www.binance.com/en/my/settings/api-management
+2. **WICHTIG:** Withdrawal-Berechtigung NIEMALS aktivieren!
+3. IP-Whitelist aktivieren
+4. Bearbeite `src/env-config.js`:
+```javascript
+window.ENV_CONFIG = {
+  TRADING_MODE: 'live',
+  BINANCE_API_KEY: 'DEIN_LIVE_API_KEY',
+  BINANCE_API_SECRET: 'DEIN_LIVE_API_SECRET'
+};
+```
+
+📖 **Detaillierte Setup-Anleitung:** Siehe [SETUP.md](SETUP.md)
+
+**⚠️ WICHTIG: API Keys in `src/env-config.js` bearbeiten. Diese Datei wird MIT committed (enthält nur Beispielwerte)!**
+
+## Development Server
+
+Entwicklungsserver starten:
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Navigiere zu `http://localhost:4200/`. Die Anwendung lädt automatisch neu, wenn du Änderungen an den Quelldateien vornimmst.
 
-## Code scaffolding
+## Projektstruktur
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+```
+src/app/
+├── components/
+│   ├── dashboard/          # Hauptdashboard mit Übersicht
+│   ├── chart/              # Chart-Komponente mit TradingView
+│   └── strategy-manager/   # Strategieverwaltung
+├── services/
+│   ├── binance.service.ts  # Binance API Integration
+│   └── strategy.service.ts # Strategie-Engine
+├── models/
+│   └── trading.model.ts    # TypeScript Interfaces
+└── app.routes.ts          # Routing-Konfiguration
+```
 
+## Verwendung
+
+### Dashboard
+- Zeigt aktuelle Kontostände, Positionen und offene Orders
+- Live-Statistiken über P&L und Margin-Nutzung
+- Aktive Handelsstrategien und deren Status
+
+### Charts
+- Auswahl verschiedener Trading-Paare (BTC, ETH, BNB, etc.)
+- Mehrere Zeitrahmen (1m, 5m, 15m, 1h, 4h, 1d)
+- Interaktive Candlestick-Charts
+
+### Strategieverwaltung
+- Neue Strategien erstellen und konfigurieren
+- Pine Script Integration für benutzerdefinierte Strategien
+- RSI-basierte Standard-Strategie verfügbar
+- Strategien aktivieren/deaktivieren
+- Automatische Ausführung optional
+
+## Handelsstrategien
+
+### Beispiel: RSI-Strategie
+```
+- Kaufen wenn RSI < 30 (überverkauft)
+- Verkaufen wenn RSI > 70 (überkauft)
+```
+
+### Beispiel: Pine Script SMA Crossover
+```pine
+//@version=5
+strategy("SMA Crossover", overlay=true)
+
+sma20 = ta.sma(close, 20)
+sma50 = ta.sma(close, 50)
+
+if (ta.crossover(sma20, sma50))
+    strategy.entry("Long", strategy.long)
+
+if (ta.crossunder(sma20, sma50))
+    strategy.close("Long")
+```
+
+## Sicherheitshinweise
+
+⚠️ **WICHTIG**:
+- Teste das System zuerst mit kleinen Beträgen oder im Testnet
+- Verwende niemals API-Keys mit Withdrawal-Rechten
+- Setze immer Stop-Loss und Take-Profit Parameter
+- Überwache automatisierte Strategien regelmäßig
+- Speichere keine Credentials im Code
+
+## Technische Details
+
+### Verwendete Technologien
+- **Angular 20**: Frontend Framework
+- **RxJS**: Reaktive Programmierung
+- **Binance API Node**: API Client für Binance
+- **Lightweight Charts**: Chart-Bibliothek von TradingView
+- **TypeScript**: Typsicherer Code
+- **SCSS**: Styling
+
+### API Integrationen
+- Binance REST API für Orders und Kontoinformationen
+- Binance WebSocket für Echtzeit-Preisdaten
+- Candlestick-Daten und technische Indikatoren
+
+## Entwicklung
+
+### Neue Komponente erstellen
 ```bash
 ng generate component component-name
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
+### Build für Produktion
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Die Build-Artefakte werden im `dist/` Verzeichnis gespeichert.
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
+### Tests ausführen
 ```bash
 ng test
 ```
 
-## Running end-to-end tests
+## Roadmap
 
-For end-to-end (e2e) testing, run:
+- [ ] Vollständiger Pine Script Interpreter
+- [ ] Backtesting-Funktionalität
+- [ ] Erweiterte Order-Typen (OCO, etc.)
+- [ ] Portfolio-Management
+- [ ] Trading-Bot mit ML-Integration
+- [ ] Multi-Exchange Support
+- [ ] Telegram/Discord Benachrichtigungen
 
-```bash
-ng e2e
-```
+## Lizenz
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Dieses Projekt dient ausschließlich zu Bildungszwecken. Verwendung auf eigene Gefahr.
 
-## Additional Resources
+## Support
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Bei Fragen oder Problemen erstelle bitte ein Issue im Repository.
+
+---
+
+**Hinweis**: Dies ist ein Bildungsprojekt. Trading mit Kryptowährungen birgt erhebliche Risiken. Investiere nur Geld, das du bereit bist zu verlieren.
