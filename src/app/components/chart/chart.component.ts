@@ -493,11 +493,26 @@ export class ChartComponent implements OnInit, OnDestroy {
     if (this.signalMarkers.length > 0) {
       console.log(`📊 Strategy signals detected: ${buySignals} buy signals, ${sellSignals} sell signals`);
     }
-  }
+
+    // Apply markers to the candlestick series
+    if (this.candlestickSeries) {
+      this.candlestickSeries.setMarkers(this.signalMarkers.map(marker => ({
+        time: marker.time,
+        position: marker.position as any,
+        color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
+        shape: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? 'arrowUp' : 'arrowDown',
+        text: marker.type
+      })));
+    }
 
   private clearStrategyIndicators(): void {
     // Clear signal markers
     this.signalMarkers = [];
+
+    // Clear signal markers from chart
+    if (this.candlestickSeries) {
+      this.candlestickSeries.setMarkers([]);
+    }
 
     if (this.sma20Series && this.chart) {
       this.chart.removeSeries(this.sma20Series);
