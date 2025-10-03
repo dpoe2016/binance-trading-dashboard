@@ -141,6 +141,7 @@ export class ChartComponent implements OnInit, OnDestroy {
           }
         },
         rightOffset: 10, // Add a small offset to prevent price scale overlap
+        alignLabelsAndScales: true, // Align time scale with other charts
       },
       localization: {
         locale: navigator.language,
@@ -659,6 +660,7 @@ export class ChartComponent implements OnInit, OnDestroy {
           }
         },
         rightOffset: 10, // Add a small offset to prevent price scale overlap
+        alignLabelsAndScales: true, // Align time scale with other charts
       },
       rightPriceScale: {
         borderVisible: true,
