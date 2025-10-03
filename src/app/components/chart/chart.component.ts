@@ -30,6 +30,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   private candlestickSeries?: ICandlestickSeriesApiWithMarkers;
   private sma20Series?: ISeriesApi<'Line'>;
   private sma50Series?: ISeriesApi<'Line'>;
+  private sma200Series?: ISeriesApi<'Line'>;
   private rsiSeries?: ISeriesApi<'Line'>;
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
@@ -286,6 +287,14 @@ export class ChartComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Update SMA 200 indicator
+    if (strategy.parameters['useSMA200']) {
+      const sma200Data = this.calculateSMAData(this.currentCandles, 200);
+      if (this.sma200Series && sma200Data.length > 0) {
+        this.sma200Series.update(sma200Data[sma200Data.length - 1]);
+      }
+    }
+
     // Update RSI indicator
     if (strategy.parameters['useRSI'] && this.rsiSeries) {
       const rsiData = this.calculateRSIData(this.currentCandles, 14);
@@ -375,6 +384,22 @@ export class ChartComponent implements OnInit, OnDestroy {
 
       if (this.sma50Series) {
         this.sma50Series.setData(sma50Data);
+      }
+    }
+
+    // Add SMA 200 line
+    if (strategy.parameters['useSMA200']) {
+      if (!this.sma200Series && this.chart) {
+        this.sma200Series = this.chart.addSeries(LineSeries, {
+          color: '#FF00FF', // Magenta color for SMA 200
+          lineWidth: 2,
+          title: 'SMA 200',
+        });
+      }
+
+      if (this.sma200Series) {
+        const sma200Data = this.calculateSMAData(this.currentCandles, 200);
+        this.sma200Series.setData(sma200Data);
       }
     }
 
@@ -540,6 +565,17 @@ export class ChartComponent implements OnInit, OnDestroy {
       this.sma50Series = undefined;
     }
 
+    // Clear SMA 200 series
+    if (this.sma200Series && this.chart) {
+      this.chart.removeSeries(this.sma200Series);
+      this.sma200Series = undefined;
+    }
+
+    if (this.sma200Series && this.chart) {
+      this.chart.removeSeries(this.sma200Series);
+      this.sma200Series = undefined;
+    }
+
     // Clear RSI chart and series
     if (this.rsiSeries && this.rsiChart) {
       this.rsiChart.removeSeries(this.rsiSeries);
@@ -618,7 +654,8 @@ export class ChartComponent implements OnInit, OnDestroy {
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
-        borderVisible: false,
+        visible: true,
+        borderVisible: true,
         tickMarkFormatter: (time: any, tickMarkType: any, locale: string) => {
           // Convert UTC timestamp to local time for x-axis labels
           const date = new Date(time * 1000);
