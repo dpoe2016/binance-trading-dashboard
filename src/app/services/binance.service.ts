@@ -166,10 +166,16 @@ export class BinanceService {
       }
 
       this.updateAccountStats();
-    } catch (error) {
-      console.error('Error fetching positions:', error);
-      // Clear positions on error (might not have futures enabled)
+    } catch (error: any) {
+      // Futures API might not be available on testnet or account
+      if (error.status === 404) {
+        console.warn('⚠️ Futures API not available (404). This is normal for spot-only accounts or testnet.');
+      } else {
+        console.error('Error fetching positions:', error);
+      }
+      // Clear positions on error
       this.positions$.next([]);
+      this.updateAccountStats();
     }
   }
 
