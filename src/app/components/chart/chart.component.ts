@@ -503,13 +503,17 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Apply markers to the candlestick series
     if (this.candlestickSeries) {
-      this.candlestickSeries.setMarkers(this.signalMarkers.map(marker => ({
-        time: marker.time,
-        position: marker.position as any,
-        color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
-        shape: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? 'arrowUp' : 'arrowDown',
-        text: marker.type
-      })));
+      if (typeof this.candlestickSeries.setMarkers === 'function') {
+        this.candlestickSeries.setMarkers(this.signalMarkers.map(marker => ({
+          time: marker.time,
+          position: marker.position as any,
+          color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
+          shape: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? 'arrowUp' : 'arrowDown',
+          text: marker.type
+        })));
+      } else {
+        console.error("Error: setMarkers function not found on candlestickSeries. Cannot display markers.");
+      }
     }
   }
 
@@ -519,7 +523,11 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Clear signal markers from chart
     if (this.candlestickSeries) {
-      this.candlestickSeries.setMarkers([]);
+      if (typeof this.candlestickSeries.setMarkers === 'function') {
+        this.candlestickSeries.setMarkers([]);
+      } else {
+        console.error("Error: setMarkers function not found on candlestickSeries. Cannot clear markers.");
+      }
     }
 
     if (this.sma20Series && this.chart) {
