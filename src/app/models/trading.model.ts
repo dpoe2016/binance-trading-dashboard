@@ -37,7 +37,12 @@ export interface TradingStrategy {
   timeframe: string;
   isActive: boolean;
   pineScript?: string;
-  parameters: Record<string, any>;
+  parameters: {
+    useSMA?: boolean;
+    useRSI?: boolean;
+    useSMA200?: boolean; // Add this line
+    [key: string]: any; // Allow other parameters
+  };
   createdAt: Date;
   lastExecuted?: Date;
 }

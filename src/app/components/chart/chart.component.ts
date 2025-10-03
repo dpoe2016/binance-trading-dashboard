@@ -404,8 +404,7 @@ export class ChartComponent implements OnInit, OnDestroy {
           lineWidth: 2,
           title: 'RSI (14)',
           priceScaleId: 'rsi-scale', // Assign to a new price scale
-          pane: 1, // Move to a new pane
-        });
+        }, 1); // Move to a new pane
 
         // Configure the new price scale
         this.chart.priceScale('rsi-scale').applyOptions({
