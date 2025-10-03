@@ -7,9 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-03
+
+### Added
+- Collapsible sections for dashboard components
+- Strategy signal detection and display in local time
+- RSI subchart with real-time updates
+
+### Changed
+- Optimized dashboard layout for better readability
+- Moved version display to the navigation bar
+
+### Fixed
+- Improved RSI subchart reinitialization and cleanup
+- Handled futures API 404 error gracefully in proxy server
+
+### Docs
+- Consolidated all documentation into a comprehensive README
+
 ## [0.2.0] - 2025-10-03
-
-
 
 ### Added
 - Inline editing for trading strategies in dashboard

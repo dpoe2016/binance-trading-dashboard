@@ -27,6 +27,8 @@ export class ChartComponent implements OnInit, OnDestroy {
   private sma50Series?: ISeriesApi<'Line'>;
   private rsiSeries?: ISeriesApi<'Line'>;
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
+  private chartResizeObserver?: ResizeObserver;
+  private rsiChartResizeObserver?: ResizeObserver;
   private priceUpdateCleanup?: () => void;
   private subscriptions: Subscription[] = [];
 
@@ -79,6 +81,12 @@ export class ChartComponent implements OnInit, OnDestroy {
     }
     if (this.rsiChart) {
       this.rsiChart.remove();
+    }
+    if (this.chartResizeObserver) {
+      this.chartResizeObserver.disconnect();
+    }
+    if (this.rsiChartResizeObserver) {
+      this.rsiChartResizeObserver.disconnect();
     }
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
@@ -149,28 +157,19 @@ export class ChartComponent implements OnInit, OnDestroy {
       wickDownColor: '#ef4444',
     });
 
-    // Handle window resize
-    window.addEventListener('resize', this.handleResize.bind(this));
+    // Handle container resize using ResizeObserver
+    this.chartResizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        if (entry.target === container && this.chart) {
+          const { width, height } = entry.contentRect;
+          this.chart.applyOptions({ width, height });
+        }
+      }
+    });
+    this.chartResizeObserver.observe(container);
   }
 
-  private handleResize(): void {
-    if (this.chart && this.chartContainer) {
-      const height = this.rsiChart
-        ? this.chartContainer.nativeElement.clientHeight
-        : this.chartContainer.nativeElement.clientHeight;
 
-      this.chart.applyOptions({
-        width: this.chartContainer.nativeElement.clientWidth,
-        height: height,
-      });
-    }
-
-    if (this.rsiChart && this.rsiContainer) {
-      this.rsiChart.applyOptions({
-        width: this.rsiContainer.nativeElement.clientWidth,
-      });
-    }
-  }
 
   async loadChartData(): Promise<void> {
     try {
@@ -667,14 +666,16 @@ export class ChartComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Handle window resize for RSI chart
-    window.addEventListener('resize', () => {
-      if (this.rsiChart && this.rsiContainer) {
-        this.rsiChart.applyOptions({
-          width: this.rsiContainer.nativeElement.clientWidth,
-        });
+    // Handle container resize using ResizeObserver
+    this.rsiChartResizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        if (entry.target === container && this.rsiChart) {
+          const { width } = entry.contentRect;
+          this.rsiChart.applyOptions({ width });
+        }
       }
     });
+    this.rsiChartResizeObserver.observe(container);
   }
 
   private calculateRSIData(candles: Candle[], period: number = 14): LineData[] {
