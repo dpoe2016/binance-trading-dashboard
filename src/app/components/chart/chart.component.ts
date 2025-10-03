@@ -22,12 +22,10 @@ import { Subscription } from 'rxjs';
 })
 export class ChartComponent implements OnInit, OnDestroy {
   @ViewChild('chartContainer', { static: true }) chartContainer!: ElementRef;
-  @ViewChild('rsiContainer') rsiContainer?: ElementRef;
   @ViewChild('chartWrapper', { static: true }) chartWrapper!: ElementRef;
   @Input() symbol: string = 'BTCUSDT';
 
   private chart?: IChartApi;
-  private rsiChart?: IChartApi;
   private candlestickSeries?: ICandlestickSeriesApiWithMarkers;
   private sma20Series?: ISeriesApi<'Line'>;
   private sma50Series?: ISeriesApi<'Line'>;
@@ -35,7 +33,6 @@ export class ChartComponent implements OnInit, OnDestroy {
   private rsiSeries?: ISeriesApi<'Line'>;
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
-  private rsiChartResizeObserver?: ResizeObserver;
   private priceUpdateCleanup?: () => void;
   private subscriptions: Subscription[] = [];
 
@@ -86,14 +83,8 @@ export class ChartComponent implements OnInit, OnDestroy {
     if (this.chart) {
       this.chart.remove();
     }
-    if (this.rsiChart) {
-      this.rsiChart.remove();
-    }
     if (this.chartResizeObserver) {
       this.chartResizeObserver.disconnect();
-    }
-    if (this.rsiChartResizeObserver) {
-      this.rsiChartResizeObserver.disconnect();
     }
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
@@ -142,7 +133,6 @@ export class ChartComponent implements OnInit, OnDestroy {
           }
         },
         rightOffset: 10, // Add a small offset to prevent price scale overlap
-        alignLabelsAndScales: true, // Align time scale with other charts
       },
       localization: {
         locale: navigator.language,
@@ -303,7 +293,6 @@ export class ChartComponent implements OnInit, OnDestroy {
       const rsiData = this.calculateRSIData(this.currentCandles, 14);
       if (rsiData.length > 0) {
         this.rsiSeries.update(rsiData[rsiData.length - 1]);
-        this.updateRsiPriceScale(rsiData);
       }
     }
   }
@@ -408,30 +397,31 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Add RSI indicator as subchart
     if (strategy.parameters['useRSI']) {
-      // Use setTimeout to ensure DOM has updated before initializing RSI chart
-      setTimeout(() => {
-        this.initRSIChart();
-        const rsiData = this.calculateRSIData(this.currentCandles, 14);
+      // Add RSI series to the main chart on a new price scale
+      if (!this.rsiSeries && this.chart) {
+        this.rsiSeries = this.chart.addSeries(LineSeries, {
+          color: '#9C27B0',
+          lineWidth: 2,
+          title: 'RSI (14)',
+          priceScaleId: 'rsi-scale', // Assign to a new price scale
+          pane: 1, // Move to a new pane
+        });
 
-        if (this.rsiSeries) {
-          this.rsiSeries.setData(rsiData);
-          this.updateRsiPriceScale(rsiData);
-        }
+        // Configure the new price scale
+        this.chart.priceScale('rsi-scale').applyOptions({
+          autoScale: true,
+          visible: true,
+          borderVisible: true,
+          borderColor: '#737375',
+          mode: 2, // PriceScaleMode.Normal
+          alignLabels: true,
+        });
+      }
 
-        // Auto-fit RSI chart
-        if (this.rsiChart) {
-          this.rsiChart.timeScale().fitContent();
-        }
-
-        // Hide time axis on main chart when RSI is visible
-        if (this.chart && this.chartContainer) {
-          this.chart.applyOptions({
-            timeScale: {
-              visible: false,
-            },
-          });
-        }
-      }, 100);
+      const rsiData = this.calculateRSIData(this.currentCandles, 14);
+      if (this.rsiSeries) {
+        this.rsiSeries.setData(rsiData);
+      }
     }
 
     // Generate and add strategy signals as markers
@@ -570,14 +560,9 @@ export class ChartComponent implements OnInit, OnDestroy {
     }
 
     // Clear RSI chart and series
-    if (this.rsiSeries && this.rsiChart) {
-      this.rsiChart.removeSeries(this.rsiSeries);
+    if (this.rsiSeries && this.chart) {
+      this.chart.removeSeries(this.rsiSeries);
       this.rsiSeries = undefined;
-    }
-
-    if (this.rsiChart) {
-      this.rsiChart.remove();
-      this.rsiChart = undefined;
 
       // Show time axis on main chart again when RSI is removed
       if (this.chart && this.chartContainer) {
@@ -618,108 +603,6 @@ export class ChartComponent implements OnInit, OnDestroy {
     return strategy ? !!strategy.parameters['useRSI'] : false;
   }
 
-  private initRSIChart(): void {
-    if (this.rsiChart || !this.rsiContainer) return;
-
-    const container = this.rsiContainer.nativeElement;
-
-    this.rsiChart = createChart(container, {
-      width: this.chartWrapper.nativeElement.clientWidth,
-      height: 180,
-      layout: {
-        background: { type: 'solid' as any, color: '#ffffff' },
-        textColor: '#333',
-      },
-      grid: {
-        vertLines: { color: '#f0f0f0' },
-        horzLines: { color: '#f0f0f0' },
-      },
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-        visible: true,
-        borderVisible: true,
-        tickMarkFormatter: (time: any, tickMarkType: any, locale: string) => {
-          // Convert UTC timestamp to local time for x-axis labels
-          const date = new Date(time * 1000);
-
-          // Different formatting based on tick mark type
-          if (tickMarkType === 0) {
-            // Year
-            return date.getFullYear().toString();
-          } else if (tickMarkType === 1) {
-            // Month
-            return date.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
-          } else if (tickMarkType === 2) {
-            // Day
-            return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-          } else {
-            // Time
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            return `${hours}:${minutes}`;
-          }
-        },
-        rightOffset: 10, // Add a small offset to prevent price scale overlap
-        alignLabelsAndScales: true, // Align time scale with other charts
-      },
-      rightPriceScale: {
-        borderVisible: true,
-      },
-      localization: {
-        locale: navigator.language,
-        timeFormatter: (timestamp: number) => {
-          // timestamp is in seconds (Unix timestamp)
-          const date = new Date(timestamp * 1000);
-          const hours = date.getHours().toString().padStart(2, '0');
-          const minutes = date.getMinutes().toString().padStart(2, '0');
-          return `${hours}:${minutes}`;
-        },
-      },
-    });
-
-    this.rsiSeries = this.rsiChart.addSeries(LineSeries, {
-      color: '#9C27B0',
-      lineWidth: 2,
-      title: 'RSI (14)',
-      priceScaleId: 'right',
-      lastValueVisible: true,
-      priceLineVisible: true,
-    });
-
-    // Synchronize time scales with main chart
-    if (this.chart) {
-      const mainTimeScale = this.chart.timeScale();
-      const rsiTimeScale = this.rsiChart.timeScale();
-
-      // Sync from main chart to RSI chart
-      mainTimeScale.subscribeVisibleLogicalRangeChange(() => {
-        const logicalRange = mainTimeScale.getVisibleLogicalRange();
-        if (logicalRange) {
-          rsiTimeScale.setVisibleLogicalRange(logicalRange);
-        }
-      });
-
-      // Sync from RSI chart to main chart
-      rsiTimeScale.subscribeVisibleLogicalRangeChange(() => {
-        const logicalRange = rsiTimeScale.getVisibleLogicalRange();
-        if (logicalRange) {
-          mainTimeScale.setVisibleLogicalRange(logicalRange);
-        }
-      });
-    }
-
-    // Handle container resize using ResizeObserver
-    this.rsiChartResizeObserver = new ResizeObserver(entries => {
-      for (let entry of entries) {
-        if (entry.target === container && this.rsiChart) {
-          this.rsiChart.applyOptions({ width: this.chartWrapper.nativeElement.clientWidth });
-        }
-      }
-    });
-    this.rsiChartResizeObserver.observe(container);
-  }
-
   private calculateRSIData(candles: Candle[], period: number = 14): LineData[] {
     const data: LineData[] = [];
     const closes = candles.map(c => c.close);
@@ -752,27 +635,5 @@ export class ChartComponent implements OnInit, OnDestroy {
     }
 
     return data;
-  }
-
-  private updateRsiPriceScale(rsiData: LineData[]): void {
-    if (!this.rsiSeries || rsiData.length === 0) return;
-
-    const values = rsiData.map(d => d.value);
-    const minRsi = Math.min(...values);
-    const maxRsi = Math.max(...values);
-
-    // Add some padding to the min/max values
-    const padding = (maxRsi - minRsi) * 0.1; // 10% padding
-    const minValue = Math.max(0, minRsi - padding);
-    const maxValue = Math.min(100, maxRsi + padding);
-
-    this.rsiSeries.applyOptions({
-      autoscaleInfoProvider: () => ({
-        priceRange: {
-          minValue: minValue,
-          maxValue: maxValue,
-        },
-      }),
-    } as any);
   }
 }
