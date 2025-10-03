@@ -293,6 +293,16 @@ export class ChartComponent implements OnInit, OnDestroy {
         this.rsiSeries.update(rsiData[rsiData.length - 1]);
       }
     }
+
+    // Update Aroon indicator
+    if (strategy.parameters['useAroon'] && this.aroonUpSeries && this.aroonDownSeries) {
+      const aroonPeriod = strategy.parameters['aroonPeriod'] || 25;
+      const aroonData = this.calculateAroonData(this.currentCandles, aroonPeriod);
+      if (aroonData.aroonUp.length > 0 && aroonData.aroonDown.length > 0) {
+        this.aroonUpSeries.update(aroonData.aroonUp[aroonData.aroonUp.length - 1]);
+        this.aroonDownSeries.update(aroonData.aroonDown[aroonData.aroonDown.length - 1]);
+      }
+    }
   }
 
   onSymbolChange(): void {
@@ -415,8 +425,10 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Add Aroon indicator as subchart
     if (strategy.parameters['useAroon']) {
+      console.log('📊 Adding Aroon indicator to chart');
       const aroonPeriod = strategy.parameters['aroonPeriod'] || 25;
       const aroonData = this.calculateAroonData(this.currentCandles, aroonPeriod);
+      console.log(`📊 Aroon data calculated: ${aroonData.aroonUp.length} data points`);
 
       // Add Aroon Up series
       if (!this.aroonUpSeries && this.chart) {
@@ -428,6 +440,7 @@ export class ChartComponent implements OnInit, OnDestroy {
           lastValueVisible: true,
           priceLineVisible: true,
         }, 2); // Move to a new pane (pane 2)
+        console.log('📊 Aroon Up series added to chart');
       }
 
       // Add Aroon Down series
@@ -440,15 +453,20 @@ export class ChartComponent implements OnInit, OnDestroy {
           lastValueVisible: true,
           priceLineVisible: true,
         }, 2); // Same pane as Aroon Up
+        console.log('📊 Aroon Down series added to chart');
       }
 
       if (this.aroonUpSeries && aroonData.aroonUp.length > 0) {
         this.aroonUpSeries.setData(aroonData.aroonUp);
+        console.log('📊 Aroon Up data set');
       }
 
       if (this.aroonDownSeries && aroonData.aroonDown.length > 0) {
         this.aroonDownSeries.setData(aroonData.aroonDown);
+        console.log('📊 Aroon Down data set');
       }
+    } else {
+      console.log('📊 Aroon not enabled in strategy parameters:', strategy.parameters);
     }
 
     // Generate and add strategy signals as markers
