@@ -160,6 +160,18 @@ if (ta.crossunder(sma20, sma50))
     if (this.editingStrategy.parameters['aroonPeriod'] === undefined) {
       this.editingStrategy.parameters['aroonPeriod'] = 25;
     }
+    if (this.editingStrategy.parameters['macdFastPeriod'] === undefined) {
+      this.editingStrategy.parameters['macdFastPeriod'] = 12;
+    }
+    if (this.editingStrategy.parameters['macdSlowPeriod'] === undefined) {
+      this.editingStrategy.parameters['macdSlowPeriod'] = 26;
+    }
+    if (this.editingStrategy.parameters['macdSignalPeriod'] === undefined) {
+      this.editingStrategy.parameters['macdSignalPeriod'] = 9;
+    }
+    if (this.editingStrategy.parameters['choppinessPeriod'] === undefined) {
+      this.editingStrategy.parameters['choppinessPeriod'] = 14;
+    }
   }
 
   saveEditedStrategy(): void {

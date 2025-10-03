@@ -147,9 +147,62 @@ export class StrategyService {
     const indicators = this.calculateBasicIndicators(candles);
     const lastCandle = candles[candles.length - 1];
 
+    // Check Choppiness Index filter (only trade in trending markets)
+    let choppinessFilter = true;
+    if (strategy.parameters['useChoppiness']) {
+      const choppinessPeriod = strategy.parameters['choppinessPeriod'] || 14;
+      const choppinessValue = this.calculateChoppinessIndex(candles, choppinessPeriod);
+
+      // Only allow signals when market is trending (CI < 38.2)
+      if (choppinessValue > 38.2) {
+        choppinessFilter = false;
+        console.log(`🚫 Signal filtered: Market is choppy (CI: ${choppinessValue.toFixed(2)})`);
+      }
+    }
+
+    // MACD crossover signals
+    if (strategy.parameters['useMACD']) {
+      const fastPeriod = strategy.parameters['macdFastPeriod'] || 12;
+      const slowPeriod = strategy.parameters['macdSlowPeriod'] || 26;
+      const signalPeriod = strategy.parameters['macdSignalPeriod'] || 9;
+
+      const macdData = this.calculateMACD(candles, fastPeriod, slowPeriod, signalPeriod);
+
+      if (macdData.length >= 2) {
+        const current = macdData[macdData.length - 1];
+        const previous = macdData[macdData.length - 2];
+
+        // Bullish crossover: MACD crosses above signal line
+        if (current.histogram > 0 && previous.histogram <= 0 && choppinessFilter) {
+          return {
+            strategyId: strategy.id,
+            symbol: strategy.symbol,
+            action: 'BUY',
+            price: lastCandle.close,
+            quantity: parseFloat(strategy.parameters['quantity'] || '0'),
+            timestamp: new Date(),
+            reason: 'MACD Bullish Crossover'
+          };
+        }
+
+        // Bearish crossover: MACD crosses below signal line
+        if (current.histogram < 0 && previous.histogram >= 0 && choppinessFilter) {
+          return {
+            strategyId: strategy.id,
+            symbol: strategy.symbol,
+            action: 'SELL',
+            price: lastCandle.close,
+            quantity: parseFloat(strategy.parameters['quantity'] || '0'),
+            timestamp: new Date(),
+            reason: 'MACD Bearish Crossover'
+          };
+        }
+      }
+    }
+
     // Example: Simple RSI strategy
     if (strategy.parameters['useRSI']) {
-      if (indicators.rsi < 30) {
+      if (indicators.rsi < 30 && choppinessFilter) {
         return {
           strategyId: strategy.id,
           symbol: strategy.symbol,
@@ -159,7 +212,7 @@ export class StrategyService {
           timestamp: new Date(),
           reason: 'RSI Oversold'
         };
-      } else if (indicators.rsi > 70) {
+      } else if (indicators.rsi > 70 && choppinessFilter) {
         return {
           strategyId: strategy.id,
           symbol: strategy.symbol,
@@ -221,6 +274,109 @@ export class StrategyService {
     const avgLoss = losses / period;
     const rs = avgGain / avgLoss;
     return 100 - (100 / (1 + rs));
+  }
+
+  private calculateMACD(candles: Candle[], fastPeriod: number = 12, slowPeriod: number = 26, signalPeriod: number = 9): Array<{macd: number, signal: number, histogram: number}> {
+    if (candles.length < slowPeriod) {
+      return [];
+    }
+
+    const closes = candles.map(c => c.close);
+
+    // Calculate EMAs using proper EMA calculation
+    const calculateEMAArray = (data: number[], period: number): number[] => {
+      const ema: number[] = [];
+      const multiplier = 2 / (period + 1);
+
+      // First EMA is SMA
+      let sum = 0;
+      for (let i = 0; i < period; i++) {
+        sum += data[i];
+      }
+      ema.push(sum / period);
+
+      // Calculate remaining EMAs
+      for (let i = period; i < data.length; i++) {
+        const currentEMA = (data[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1];
+        ema.push(currentEMA);
+      }
+
+      return ema;
+    };
+
+    // Calculate fast and slow EMAs
+    const fastEMA = calculateEMAArray(closes, fastPeriod);
+    const slowEMA = calculateEMAArray(closes, slowPeriod);
+
+    // Calculate MACD line (fast EMA - slow EMA)
+    const macdValues: number[] = [];
+    for (let i = 0; i < slowEMA.length; i++) {
+      const fastIndex = i + (slowPeriod - fastPeriod);
+      if (fastIndex >= 0 && fastIndex < fastEMA.length) {
+        macdValues.push(fastEMA[fastIndex] - slowEMA[i]);
+      }
+    }
+
+    // Calculate signal line (EMA of MACD line)
+    const signalEMA = calculateEMAArray(macdValues, signalPeriod);
+
+    // Build output array
+    const result: Array<{macd: number, signal: number, histogram: number}> = [];
+    for (let i = 0; i < signalEMA.length; i++) {
+      const macdValue = macdValues[i + (signalPeriod - 1)];
+      const signalValue = signalEMA[i];
+      const histogramValue = macdValue - signalValue;
+
+      result.push({
+        macd: macdValue,
+        signal: signalValue,
+        histogram: histogramValue
+      });
+    }
+
+    return result;
+  }
+
+  private calculateChoppinessIndex(candles: Candle[], period: number = 14): number {
+    if (candles.length < period) {
+      return 100; // Return high value (choppy) if not enough data
+    }
+
+    const slice = candles.slice(-period);
+
+    // Find highest high and lowest low in the period
+    let highestHigh = slice[0].high;
+    let lowestLow = slice[0].low;
+
+    for (let i = 1; i < slice.length; i++) {
+      if (slice[i].high > highestHigh) highestHigh = slice[i].high;
+      if (slice[i].low < lowestLow) lowestLow = slice[i].low;
+    }
+
+    // Calculate sum of true ranges
+    let sumTrueRange = 0;
+    for (let i = 1; i < slice.length; i++) {
+      const high = slice[i].high;
+      const low = slice[i].low;
+      const prevClose = slice[i - 1].close;
+
+      const trueRange = Math.max(
+        high - low,
+        Math.abs(high - prevClose),
+        Math.abs(low - prevClose)
+      );
+
+      sumTrueRange += trueRange;
+    }
+
+    // Calculate Choppiness Index
+    const range = highestHigh - lowestLow;
+
+    if (range > 0 && sumTrueRange > 0) {
+      return 100 * Math.log10(sumTrueRange / range) / Math.log10(period);
+    }
+
+    return 100; // Return high value if calculation fails
   }
 
   // Signal Management

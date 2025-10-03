@@ -200,6 +200,40 @@
             </div>
 
             <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['useMACD']">
+                MACD Indikator verwenden
+              </label>
+            </div>
+
+            <div class="param-row" *ngIf="editingStrategy.parameters!['useMACD']">
+              <div class="param-item">
+                <label>MACD Fast Period</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['macdFastPeriod']" placeholder="12" min="5" max="50">
+              </div>
+              <div class="param-item">
+                <label>MACD Slow Period</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['macdSlowPeriod']" placeholder="26" min="10" max="100">
+              </div>
+              <div class="param-item">
+                <label>MACD Signal Period</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['macdSignalPeriod']" placeholder="9" min="5" max="50">
+              </div>
+            </div>
+
+            <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['useChoppiness']">
+                Choppiness Index verwenden
+              </label>
+            </div>
+
+            <div class="param-item" *ngIf="editingStrategy.parameters!['useChoppiness']">
+              <label>Choppiness Periode</label>
+              <input type="number" [(ngModel)]="editingStrategy.parameters!['choppinessPeriod']" placeholder="14" min="5" max="50">
+            </div>
+
+            <div class="param-item">
               <label>Menge</label>
               <input type="text" [(ngModel)]="editingStrategy.parameters!['quantity']" placeholder="0.001">
             </div>

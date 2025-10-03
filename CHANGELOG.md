@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2025-10-03
+
+### Added
+- Choppiness Index indicator as separate pane
+- Color-coded zones: Green (trending < 38.2), Orange (neutral), Red (choppy > 61.8)
+- Configurable Choppiness period (default 14)
+- Choppiness Index as signal filter to prevent trading in choppy markets
+- Choppiness support in backtesting service
+- Choppiness parameter editing in strategy manager UI
+
+## [0.5.4] - 2025-10-03
+
+### Added
+- MACD (Moving Average Convergence Divergence) indicator as separate pane
+- MACD line, signal line, and histogram visualization
+- Configurable MACD periods (fast: 12, slow: 26, signal: 9)
+- MACD crossover signal detection in strategy service
+- MACD support in backtesting with bullish/bearish crossover signals
+- MACD parameter editing in strategy manager UI
+
 ## [0.5.3] - 2025-10-03
 
 ### Fixed

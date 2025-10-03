@@ -55,3 +55,6 @@ GEMINI.md
 
 # API Keys and Secrets (NEVER COMMIT THESE!)
 # Note: API keys are loaded from .env file and generated into src/environments/
+
+# no screenshots
+iScreen*.png

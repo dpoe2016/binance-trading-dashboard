@@ -88,6 +88,16 @@ export class BacktestingService {
     const sma20Data = strategy.parameters['useSMA'] !== false ? this.calculateSMA(candles, 20) : null;
     const sma50Data = strategy.parameters['useSMA'] !== false ? this.calculateSMA(candles, 50) : null;
     const sma200Data = strategy.parameters['useSMA200'] ? this.calculateSMA(candles, 200) : null;
+    const macdData = strategy.parameters['useMACD'] ? this.calculateMACD(
+      candles,
+      strategy.parameters['macdFastPeriod'] || 12,
+      strategy.parameters['macdSlowPeriod'] || 26,
+      strategy.parameters['macdSignalPeriod'] || 9
+    ) : null;
+    const choppinessData = strategy.parameters['useChoppiness'] ? this.calculateChoppinessIndex(
+      candles,
+      strategy.parameters['choppinessPeriod'] || 14
+    ) : null;
 
     // Generate RSI signals
     if (rsiData && strategy.parameters['useRSI']) {
@@ -102,8 +112,14 @@ export class BacktestingService {
         if (candleIndex >= candles.length) continue;
         const candle = candles[candleIndex];
 
+        // Check choppiness filter
+        const choppinessValue = choppinessData && candleIndex < choppinessData.length
+          ? choppinessData[candleIndex]
+          : 0;
+        const passesChoppinessFilter = !choppinessData || choppinessValue < 38.2;
+
         // Buy signal: RSI crosses below oversold level
-        if (prevRSI >= rsiOversold && currRSI < rsiOversold) {
+        if (prevRSI >= rsiOversold && currRSI < rsiOversold && passesChoppinessFilter) {
           signals.push({
             time: candle.time,
             type: 'BUY',
@@ -116,7 +132,7 @@ export class BacktestingService {
         }
 
         // Sell signal: RSI crosses above overbought level
-        if (prevRSI <= rsiOverbought && currRSI > rsiOverbought) {
+        if (prevRSI <= rsiOverbought && currRSI > rsiOverbought && passesChoppinessFilter) {
           signals.push({
             time: candle.time,
             type: 'SELL',
@@ -141,8 +157,14 @@ export class BacktestingService {
         if (i >= candles.length) continue;
         const candle = candles[i];
 
+        // Check choppiness filter
+        const choppinessValue = choppinessData && i < choppinessData.length
+          ? choppinessData[i]
+          : 0;
+        const passesChoppinessFilter = !choppinessData || choppinessValue < 38.2;
+
         // Golden cross: SMA20 crosses above SMA50 (bullish)
-        if (prevSMA20 <= prevSMA50 && currSMA20 > currSMA50) {
+        if (prevSMA20 <= prevSMA50 && currSMA20 > currSMA50 && passesChoppinessFilter) {
           signals.push({
             time: candle.time,
             type: 'GOLDEN_CROSS',
@@ -155,7 +177,7 @@ export class BacktestingService {
         }
 
         // Death cross: SMA20 crosses below SMA50 (bearish)
-        if (prevSMA20 >= prevSMA50 && currSMA20 < currSMA50) {
+        if (prevSMA20 >= prevSMA50 && currSMA20 < currSMA50 && passesChoppinessFilter) {
           signals.push({
             time: candle.time,
             type: 'DEATH_CROSS',
@@ -164,6 +186,58 @@ export class BacktestingService {
             rsi: rsiData ? rsiData[i - 14] : undefined,
             sma20: currSMA20,
             sma50: currSMA50,
+          });
+        }
+      }
+    }
+
+    // Generate MACD crossover signals
+    if (macdData && strategy.parameters['useMACD']) {
+      const slowPeriod = strategy.parameters['macdSlowPeriod'] || 26;
+      const signalPeriod = strategy.parameters['macdSignalPeriod'] || 9;
+      const startIndex = slowPeriod + signalPeriod - 2;
+
+      for (let i = 1; i < macdData.length; i++) {
+        const prevMACD = macdData[i - 1];
+        const currMACD = macdData[i];
+        const candleIndex = startIndex + i;
+
+        if (candleIndex >= candles.length) continue;
+        const candle = candles[candleIndex];
+
+        // Check choppiness filter
+        const choppinessValue = choppinessData && candleIndex < choppinessData.length
+          ? choppinessData[candleIndex]
+          : 0;
+        const passesChoppinessFilter = !choppinessData || choppinessValue < 38.2;
+
+        // Bullish crossover: MACD crosses above signal line
+        if (prevMACD.histogram <= 0 && currMACD.histogram > 0 && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'BUY',
+            price: candle.close,
+            reason: `MACD bullish crossover (${currMACD.histogram.toFixed(4)})`,
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+
+        // Bearish crossover: MACD crosses below signal line
+        if (prevMACD.histogram >= 0 && currMACD.histogram < 0 && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'SELL',
+            price: candle.close,
+            reason: `MACD bearish crossover (${currMACD.histogram.toFixed(4)})`,
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
           });
         }
       }
@@ -373,5 +447,120 @@ export class BacktestingService {
     }
 
     return sma;
+  }
+
+  private calculateMACD(
+    candles: Candle[],
+    fastPeriod: number = 12,
+    slowPeriod: number = 26,
+    signalPeriod: number = 9
+  ): Array<{macd: number, signal: number, histogram: number}> {
+    if (candles.length < slowPeriod) {
+      return [];
+    }
+
+    const closes = candles.map(c => c.close);
+
+    // Helper function to calculate EMA array
+    const calculateEMAArray = (data: number[], period: number): number[] => {
+      const ema: number[] = [];
+      const multiplier = 2 / (period + 1);
+
+      // First EMA is SMA
+      let sum = 0;
+      for (let i = 0; i < period; i++) {
+        sum += data[i];
+      }
+      ema.push(sum / period);
+
+      // Calculate remaining EMAs
+      for (let i = period; i < data.length; i++) {
+        const currentEMA = (data[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1];
+        ema.push(currentEMA);
+      }
+
+      return ema;
+    };
+
+    // Calculate fast and slow EMAs
+    const fastEMA = calculateEMAArray(closes, fastPeriod);
+    const slowEMA = calculateEMAArray(closes, slowPeriod);
+
+    // Calculate MACD line (fast EMA - slow EMA)
+    const macdValues: number[] = [];
+    for (let i = 0; i < slowEMA.length; i++) {
+      const fastIndex = i + (slowPeriod - fastPeriod);
+      if (fastIndex >= 0 && fastIndex < fastEMA.length) {
+        macdValues.push(fastEMA[fastIndex] - slowEMA[i]);
+      }
+    }
+
+    // Calculate signal line (EMA of MACD line)
+    const signalEMA = calculateEMAArray(macdValues, signalPeriod);
+
+    // Build output array
+    const result: Array<{macd: number, signal: number, histogram: number}> = [];
+    for (let i = 0; i < signalEMA.length; i++) {
+      const macdValue = macdValues[i + (signalPeriod - 1)];
+      const signalValue = signalEMA[i];
+      const histogramValue = macdValue - signalValue;
+
+      result.push({
+        macd: macdValue,
+        signal: signalValue,
+        histogram: histogramValue
+      });
+    }
+
+    return result;
+  }
+
+  private calculateChoppinessIndex(candles: Candle[], period: number = 14): number[] {
+    const choppiness: number[] = [];
+
+    if (candles.length < period) {
+      return choppiness;
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+
+      // Find highest high and lowest low in the period
+      let highestHigh = slice[0].high;
+      let lowestLow = slice[0].low;
+
+      for (let j = 1; j < slice.length; j++) {
+        if (slice[j].high > highestHigh) highestHigh = slice[j].high;
+        if (slice[j].low < lowestLow) lowestLow = slice[j].low;
+      }
+
+      // Calculate sum of true ranges
+      let sumTrueRange = 0;
+      for (let j = 1; j < slice.length; j++) {
+        const high = slice[j].high;
+        const low = slice[j].low;
+        const prevClose = slice[j - 1].close;
+
+        const trueRange = Math.max(
+          high - low,
+          Math.abs(high - prevClose),
+          Math.abs(low - prevClose)
+        );
+
+        sumTrueRange += trueRange;
+      }
+
+      // Calculate Choppiness Index
+      const range = highestHigh - lowestLow;
+
+      if (range > 0 && sumTrueRange > 0) {
+        const ci = 100 * Math.log10(sumTrueRange / range) / Math.log10(period);
+        choppiness.push(ci);
+      } else {
+        choppiness.push(100); // High value indicates choppy
+      }
+    }
+
+    return choppiness;
   }
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData, createSeriesMarkers } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData, HistogramSeries, HistogramData, createSeriesMarkers } from 'lightweight-charts';
 
 import { BinanceService } from '../../services/binance.service';
 import { StrategyService } from '../../services/strategy.service';
@@ -29,6 +29,10 @@ export class ChartComponent implements OnInit, OnDestroy {
   private rsiSeries?: any;
   private aroonUpSeries?: any;
   private aroonDownSeries?: any;
+  private macdLineSeries?: any;
+  private macdSignalSeries?: any;
+  private macdHistogramSeries?: any;
+  private choppinessSeries?: any;
   private seriesMarkers?: any; // v5 marker primitive
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
@@ -470,6 +474,126 @@ export class ChartComponent implements OnInit, OnDestroy {
       console.log('📊 Aroon not enabled in strategy parameters:', strategy.parameters);
     }
 
+    // Add MACD indicator as subchart
+    if (strategy.parameters['useMACD']) {
+      console.log('📊 Adding MACD indicator to chart');
+      const macdFastPeriod = strategy.parameters['macdFastPeriod'] || 12;
+      const macdSlowPeriod = strategy.parameters['macdSlowPeriod'] || 26;
+      const macdSignalPeriod = strategy.parameters['macdSignalPeriod'] || 9;
+      const macdData = this.calculateMACDData(this.currentCandles, macdFastPeriod, macdSlowPeriod, macdSignalPeriod);
+      console.log(`📊 MACD data calculated: ${macdData.macdLine.length} data points`);
+
+      // Add MACD Line series
+      if (!this.macdLineSeries && this.chart) {
+        this.macdLineSeries = this.chart.addSeries(LineSeries, {
+          color: '#2962FF',
+          lineWidth: 2,
+          title: 'MACD',
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 3); // New pane (pane 3)
+        console.log('📊 MACD Line series added to chart');
+      }
+
+      // Add MACD Signal Line series
+      if (!this.macdSignalSeries && this.chart) {
+        this.macdSignalSeries = this.chart.addSeries(LineSeries, {
+          color: '#FF6D00',
+          lineWidth: 2,
+          title: 'Signal',
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 3); // Same pane as MACD line
+        console.log('📊 MACD Signal series added to chart');
+      }
+
+      // Add MACD Histogram series
+      if (!this.macdHistogramSeries && this.chart) {
+        this.macdHistogramSeries = this.chart.addSeries(HistogramSeries, {
+          color: '#26a69a',
+          priceFormat: {
+            type: 'volume',
+          },
+          priceScaleId: 'right',
+        }, 3); // Same pane as MACD lines
+        console.log('📊 MACD Histogram series added to chart');
+      }
+
+      // Set data for MACD series
+      if (this.macdLineSeries && macdData.macdLine.length > 0) {
+        this.macdLineSeries.setData(macdData.macdLine);
+        console.log('📊 MACD Line data set');
+      }
+
+      if (this.macdSignalSeries && macdData.signalLine.length > 0) {
+        this.macdSignalSeries.setData(macdData.signalLine);
+        console.log('📊 MACD Signal data set');
+      }
+
+      if (this.macdHistogramSeries && macdData.histogram.length > 0) {
+        // Convert LineData to HistogramData
+        const histogramData: HistogramData[] = macdData.histogram.map(d => ({
+          time: d.time,
+          value: d.value,
+          color: d.value >= 0 ? '#26a69a' : '#ef5350'
+        }));
+        this.macdHistogramSeries.setData(histogramData);
+        console.log('📊 MACD Histogram data set');
+      }
+    } else {
+      console.log('📊 MACD not enabled in strategy parameters:', strategy.parameters);
+    }
+
+    // Add Choppiness Index as subchart
+    if (strategy.parameters['useChoppiness']) {
+      console.log('📊 Adding Choppiness Index to chart');
+      const choppinessPeriod = strategy.parameters['choppinessPeriod'] || 14;
+      const choppinessData = this.calculateChoppinessIndex(this.currentCandles, choppinessPeriod);
+      console.log(`📊 Choppiness Index data calculated: ${choppinessData.length} data points`);
+
+      // Add Choppiness Index series with histogram
+      if (!this.choppinessSeries && this.chart) {
+        this.choppinessSeries = this.chart.addSeries(HistogramSeries, {
+          priceFormat: {
+            type: 'price',
+            precision: 2,
+          },
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: false,
+        }, 4); // New pane (pane 4)
+        console.log('📊 Choppiness Index series added to chart');
+      }
+
+      // Set data for Choppiness series with color coding
+      if (this.choppinessSeries && choppinessData.length > 0) {
+        // Convert LineData to HistogramData with color zones
+        const histogramData: HistogramData[] = choppinessData.map(d => {
+          let color: string;
+          if (d.value > 61.8) {
+            color = '#ef5350'; // Red: Choppy/Consolidating
+          } else if (d.value < 38.2) {
+            color = '#26a69a'; // Green: Trending
+          } else {
+            color = '#FFA726'; // Orange: Neutral
+          }
+
+          return {
+            time: d.time,
+            value: d.value,
+            color: color
+          };
+        });
+
+        this.choppinessSeries.setData(histogramData);
+        console.log('📊 Choppiness Index data set with color zones');
+      }
+    } else {
+      console.log('📊 Choppiness Index not enabled in strategy parameters:', strategy.parameters);
+    }
+
     // Generate and add strategy signals as markers
     this.addStrategySignals(strategy);
   }
@@ -764,5 +888,159 @@ export class ChartComponent implements OnInit, OnDestroy {
     }
 
     return { aroonUp, aroonDown };
+  }
+
+  /**
+   * Calculate MACD (Moving Average Convergence Divergence)
+   * @param candles - Array of candlestick data
+   * @param fastPeriod - Fast EMA period (default 12)
+   * @param slowPeriod - Slow EMA period (default 26)
+   * @param signalPeriod - Signal line EMA period (default 9)
+   * @returns Object with MACD line, signal line, and histogram data
+   */
+  private calculateMACDData(
+    candles: Candle[],
+    fastPeriod: number = 12,
+    slowPeriod: number = 26,
+    signalPeriod: number = 9
+  ): { macdLine: LineData[], signalLine: LineData[], histogram: LineData[] } {
+    const macdLine: LineData[] = [];
+    const signalLine: LineData[] = [];
+    const histogram: LineData[] = [];
+
+    if (candles.length < slowPeriod) {
+      return { macdLine, signalLine, histogram };
+    }
+
+    // Helper function to calculate EMA
+    const calculateEMA = (data: number[], period: number): number[] => {
+      const ema: number[] = [];
+      const multiplier = 2 / (period + 1);
+
+      // First EMA is SMA
+      let sum = 0;
+      for (let i = 0; i < period; i++) {
+        sum += data[i];
+      }
+      ema.push(sum / period);
+
+      // Calculate remaining EMAs
+      for (let i = period; i < data.length; i++) {
+        const currentEMA = (data[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1];
+        ema.push(currentEMA);
+      }
+
+      return ema;
+    };
+
+    // Extract close prices
+    const closePrices = candles.map(c => c.close);
+
+    // Calculate fast and slow EMAs
+    const fastEMA = calculateEMA(closePrices, fastPeriod);
+    const slowEMA = calculateEMA(closePrices, slowPeriod);
+
+    // Calculate MACD line (fast EMA - slow EMA)
+    const macdValues: number[] = [];
+    const startIndex = slowPeriod - 1;
+
+    for (let i = 0; i < slowEMA.length; i++) {
+      const fastIndex = i + (slowPeriod - fastPeriod);
+      if (fastIndex >= 0 && fastIndex < fastEMA.length) {
+        macdValues.push(fastEMA[fastIndex] - slowEMA[i]);
+      }
+    }
+
+    // Calculate signal line (EMA of MACD line)
+    const signalEMA = calculateEMA(macdValues, signalPeriod);
+
+    // Build output arrays with timestamps
+    for (let i = 0; i < signalEMA.length; i++) {
+      const candleIndex = startIndex + i + (signalPeriod - 1);
+      if (candleIndex < candles.length) {
+        const time = Math.floor(candles[candleIndex].time / 1000) as any;
+        const macdValue = macdValues[i + (signalPeriod - 1)];
+        const signalValue = signalEMA[i];
+        const histogramValue = macdValue - signalValue;
+
+        macdLine.push({ time, value: macdValue });
+        signalLine.push({ time, value: signalValue });
+        histogram.push({ time, value: histogramValue });
+      }
+    }
+
+    console.log('📊 MACD calculated:', {
+      dataPoints: macdLine.length,
+      fastPeriod,
+      slowPeriod,
+      signalPeriod
+    });
+
+    return { macdLine, signalLine, histogram };
+  }
+
+  /**
+   * Calculate Choppiness Index
+   * Values > 61.8: Market is choppy/consolidating
+   * Values < 38.2: Market is trending
+   * @param candles - Array of candlestick data
+   * @param period - Lookback period (default 14)
+   * @returns Array of Choppiness Index values
+   */
+  private calculateChoppinessIndex(candles: Candle[], period: number = 14): LineData[] {
+    const choppiness: LineData[] = [];
+
+    if (candles.length < period) {
+      return choppiness;
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+
+      // Find highest high and lowest low in the period
+      let highestHigh = slice[0].high;
+      let lowestLow = slice[0].low;
+
+      for (let j = 1; j < slice.length; j++) {
+        if (slice[j].high > highestHigh) highestHigh = slice[j].high;
+        if (slice[j].low < lowestLow) lowestLow = slice[j].low;
+      }
+
+      // Calculate sum of true ranges
+      let sumTrueRange = 0;
+      for (let j = 1; j < slice.length; j++) {
+        const high = slice[j].high;
+        const low = slice[j].low;
+        const prevClose = slice[j - 1].close;
+
+        const trueRange = Math.max(
+          high - low,
+          Math.abs(high - prevClose),
+          Math.abs(low - prevClose)
+        );
+
+        sumTrueRange += trueRange;
+      }
+
+      // Calculate Choppiness Index
+      // CI = 100 * log10(sumTR / (HH - LL)) / log10(period)
+      const range = highestHigh - lowestLow;
+
+      if (range > 0 && sumTrueRange > 0) {
+        const ci = 100 * Math.log10(sumTrueRange / range) / Math.log10(period);
+
+        choppiness.push({
+          time: Math.floor(candles[i].time / 1000) as any,
+          value: ci,
+        });
+      }
+    }
+
+    console.log('📊 Choppiness Index calculated:', {
+      dataPoints: choppiness.length,
+      period
+    });
+
+    return choppiness;
   }
 }
