@@ -1,7 +1,7 @@
 <div class="dashboard">
   <div class="header">
     <div class="header-left">
-      <h1>Binance Trading Dashboard</h1>
+      <h1></h1>
     </div>
     <div class="header-right">
       <div class="search-container">
@@ -175,52 +175,88 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let strategy of filteredStrategies">
-              <!-- Edit mode -->
-              <ng-container *ngIf="isEditing(strategy.id)">
-                <td><input type="text" [(ngModel)]="editingStrategy.name" class="edit-input" /></td>
-                <td><input type="text" [(ngModel)]="editingStrategy.symbol" class="edit-input" /></td>
-                <td>
-                  <select [(ngModel)]="editingStrategy.timeframe" class="edit-select">
-                    <option value="1m">1m</option>
-                    <option value="5m">5m</option>
-                    <option value="15m">15m</option>
-                    <option value="1h">1h</option>
-                    <option value="4h">4h</option>
-                    <option value="1d">1d</option>
-                  </select>
-                </td>
-                <td>
-                  <span class="status-badge" [class.active]="strategy.isActive" [class.inactive]="!strategy.isActive">
-                    {{ strategy.isActive ? 'Aktiv' : 'Inaktiv' }}
-                  </span>
-                </td>
-                <td>{{ strategy.lastExecuted ? formatDate(strategy.lastExecuted) : 'Nie' }}</td>
-                <td class="action-buttons">
-                  <button class="btn-save" (click)="saveStrategy()">Speichern</button>
-                  <button class="btn-cancel-edit" (click)="cancelEdit()">Abbrechen</button>
-                </td>
-              </ng-container>
+          <tbody>
+            <ng-container *ngFor="let strategy of filteredStrategies">
+              <tr>
+                <!-- Edit mode -->
+                <ng-container *ngIf="isEditing(strategy.id)">
+                  <td><input type="text" [(ngModel)]="editingStrategy.name" class="edit-input" /></td>
+                  <td><input type="text" [(ngModel)]="editingStrategy.symbol" class="edit-input" /></td>
+                  <td>
+                    <select [(ngModel)]="editingStrategy.timeframe" class="edit-select">
+                      <option value="1m">1m</option>
+                      <option value="5m">5m</option>
+                      <option value="15m">15m</option>
+                      <option value="1h">1h</option>
+                      <option value="4h">4h</option>
+                      <option value="1d">1d</option>
+                    </select>
+                  </td>
+                  <td>
+                    <span class="status-badge" [class.active]="strategy.isActive" [class.inactive]="!strategy.isActive">
+                      {{ strategy.isActive ? 'Aktiv' : 'Inaktiv' }}
+                    </span>
+                  </td>
+                  <td>{{ strategy.lastExecuted ? formatDate(strategy.lastExecuted) : 'Nie' }}</td>
+                  <td class="action-buttons">
+                    <button class="btn-save" (click)="saveStrategy()">Speichern</button>
+                    <button class="btn-cancel-edit" (click)="cancelEdit()">Abbrechen</button>
+                  </td>
+                </ng-container>
 
-              <!-- View mode -->
-              <ng-container *ngIf="!isEditing(strategy.id)">
-                <td><strong>{{ strategy.name }}</strong></td>
-                <td>{{ strategy.symbol }}</td>
-                <td>{{ strategy.timeframe }}</td>
-                <td>
-                  <span class="status-badge" [class.active]="strategy.isActive" [class.inactive]="!strategy.isActive">
-                    {{ strategy.isActive ? 'Aktiv' : 'Inaktiv' }}
-                  </span>
+                <!-- View mode -->
+                <ng-container *ngIf="!isEditing(strategy.id)">
+                  <td><strong>{{ strategy.name }}</strong></td>
+                  <td>{{ strategy.symbol }}</td>
+                  <td>{{ strategy.timeframe }}</td>
+                  <td>
+                    <span class="status-badge" [class.active]="strategy.isActive" [class.inactive]="!strategy.isActive">
+                      {{ strategy.isActive ? 'Aktiv' : 'Inaktiv' }}
+                    </span>
+                  </td>
+                  <td>{{ strategy.lastExecuted ? formatDate(strategy.lastExecuted) : 'Nie' }}</td>
+                  <td class="action-buttons">
+                    <button class="btn-toggle" (click)="toggleStrategy(strategy.id, !strategy.isActive)">
+                      {{ strategy.isActive ? 'Stoppen' : 'Starten' }}
+                    </button>
+                    <button class="btn-edit" (click)="startEditStrategy(strategy)">Bearbeiten</button>
+                    <button class="btn-delete" (click)="deleteStrategy(strategy.id)">Löschen</button>
+                  </td>
+                </ng-container>
+              </tr>
+              <tr *ngIf="strategy.isActive && strategy.signals && strategy.signals.length > 0">
+                <td colspan="6">
+                  <div class="strategy-signals">
+                    <h4>Signale für {{ strategy.name }}</h4>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Zeit</th>
+                          <th>Aktion</th>
+                          <th>Preis</th>
+                          <th>Menge</th>
+                          <th>Grund</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let signal of strategy.signals">
+                          <td>{{ formatDate(signal.timestamp) }}</td>
+                          <td [class.buy]="signal.action === 'BUY'" [class.sell]="signal.action === 'SELL'">{{ signal.action }}</td>
+                          <td>{{ formatNumber(signal.price, 2) }}</td>
+                          <td>{{ formatNumber(signal.quantity, 4) }}</td>
+                          <td>{{ signal.reason }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </td>
-                <td>{{ strategy.lastExecuted ? formatDate(strategy.lastExecuted) : 'Nie' }}</td>
-                <td class="action-buttons">
-                  <button class="btn-toggle" (click)="toggleStrategy(strategy.id, !strategy.isActive)">
-                    {{ strategy.isActive ? 'Stoppen' : 'Starten' }}
-                  </button>
-                  <button class="btn-edit" (click)="startEditStrategy(strategy)">Bearbeiten</button>
-                  <button class="btn-delete" (click)="deleteStrategy(strategy.id)">Löschen</button>
-                </td>
-              </ng-container>
+              </tr>
+            </ng-container>
+            <tr *ngIf="filteredStrategies.length === 0 && !searchTerm">
+              <td colspan="6" class="no-data">Keine Strategien definiert</td>
+            </tr>
+            <tr *ngIf="filteredStrategies.length === 0 && searchTerm">
+              <td colspan="6" class="no-data">Keine Ergebnisse für "{{ searchTerm }}"</td>
             </tr>
             <tr *ngIf="filteredStrategies.length === 0 && !searchTerm">
               <td colspan="6" class="no-data">Keine Strategien definiert</td>

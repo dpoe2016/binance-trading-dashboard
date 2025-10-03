@@ -45,6 +45,7 @@ export interface TradingStrategy {
   };
   createdAt: Date;
   lastExecuted?: Date;
+  signals?: StrategySignal[]; // Add this line
 }
 
 export interface StrategySignal {

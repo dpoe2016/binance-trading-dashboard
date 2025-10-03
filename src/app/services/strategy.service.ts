@@ -227,6 +227,16 @@ export class StrategyService {
   private addSignal(signal: StrategySignal): void {
     const signals = [signal, ...this.signals$.value].slice(0, 100); // Keep last 100 signals
     this.signals$.next(signals);
+
+    // Add signal to the corresponding strategy
+    const strategies = this.strategies$.value.map(s => {
+      if (s.id === signal.strategyId) {
+        const strategySignals = s.signals ? [...s.signals, signal] : [signal];
+        return { ...s, signals: strategySignals };
+      }
+      return s;
+    });
+    this.strategies$.next(strategies);
   }
 
   private async executeSignal(signal: StrategySignal): Promise<void> {
@@ -257,7 +267,14 @@ export class StrategyService {
   private loadStrategies(): void {
     const saved = localStorage.getItem('trading-strategies');
     if (saved) {
-      this.strategies$.next(JSON.parse(saved));
+      const loadedStrategies: TradingStrategy[] = JSON.parse(saved);
+      // Ensure signals array is initialized for each loaded strategy
+      loadedStrategies.forEach(s => {
+        if (!s.signals) {
+          s.signals = [];
+        }
+      });
+      this.strategies$.next(loadedStrategies);
     }
   }
 
