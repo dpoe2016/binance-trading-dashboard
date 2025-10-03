@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-10-03
+
+### Fixed
+- Chart markers now display correctly using Lightweight Charts v5 API
+- Updated marker implementation from v4 setMarkers() to v5 createSeriesMarkers()
+- Added required price property to all markers
+- Fixed marker positioning and shapes with proper TypeScript types
+- Backtesting chart markers now show entry/exit points with P&L
+
+
+
 ## [0.5.2] - 2025-10-03
 
 ### Added
