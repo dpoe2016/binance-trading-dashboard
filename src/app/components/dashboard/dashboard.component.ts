@@ -99,7 +99,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   formatNumber(value: string | number, decimals: number = 2): string {
-    return parseFloat(value.toString()).toFixed(decimals);
+    const num = parseFloat(value.toString());
+
+    // Handle invalid numbers
+    if (isNaN(num)) {
+      return '0.00';
+    }
+
+    // Format with proper locale and thousands separator
+    return num.toLocaleString('de-DE', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
   }
 
   formatDate(date: Date | number): string {
