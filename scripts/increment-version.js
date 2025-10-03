@@ -28,7 +28,7 @@ console.log(`\n🔧 Incrementing ${versionType} version...\n`);
 const rootDir = path.join(__dirname, '..');
 const packageJsonPath = path.join(rootDir, 'package.json');
 const changelogPath = path.join(rootDir, 'CHANGELOG.md');
-const dashboardComponentPath = path.join(rootDir, 'src/app/components/dashboard/dashboard.component.ts');
+const appComponentPath = path.join(rootDir, 'src/app/app.ts');
 
 // Read package.json
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
@@ -59,15 +59,15 @@ packageJson.version = newVersion;
 fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
 console.log('✅ Updated package.json');
 
-// Update dashboard component version
-if (fs.existsSync(dashboardComponentPath)) {
-  let dashboardContent = fs.readFileSync(dashboardComponentPath, 'utf8');
-  dashboardContent = dashboardContent.replace(
+// Update app component version
+if (fs.existsSync(appComponentPath)) {
+  let appContent = fs.readFileSync(appComponentPath, 'utf8');
+  appContent = appContent.replace(
     /version = '[^']+'/,
     `version = '${newVersion}'`
   );
-  fs.writeFileSync(dashboardComponentPath, dashboardContent);
-  console.log('✅ Updated dashboard component version');
+  fs.writeFileSync(appComponentPath, appContent);
+  console.log('✅ Updated app component version');
 }
 
 // Get recent commits since last version

@@ -13,7 +13,6 @@
   .header-left {
     display: flex;
     align-items: baseline;
-    gap: 12px;
   }
 
   .header-right {
@@ -26,15 +25,6 @@
     margin: 0;
     color: #333;
     font-size: 2rem;
-  }
-
-  .version {
-    color: #666;
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding: 4px 8px;
-    background-color: #f3f4f6;
-    border-radius: 4px;
   }
 }
 

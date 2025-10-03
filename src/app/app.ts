@@ -10,4 +10,5 @@ import { CommonModule } from '@angular/common';
 })
 export class App {
   title = 'Binance Trading System';
+  version = '0.1.0'; // Updated automatically by version script
 }

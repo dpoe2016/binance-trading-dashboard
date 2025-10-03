@@ -15,7 +15,6 @@ import { AccountBalance, Position, Order, AccountStats, TradingStrategy, Strateg
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  version = '0.1.0'; // Updated automatically by version script
   accountStats: AccountStats | null = null;
   balances: AccountBalance[] = [];
   positions: Position[] = [];
