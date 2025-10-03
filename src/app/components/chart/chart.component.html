@@ -51,6 +51,16 @@
         <span>RSI (14)</span>
       </div>
     </div>
+    <div class="signal-legend">
+      <div class="legend-item">
+        <span class="signal-marker buy">▲</span>
+        <span>Buy Signal</span>
+      </div>
+      <div class="legend-item">
+        <span class="signal-marker sell">▼</span>
+        <span>Sell Signal</span>
+      </div>
+    </div>
   </div>
 
   <div class="chart-container" #chartContainer [class.with-rsi]="selectedStrategy && hasRSIIndicator()"></div>

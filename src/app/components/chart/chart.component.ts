@@ -26,6 +26,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   private sma20Series?: ISeriesApi<'Line'>;
   private sma50Series?: ISeriesApi<'Line'>;
   private rsiSeries?: ISeriesApi<'Line'>;
+  private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private priceUpdateCleanup?: () => void;
   private subscriptions: Subscription[] = [];
 
@@ -104,6 +105,37 @@ export class ChartComponent implements OnInit, OnDestroy {
         timeVisible: true,
         secondsVisible: false,
         visible: true,
+        tickMarkFormatter: (time: any, tickMarkType: any, locale: string) => {
+          // Convert UTC timestamp to local time for x-axis labels
+          const date = new Date(time * 1000);
+
+          // Different formatting based on tick mark type
+          if (tickMarkType === 0) {
+            // Year
+            return date.getFullYear().toString();
+          } else if (tickMarkType === 1) {
+            // Month
+            return date.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+          } else if (tickMarkType === 2) {
+            // Day
+            return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+          } else {
+            // Time
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+          }
+        },
+      },
+      localization: {
+        locale: navigator.language,
+        timeFormatter: (timestamp: number) => {
+          // timestamp is in seconds (Unix timestamp)
+          const date = new Date(timestamp * 1000);
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          return `${hours}:${minutes}`;
+        },
       },
     });
 
@@ -150,13 +182,18 @@ export class ChartComponent implements OnInit, OnDestroy {
 
       this.currentCandles = candles;
 
-      const chartData: CandlestickData[] = candles.map(c => ({
-        time: Math.floor(c.time / 1000) as any,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-      }));
+      // Convert UTC timestamps to local time for display
+      const chartData: CandlestickData[] = candles.map(c => {
+        const utcTime = c.time;
+        const localTime = Math.floor(utcTime / 1000) as any;
+        return {
+          time: localTime,
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+        };
+      });
 
       if (this.candlestickSeries) {
         this.candlestickSeries.setData(chartData);
@@ -369,9 +406,97 @@ export class ChartComponent implements OnInit, OnDestroy {
         }, 0);
       }
     }
+
+    // Generate and add strategy signals as markers
+    this.addStrategySignals(strategy);
+  }
+
+  private addStrategySignals(strategy: TradingStrategy): void {
+    if (!this.candlestickSeries || this.currentCandles.length === 0) return;
+
+    this.signalMarkers = [];
+    let buySignals = 0;
+    let sellSignals = 0;
+
+    // RSI Strategy signals
+    if (strategy.parameters['useRSI']) {
+      const rsiData = this.calculateRSIData(this.currentCandles, 14);
+
+      for (let i = 1; i < rsiData.length; i++) {
+        const prevRSI = rsiData[i - 1].value;
+        const currRSI = rsiData[i].value;
+        const candle = this.currentCandles[i + 14]; // Offset by RSI period
+
+        // Buy signal: RSI crosses below 30 (oversold)
+        if (prevRSI >= 30 && currRSI < 30) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'belowBar',
+            type: 'BUY',
+            price: candle.low
+          });
+          buySignals++;
+        }
+
+        // Sell signal: RSI crosses above 70 (overbought)
+        if (prevRSI <= 70 && currRSI > 70) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'aboveBar',
+            type: 'SELL',
+            price: candle.high
+          });
+          sellSignals++;
+        }
+      }
+    }
+
+    // SMA Strategy signals (SMA crossover)
+    if (strategy.parameters['useSMA'] !== false) {
+      const sma20Data = this.calculateSMAData(this.currentCandles, 20);
+      const sma50Data = this.calculateSMAData(this.currentCandles, 50);
+
+      for (let i = 1; i < Math.min(sma20Data.length, sma50Data.length); i++) {
+        const prevSMA20 = sma20Data[i - 1].value;
+        const prevSMA50 = sma50Data[i - 1].value;
+        const currSMA20 = sma20Data[i].value;
+        const currSMA50 = sma50Data[i].value;
+        const candle = this.currentCandles[i + 19]; // Offset by SMA period
+
+        // Golden cross: SMA20 crosses above SMA50 (bullish)
+        if (prevSMA20 <= prevSMA50 && currSMA20 > currSMA50) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'belowBar',
+            type: 'GOLDEN_CROSS',
+            price: candle.low
+          });
+          buySignals++;
+        }
+
+        // Death cross: SMA20 crosses below SMA50 (bearish)
+        if (prevSMA20 >= prevSMA50 && currSMA20 < currSMA50) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'aboveBar',
+            type: 'DEATH_CROSS',
+            price: candle.high
+          });
+          sellSignals++;
+        }
+      }
+    }
+
+    // Log signals found
+    if (this.signalMarkers.length > 0) {
+      console.log(`📊 Strategy signals detected: ${buySignals} buy signals, ${sellSignals} sell signals`);
+    }
   }
 
   private clearStrategyIndicators(): void {
+    // Clear signal markers
+    this.signalMarkers = [];
+
     if (this.sma20Series && this.chart) {
       this.chart.removeSeries(this.sma20Series);
       this.sma20Series = undefined;
@@ -456,9 +581,40 @@ export class ChartComponent implements OnInit, OnDestroy {
         timeVisible: true,
         secondsVisible: false,
         borderVisible: false,
+        tickMarkFormatter: (time: any, tickMarkType: any, locale: string) => {
+          // Convert UTC timestamp to local time for x-axis labels
+          const date = new Date(time * 1000);
+
+          // Different formatting based on tick mark type
+          if (tickMarkType === 0) {
+            // Year
+            return date.getFullYear().toString();
+          } else if (tickMarkType === 1) {
+            // Month
+            return date.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+          } else if (tickMarkType === 2) {
+            // Day
+            return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+          } else {
+            // Time
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+          }
+        },
       },
       rightPriceScale: {
         borderVisible: false,
+      },
+      localization: {
+        locale: navigator.language,
+        timeFormatter: (timestamp: number) => {
+          // timestamp is in seconds (Unix timestamp)
+          const date = new Date(timestamp * 1000);
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          return `${hours}:${minutes}`;
+        },
       },
     });
 

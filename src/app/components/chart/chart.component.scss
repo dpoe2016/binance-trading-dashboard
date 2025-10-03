@@ -147,4 +147,31 @@
       }
     }
   }
+
+  .signal-legend {
+    display: flex;
+    gap: 15px;
+    padding-left: 20px;
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+
+      .signal-marker {
+        font-size: 1rem;
+        font-weight: bold;
+
+        &.buy {
+          color: #22c55e;
+        }
+
+        &.sell {
+          color: #ef4444;
+        }
+      }
+    }
+  }
 }
