@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { BinanceService } from '../../services/binance.service';
 import { StrategyService } from '../../services/strategy.service';
+import { SettingsService } from '../../services/settings.service';
 import { AccountBalance, Position, Order, AccountStats, TradingStrategy, StrategySignal } from '../../models/trading.model';
 
 @Component({
@@ -40,10 +41,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private binanceService: BinanceService,
-    private strategyService: StrategyService
+    private strategyService: StrategyService,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
+    // Load saved settings first
+    const dashboardSettings = this.settingsService.getDashboardSettings();
+    this.searchTerm = dashboardSettings.searchTerm;
+
     // Subscribe to account stats
     this.subscriptions.push(
       this.binanceService.getAccountStats().subscribe(stats => {
@@ -90,6 +96,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.applyFilters();
       })
     );
+
+    // Refresh data on init
+    this.refreshData();
 
     // Start auto-refresh
     this.binanceService.startAutoRefresh(10000);
@@ -150,6 +159,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // Search and filter methods
   onSearchChange(): void {
     this.applyFilters();
+    // Save search term to settings
+    this.settingsService.saveDashboardSettings({ searchTerm: this.searchTerm });
   }
 
   private applyFilters(): void {
@@ -208,5 +219,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   toNumber(value: string | number): number {
     return parseFloat(value.toString());
+  }
+
+  resetSettings(): void {
+    if (confirm('Möchten Sie alle gespeicherten Einstellungen zurücksetzen?')) {
+      this.settingsService.resetSettings();
+      this.searchTerm = '';
+      this.applyFilters();
+    }
   }
 }

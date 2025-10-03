@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData } from 'lightweight-charts';
 import { BinanceService } from '../../services/binance.service';
 import { StrategyService } from '../../services/strategy.service';
+import { SettingsService } from '../../services/settings.service';
 import { TradingStrategy, Candle } from '../../models/trading.model';
 import { Subscription } from 'rxjs';
 
@@ -48,11 +49,17 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   constructor(
     private binanceService: BinanceService,
-    private strategyService: StrategyService
+    private strategyService: StrategyService,
+    private settingsService: SettingsService
   ) {}
 
   ngOnInit(): void {
-    this.selectedSymbol = this.symbol;
+    // Load saved settings
+    const chartSettings = this.settingsService.getChartSettings();
+    this.selectedSymbol = chartSettings.selectedSymbol || this.symbol;
+    this.selectedInterval = chartSettings.selectedInterval;
+    this.selectedStrategy = chartSettings.selectedStrategy;
+
     this.initChart();
     this.loadChartData();
     this.loadStrategies();
@@ -166,10 +173,12 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   onSymbolChange(): void {
     this.loadChartData();
+    this.settingsService.saveChartSettings({ selectedSymbol: this.selectedSymbol });
   }
 
   onIntervalChange(): void {
     this.loadChartData();
+    this.settingsService.saveChartSettings({ selectedInterval: this.selectedInterval });
   }
 
   private loadStrategies(): void {
@@ -181,6 +190,9 @@ export class ChartComponent implements OnInit, OnDestroy {
   }
 
   onStrategyChange(): void {
+    // Save strategy selection
+    this.settingsService.saveChartSettings({ selectedStrategy: this.selectedStrategy });
+
     if (this.selectedStrategy) {
       const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
       if (strategy && strategy.symbol !== this.selectedSymbol) {
