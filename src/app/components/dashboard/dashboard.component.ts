@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { BinanceService } from '../../services/binance.service';
 import { StrategyService } from '../../services/strategy.service';
@@ -8,17 +9,22 @@ import { AccountBalance, Position, Order, AccountStats, TradingStrategy, Strateg
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  version = '0.1.0'; // Updated automatically by version script
   accountStats: AccountStats | null = null;
   balances: AccountBalance[] = [];
   positions: Position[] = [];
   openOrders: Order[] = [];
   strategies: TradingStrategy[] = [];
   signals: StrategySignal[] = [];
+
+  // Edit mode tracking
+  editingStrategyId: string | null = null;
+  editingStrategy: Partial<TradingStrategy> = {};
 
   private subscriptions: Subscription[] = [];
 
@@ -95,6 +101,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.strategyService.activateStrategy(strategyId);
     } else {
       this.strategyService.deactivateStrategy(strategyId);
+    }
+  }
+
+  // Edit strategy methods
+  startEditStrategy(strategy: TradingStrategy): void {
+    this.editingStrategyId = strategy.id;
+    this.editingStrategy = { ...strategy };
+  }
+
+  saveStrategy(): void {
+    if (this.editingStrategyId && this.editingStrategy) {
+      this.strategyService.updateStrategy(this.editingStrategyId, this.editingStrategy);
+      this.cancelEdit();
+    }
+  }
+
+  cancelEdit(): void {
+    this.editingStrategyId = null;
+    this.editingStrategy = {};
+  }
+
+  isEditing(strategyId: string): boolean {
+    return this.editingStrategyId === strategyId;
+  }
+
+  deleteStrategy(strategyId: string): void {
+    if (confirm('Möchten Sie diese Strategie wirklich löschen?')) {
+      this.strategyService.deleteStrategy(strategyId);
     }
   }
 

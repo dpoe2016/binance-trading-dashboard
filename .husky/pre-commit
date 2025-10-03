@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Auto-increment version on commit
+# This runs before every commit to update version number and changelog
+
+echo "🔧 Checking if version needs to be incremented..."
+
+# Get the commit message from .git/COMMIT_EDITMSG if it exists
+COMMIT_MSG_FILE=".git/COMMIT_EDITMSG"
+
+# Determine version increment type based on commit message prefix
+if [ -f "$COMMIT_MSG_FILE" ]; then
+  COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+  # Check commit message type
+  if echo "$COMMIT_MSG" | grep -q "^feat!:\|^BREAKING CHANGE:"; then
+    VERSION_TYPE="major"
+  elif echo "$COMMIT_MSG" | grep -q "^feat:"; then
+    VERSION_TYPE="minor"
+  elif echo "$COMMIT_MSG" | grep -q "^fix:\|^perf:\|^refactor:"; then
+    VERSION_TYPE="patch"
+  else
+    # For other commit types (docs, chore, style, test), don't increment
+    echo "ℹ️  Commit type doesn't require version increment"
+    exit 0
+  fi
+
+  echo "📦 Incrementing version ($VERSION_TYPE)..."
+  npm run version:$VERSION_TYPE --silent
+
+  # Stage the updated files
+  git add package.json CHANGELOG.md src/app/components/dashboard/dashboard.component.ts
+
+  echo "✅ Version incremented and staged"
+fi

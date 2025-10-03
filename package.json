@@ -1,6 +1,6 @@
 {
   "name": "binance-trading-system",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
     "generate-env": "node scripts/generate-env.js",
@@ -11,7 +11,10 @@
     "prebuild": "npm run generate-env",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "version:patch": "node scripts/increment-version.js patch",
+    "version:minor": "node scripts/increment-version.js minor",
+    "version:major": "node scripts/increment-version.js major"
   },
   "prettier": {
     "printWidth": 100,

@@ -10,10 +10,25 @@
   align-items: center;
   margin-bottom: 30px;
 
+  .header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
   h1 {
     margin: 0;
     color: #333;
     font-size: 2rem;
+  }
+
+  .version {
+    color: #666;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 4px 8px;
+    background-color: #f3f4f6;
+    border-radius: 4px;
   }
 }
 
@@ -222,5 +237,89 @@ table {
   &.inactive {
     background-color: #fee2e2;
     color: #991b1b;
+  }
+}
+
+// Edit mode styles
+.edit-input,
+.edit-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-family: inherit;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.edit-select {
+  cursor: pointer;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  text-align: left !important;
+}
+
+.btn-edit {
+  padding: 6px 12px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover {
+    background-color: #2563eb;
+  }
+}
+
+.btn-delete {
+  padding: 6px 12px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover {
+    background-color: #dc2626;
+  }
+}
+
+.btn-save {
+  padding: 6px 12px;
+  background-color: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover {
+    background-color: #16a34a;
+  }
+}
+
+.btn-cancel-edit {
+  padding: 6px 12px;
+  background-color: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+
+  &:hover {
+    background-color: #4b5563;
   }
 }

@@ -220,6 +220,24 @@ Die Build-Artefakte werden im `dist/` Verzeichnis gespeichert.
 ng test
 ```
 
+### Versionierung
+
+Das Projekt verwendet automatische Versionierung basierend auf Commit-Nachrichten:
+
+```bash
+# Version wird automatisch erhöht bei Commits mit:
+git commit -m "feat: neue Funktion"   # → Minor Version (0.1.0 → 0.2.0)
+git commit -m "fix: Bugfix"           # → Patch Version (0.1.0 → 0.1.1)
+git commit -m "feat!: Breaking Change" # → Major Version (0.1.0 → 1.0.0)
+
+# Oder manuell:
+npm run version:patch  # 0.1.0 → 0.1.1
+npm run version:minor  # 0.1.0 → 0.2.0
+npm run version:major  # 0.1.0 → 1.0.0
+```
+
+Siehe [VERSIONING.md](VERSIONING.md) für Details.
+
 ## Roadmap
 
 - [ ] Vollständiger Pine Script Interpreter
