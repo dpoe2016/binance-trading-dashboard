@@ -1,11 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData, SeriesMarker } from 'lightweight-charts';
-
-interface ICandlestickSeriesApiWithMarkers extends ISeriesApi<'Candlestick'> {
-  setMarkers(markers: SeriesMarker<any>[]): void;
-}
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData } from 'lightweight-charts';
 
 import { BinanceService } from '../../services/binance.service';
 import { StrategyService } from '../../services/strategy.service';
@@ -26,11 +22,11 @@ export class ChartComponent implements OnInit, OnDestroy {
   @Input() symbol: string = 'BTCUSDT';
 
   private chart?: IChartApi;
-  private candlestickSeries?: ICandlestickSeriesApiWithMarkers;
-  private sma20Series?: ISeriesApi<'Line'>;
-  private sma50Series?: ISeriesApi<'Line'>;
-  private sma200Series?: ISeriesApi<'Line'>;
-  private rsiSeries?: ISeriesApi<'Line'>;
+  private candlestickSeries?: any;
+  private sma20Series?: any;
+  private sma50Series?: any;
+  private sma200Series?: any;
+  private rsiSeries?: any;
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
   private priceUpdateCleanup?: () => void;
@@ -97,7 +93,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Create chart with proper configuration
     this.chart = createChart(container, {
-      width: this.chartWrapper.nativeElement.clientWidth,
+      width: this.chartWrapper.nativeElement.clientWidth - 40,
       height: containerHeight,
       layout: {
         background: { type: 'solid' as any, color: '#ffffff' },
@@ -154,14 +150,14 @@ export class ChartComponent implements OnInit, OnDestroy {
       borderVisible: false,
       wickUpColor: '#22c55e',
       wickDownColor: '#ef4444',
-    }) as ICandlestickSeriesApiWithMarkers;
+    });
 
     // Handle container resize using ResizeObserver
     this.chartResizeObserver = new ResizeObserver(entries => {
       for (let entry of entries) {
         if (entry.target === container && this.chart) {
           const { height } = entry.contentRect;
-          this.chart.applyOptions({ width: this.chartWrapper.nativeElement.clientWidth, height });
+          this.chart.applyOptions({ width: this.chartWrapper.nativeElement.clientWidth - 40, height });
         }
       }
     });
@@ -414,6 +410,10 @@ export class ChartComponent implements OnInit, OnDestroy {
           borderColor: '#737375',
           mode: 2, // PriceScaleMode.Normal
           alignLabels: true,
+          scaleMargins: {
+            top: 0.1, // 10% margin at the top
+            bottom: 0.1, // 10% margin at the bottom
+          },
         });
       }
 
