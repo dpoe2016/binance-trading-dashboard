@@ -496,7 +496,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Apply markers to the candlestick series
     if (this.candlestickSeries) {
-      this.candlestickSeries.setMarkers(this.signalMarkers.map(marker => ({
+      (this.candlestickSeries as any).setMarkers(this.signalMarkers.map(marker => ({
         time: marker.time,
         position: marker.position as any,
         color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
@@ -504,6 +504,7 @@ export class ChartComponent implements OnInit, OnDestroy {
         text: marker.type
       })));
     }
+  }
 
   private clearStrategyIndicators(): void {
     // Clear signal markers
@@ -511,7 +512,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Clear signal markers from chart
     if (this.candlestickSeries) {
-      this.candlestickSeries.setMarkers([]);
+      (this.candlestickSeries as any).setMarkers([]);
     }
 
     if (this.sma20Series && this.chart) {
