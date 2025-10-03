@@ -30,139 +30,276 @@ Durch die Nutzung dieser Software akzeptieren Sie, dass:
 
 ---
 
-## Features
+## 🚀 Features
 
-- **Dashboard**: Übersicht über Kontostände, Positionen, offene Orders und Statistiken
-- **Chart-Visualisierung**: Interaktive Candlestick-Charts mit TradingView Lightweight Charts
-- **Handelsstrategien**: Definiere und führe automatisierte Handelsstrategien aus
-- **Pine Script Support**: Grundlegende Unterstützung für Pine Script basierte Strategien
-- **Technische Indikatoren**: RSI, SMA, EMA und mehr
-- **Echtzeit-Updates**: Live-Preisdaten und automatische Aktualisierung der Kontoinformationen
+### Dashboard
+- **Kontoverwaltung**: Übersicht über Kontostände, Positionen und offene Orders
+- **Live-Statistiken**: Echtzeit P&L, Margin-Nutzung und Account-Stats
+- **Such- und Filterfunktion**: Schnelles Finden von Assets
+- **Inline-Editing**: Direkte Bearbeitung von Strategien
+- **Settings-Persistenz**: Speichert Benutzereinstellungen
 
-## Voraussetzungen
+### Charts
+- **TradingView Lightweight Charts**: Professionelle Candlestick-Charts
+- **Echtzeit-Updates**: Live-Preisdaten via WebSocket
+- **Technische Indikatoren**:
+  - SMA 20 & SMA 50 (Simple Moving Average)
+  - RSI (14) Indikator mit separatem Subchart
+- **Strategy Signals**: Visuelle Markierung von Buy/Sell-Signalen
+  - RSI Oversold/Overbought (< 30 / > 70)
+  - Golden Cross / Death Cross (SMA Crossover)
+- **Lokale Zeitformatierung**: X-Achse in lokaler Zeitzone
+- **Auto-Skalierung**: Automatische Anpassung an geladene Daten
+- **Zeitrahmen**: 1m, 5m, 15m, 1h, 4h, 1d
+- **Symbol-Auswahl**: BTC, ETH, BNB, ADA, DOGE, XRP, DOT, UNI, LTC, SOL
 
-- Node.js (v18 oder höher)
-- npm oder yarn
-- Binance API Schlüssel (API Key und Secret)
+### Strategieverwaltung
+- **Strategy Builder**: Erstelle und konfiguriere Trading-Strategien
+- **Pine Script Support**: Grundlegende Unterstützung für Pine Script
+- **RSI-Strategie**: Vorkonfigurierte RSI-basierte Strategie
+- **SMA Crossover**: Golden Cross / Death Cross Strategie
+- **Auto-Execute**: Optionale automatische Ausführung
+- **Inline-Editing**: Bearbeite Strategien direkt in der Liste
 
-## Installation
+---
 
-1. Repository klonen oder Projektordner öffnen:
-```bash
-cd binance-trading-system
-```
+## ⚡ Quick Start (3 Schritte)
 
-2. Dependencies installieren:
+### Schritt 1: Installation
+
 ```bash
 npm install
 ```
 
-3. **API Konfiguration (3 Modi verfügbar):**
+### Schritt 2: Testnet API Keys erstellen
 
-### 🎮 Demo-Modus (Standard - Empfohlen zum Starten)
-Keine Konfiguration nötig! Verwendet Mock-Daten.
+1. Gehe zu: **https://testnet.binance.vision/**
+2. Registriere einen Account (keine echten Daten nötig)
+3. Klicke auf **"Generate HMAC_SHA256 Key"**
+4. Kopiere deinen **API Key** und **Secret Key**
 
-### 🧪 Testnet-Modus (Empfohlen zum Testen)
-1. Erstelle einen Account auf https://testnet.binance.vision/
-2. Generiere API Keys
-3. Erstelle eine `.env` Datei:
+### Schritt 3: .env Datei konfigurieren
+
 ```bash
+# Kopiere die Beispieldatei
 cp .env.example .env
 ```
-4. Bearbeite `.env`:
+
+Bearbeite `.env`:
 ```bash
+# Trading Mode
 TRADING_MODE=testnet
-BINANCE_TESTNET_API_KEY=DEIN_TESTNET_API_KEY
-BINANCE_TESTNET_API_SECRET=DEIN_TESTNET_API_SECRET
+
+# Testnet API Keys
+BINANCE_TESTNET_API_KEY=dein_testnet_api_key_hier
+BINANCE_TESTNET_API_SECRET=dein_testnet_secret_hier
+
+# Proxy Server (für echte API-Calls)
+USE_PROXY=true
+PROXY_URL=http://localhost:3000
+PROXY_PORT=3000
 ```
 
-### 💰 Live-Modus (⚠️ Nur für Produktion!)
-1. API Keys von https://www.binance.com/en/my/settings/api-management
-2. **WICHTIG:** Withdrawal-Berechtigung NIEMALS aktivieren!
-3. IP-Whitelist aktivieren
-4. Bearbeite `.env`:
+### Schritt 4: Server starten
+
+**Terminal 1 - Proxy Server:**
 ```bash
-TRADING_MODE=live
-BINANCE_API_KEY=DEIN_LIVE_API_KEY
-BINANCE_API_SECRET=DEIN_LIVE_API_SECRET
+npm run proxy
 ```
 
-📖 **Detaillierte Setup-Anleitung:** Siehe [SETUP.md](SETUP.md)
-
-**⚠️ WICHTIG: Die `.env` Datei wird NICHT in Git committed (steht in .gitignore)!**
-
-## Development Server
-
-Entwicklungsserver starten:
-
+**Terminal 2 - Angular App:**
 ```bash
-ng serve
+npm start
 ```
 
-Navigiere zu `http://localhost:4200/`. Die Anwendung lädt automatisch neu, wenn du Änderungen an den Quelldateien vornimmst.
+Öffne: **http://localhost:4200**
 
 ---
 
-## ⚡ Testnet-Modus aktivieren
+## 🎯 Trading Modi
 
-**Standard:** Die App läuft im **Demo-Modus** mit Mock-Daten.
+Das System unterstützt 3 Modi:
 
-**Für echte Testnet-Daten:**
+### 1. 🎮 Demo Mode (Standard)
+- **Keine API Keys nötig**
+- Zeigt Mock-Daten
+- Perfekt zum Testen der UI
+- Keine echten Trades
+- Keine Konfiguration erforderlich
 
-1. **Erstelle .env Datei:** `cp .env.example .env`
-2. **Bearbeite:** `.env`
-3. **Ändere:** `TRADING_MODE=demo` → `TRADING_MODE=testnet`
-4. **Trage API Keys ein** (von https://testnet.binance.vision/)
-5. **Starte neu:** `npm start`
+### 2. 🧪 Testnet Mode (Empfohlen zum Testen)
+- **Binance Testnet API Keys benötigt**
+- Echte API-Integration
+- Test-USDT (kein echtes Geld)
+- Sichere Testumgebung
+- **Setup**: Siehe [Quick Start](#-quick-start-3-schritte)
 
-**Siehe:** [QUICK-START.md](QUICK-START.md) für detaillierte Anleitung
+### 3. 💰 Live Mode (⚠️ Nur für Produktion!)
+- **Binance Live API Keys benötigt**
+- Echte API-Integration
+- Echtes Geld - **NUR nach ausgiebigen Tests!**
+- IP-Whitelist dringend empfohlen
+- **WICHTIG:** Withdrawal-Berechtigung NIEMALS aktivieren!
 
 ---
 
-## Projektstruktur
+## 🔧 Proxy Server - CORS-Lösung
+
+### Warum ein Proxy Server?
+
+Binance API erlaubt **keine direkten Calls aus dem Browser** (CORS-Policy).
 
 ```
-src/app/
-├── components/
-│   ├── dashboard/          # Hauptdashboard mit Übersicht
-│   ├── chart/              # Chart-Komponente mit TradingView
-│   └── strategy-manager/   # Strategieverwaltung
-├── services/
-│   ├── binance.service.ts  # Binance API Integration
-│   └── strategy.service.ts # Strategie-Engine
-├── models/
-│   └── trading.model.ts    # TypeScript Interfaces
-└── app.routes.ts          # Routing-Konfiguration
+Angular App  →  Proxy Server (localhost:3000)  →  Binance API
+         ✅ Erlaubt                   ✅ Erlaubt
 ```
 
-## Verwendung
+### Proxy Server starten
 
-### Dashboard
-- Zeigt aktuelle Kontostände, Positionen und offene Orders
-- Live-Statistiken über P&L und Margin-Nutzung
-- Aktive Handelsstrategien und deren Status
+**Option 1: Manuell in 2 Terminals** (Empfohlen)
+```bash
+# Terminal 1
+npm run proxy
 
-### Charts
-- Auswahl verschiedener Trading-Paare (BTC, ETH, BNB, etc.)
-- Mehrere Zeitrahmen (1m, 5m, 15m, 1h, 4h, 1d)
-- Interaktive Candlestick-Charts
-
-### Strategieverwaltung
-- Neue Strategien erstellen und konfigurieren
-- Pine Script Integration für benutzerdefinierte Strategien
-- RSI-basierte Standard-Strategie verfügbar
-- Strategien aktivieren/deaktivieren
-- Automatische Ausführung optional
-
-## Handelsstrategien
-
-### Beispiel: RSI-Strategie
-```
-- Kaufen wenn RSI < 30 (überverkauft)
-- Verkaufen wenn RSI > 70 (überkauft)
+# Terminal 2
+npm start
 ```
 
-### Beispiel: Pine Script SMA Crossover
+**Option 2: Automatisch**
+```bash
+npm run start:full
+```
+
+### Erfolgskontrolle
+
+Wenn der Proxy Server erfolgreich läuft, siehst du:
+
+```
+============================================================
+🚀 Binance API Proxy Server
+============================================================
+📍 Server running on: http://localhost:3000
+📋 Trading Mode: TESTNET
+🔗 Binance API: https://testnet.binance.vision
+🔑 API Key: abc123...
+
+✅ Ready to proxy requests from Angular app
+============================================================
+```
+
+---
+
+## 📋 API Berechtigungen
+
+Für **Testnet und Live** benötigst du:
+
+```
+✅ Enable Reading
+✅ Enable Spot & Margin Trading (optional)
+❌ NEVER Enable Withdrawals
+✅ Enable IP Restrictions (empfohlen für Live)
+```
+
+### API Keys erstellen
+
+**Testnet:**
+- URL: https://testnet.binance.vision/
+- Registrierung: Kostenlos, keine echten Daten nötig
+- API Keys: Unter "API Management" → "Generate HMAC_SHA256 Key"
+
+**Live:**
+- URL: https://www.binance.com/en/my/settings/api-management
+- **WICHTIG:**
+  - Withdrawal-Berechtigung NIEMALS aktivieren!
+  - IP-Whitelist aktivieren
+  - 2FA aktivieren
+  - Regelmäßig Keys rotieren
+
+---
+
+## 🛠️ Technische Details
+
+### Verwendete Technologien
+
+- **Angular 20**: Frontend Framework (Standalone Components)
+- **RxJS**: Reaktive Programmierung
+- **TradingView Lightweight Charts v5**: Chart-Bibliothek
+- **TypeScript**: Typsicherer Code
+- **SCSS**: Styling
+- **WebSocket**: Echtzeit-Preisdaten
+- **Node.js**: Proxy Server
+- **crypto-js**: HMAC SHA256 Signaturen
+
+### Projektstruktur
+
+```
+binance-trading-system/
+├── src/app/
+│   ├── components/
+│   │   ├── dashboard/          # Hauptdashboard mit Übersicht
+│   │   ├── chart/              # Chart mit Indikatoren
+│   │   └── strategy-manager/   # Strategieverwaltung
+│   ├── services/
+│   │   ├── binance.service.ts  # Binance API Integration
+│   │   ├── strategy.service.ts # Strategie-Engine
+│   │   └── settings.service.ts # Settings Persistence
+│   ├── models/
+│   │   └── trading.model.ts    # TypeScript Interfaces
+│   └── config/
+│       └── environment.config.ts # Auto-generierte Config
+├── server/
+│   └── proxy-server.js         # CORS Proxy Server
+├── scripts/
+│   ├── generate-env.js         # .env → environment.ts
+│   └── increment-version.js    # Version Management
+└── .env                        # Konfiguration (nicht in Git!)
+```
+
+### API Integrationen
+
+| Datentyp | API Endpoint | Auth | Beschreibung |
+|----------|--------------|------|--------------|
+| Account Balances | `/api/v3/account` | ✅ | Spot-Kontostände |
+| Open Orders | `/api/v3/openOrders` | ✅ | Offene Spot-Orders |
+| Futures Positions | `/fapi/v2/positionRisk` | ✅ | Futures-Positionen |
+| Kline/Candlestick | `/api/v3/klines` | ❌ | Historische Preisdaten |
+| Ticker (WebSocket) | `wss://stream.binance.com:9443/ws` | ❌ | Live-Preisdaten |
+
+---
+
+## 📊 Trading-Strategien
+
+### RSI-Strategie
+
+Konfigurierbare Parameter:
+- **RSI Period**: 14 (Standard)
+- **Oversold Level**: < 30 (Kaufsignal)
+- **Overbought Level**: > 70 (Verkaufssignal)
+
+Beispiel:
+```typescript
+{
+  name: "RSI Oversold",
+  useRSI: true,
+  quantity: "0.001",
+  autoExecute: false
+}
+```
+
+### SMA Crossover Strategie
+
+Verwendet zwei gleitende Durchschnitte:
+- **SMA 20**: Schnellerer Durchschnitt
+- **SMA 50**: Langsamerer Durchschnitt
+
+Signale:
+- **Golden Cross**: SMA 20 kreuzt SMA 50 nach oben → Bullish
+- **Death Cross**: SMA 20 kreuzt SMA 50 nach unten → Bearish
+
+### Pine Script Support
+
+Grundlegende Unterstützung für Pine Script Strategien:
+
 ```pine
 //@version=5
 strategy("SMA Crossover", overlay=true)
@@ -170,47 +307,104 @@ strategy("SMA Crossover", overlay=true)
 sma20 = ta.sma(close, 20)
 sma50 = ta.sma(close, 50)
 
+// Golden Cross
 if (ta.crossover(sma20, sma50))
     strategy.entry("Long", strategy.long)
 
+// Death Cross
 if (ta.crossunder(sma20, sma50))
     strategy.close("Long")
 ```
 
-## Sicherheitshinweise
+---
 
-⚠️ **WICHTIG**:
-- Teste das System zuerst mit kleinen Beträgen oder im Testnet
-- Verwende niemals API-Keys mit Withdrawal-Rechten
-- Setze immer Stop-Loss und Take-Profit Parameter
-- Überwache automatisierte Strategien regelmäßig
-- Speichere keine Credentials im Code
+## 🔧 Troubleshooting
 
-## Technische Details
+### Problem: App zeigt noch Demo Mode
 
-### Verwendete Technologien
-- **Angular 20**: Frontend Framework
-- **RxJS**: Reaktive Programmierung
-- **Binance API Node**: API Client für Binance
-- **Lightweight Charts**: Chart-Bibliothek von TradingView
-- **TypeScript**: Typsicherer Code
-- **SCSS**: Styling
+**Ursache:** `TRADING_MODE` steht noch auf `demo` in der `.env` Datei
 
-### API Integrationen
-- Binance REST API für Orders und Kontoinformationen
-- Binance WebSocket für Echtzeit-Preisdaten
-- Candlestick-Daten und technische Indikatoren
+**Lösung:**
+```bash
+# In .env Datei:
+TRADING_MODE=testnet  # ✅ Richtig
+```
 
-## Entwicklung
+Dann Server neu starten:
+```bash
+npm start
+```
+
+### Problem: CORS-Fehler
+
+**Fehler:**
+```
+Access to XMLHttpRequest blocked by CORS policy
+```
+
+**Lösung:**
+1. Stelle sicher, dass `USE_PROXY=true` in `.env`
+2. Starte Proxy Server: `npm run proxy`
+3. Starte Angular App: `npm start`
+
+### Problem: API Keys funktionieren nicht
+
+**Häufige Fehler:**
+```bash
+# ❌ Falsch - Anführungszeichen nicht verwenden
+BINANCE_TESTNET_API_KEY="abc123"
+
+# ❌ Falsch - Leerzeichen am Ende
+BINANCE_TESTNET_API_KEY=abc123
+
+# ✅ Richtig - Keys ohne Anführungszeichen
+BINANCE_TESTNET_API_KEY=abc123xyz
+BINANCE_TESTNET_API_SECRET=def456uvw
+```
+
+### Problem: Änderungen in .env werden nicht übernommen
+
+**Lösung:**
+1. Server stoppen (Strg+C)
+2. Umgebungsdateien neu generieren: `npm run generate-env`
+3. Server neu starten: `npm start`
+
+### Problem: Futures API 404 Error
+
+**Hinweis:** Normal für Spot-only Accounts oder Testnet!
+
+Die App behandelt diesen Fehler automatisch:
+```
+⚠️ Futures API not available (404)
+This is normal for spot-only accounts or testnet
+```
+
+Keine Aktion erforderlich - die App funktioniert trotzdem.
+
+### Problem: WebSocket connection failed
+
+**Ursache:** Testnet hat keine WebSocket-Unterstützung
+
+**Lösung:** Die App verwendet automatisch Production WebSocket für Live-Daten (öffentlich, keine Auth nötig).
+
+### Problem: RSI Subchart erscheint nicht nach Strategie-Wechsel
+
+**Ursache:** DOM-Update Timing
+
+**Lösung:** Bereits gefixt - 100ms Verzögerung vor RSI Chart Initialisierung.
+
+---
+
+## 🚀 Entwicklung
 
 ### Neue Komponente erstellen
 ```bash
-ng generate component component-name
+ng generate component components/component-name
 ```
 
 ### Build für Produktion
 ```bash
-ng build
+npm run build
 ```
 
 Die Build-Artefakte werden im `dist/` Verzeichnis gespeichert.
@@ -220,15 +414,22 @@ Die Build-Artefakte werden im `dist/` Verzeichnis gespeichert.
 ng test
 ```
 
-### Versionierung
+### Linting
+```bash
+ng lint
+```
 
-Das Projekt verwendet automatische Versionierung basierend auf Commit-Nachrichten:
+---
+
+## 📦 Versionierung
+
+Das Projekt verwendet automatische Versionierung:
 
 ```bash
-# Version wird automatisch erhöht bei Commits mit:
-git commit -m "feat: neue Funktion"   # → Minor Version (0.1.0 → 0.2.0)
-git commit -m "fix: Bugfix"           # → Patch Version (0.1.0 → 0.1.1)
-git commit -m "feat!: Breaking Change" # → Major Version (0.1.0 → 1.0.0)
+# Automatisch bei Commits mit Conventional Commits:
+git commit -m "feat: neue Funktion"       # → Minor (0.1.0 → 0.2.0)
+git commit -m "fix: Bugfix"               # → Patch (0.1.0 → 0.1.1)
+git commit -m "feat!: Breaking Change"    # → Major (0.1.0 → 1.0.0)
 
 # Oder manuell:
 npm run version:patch  # 0.1.0 → 0.1.1
@@ -236,21 +437,70 @@ npm run version:minor  # 0.1.0 → 0.2.0
 npm run version:major  # 0.1.0 → 1.0.0
 ```
 
-Siehe [VERSIONING.md](VERSIONING.md) für Details.
+Version wird automatisch aktualisiert in:
+- `package.json`
+- `src/app/app.ts` (angezeigt in Navigation Bar)
+- `CHANGELOG.md`
 
-## Roadmap
+---
 
+## 🔐 Sicherheitshinweise
+
+### API Keys
+- ⚠️ **WICHTIG**: Speichere keine Credentials im Code!
+- `.env` Datei wird NICHT in Git committed (steht in `.gitignore`)
+- Verwende niemals API-Keys mit Withdrawal-Rechten
+- Aktiviere IP-Whitelist für Live Keys
+- Rotiere Keys regelmäßig
+
+### Trading
+- Teste das System zuerst mit kleinen Beträgen oder im Testnet
+- Setze immer Stop-Loss und Take-Profit Parameter
+- Überwache automatisierte Strategien regelmäßig
+- Verstehe die Strategie bevor du sie aktivierst
+- Nur Kapital einsetzen, dessen Verlust du dir leisten kannst
+
+### Proxy Server
+- **NUR für Development** gedacht
+- NIEMALS den Proxy Server öffentlich zugänglich machen
+- Läuft nur auf `localhost` (127.0.0.1)
+- Für Produktion: Richtiges Backend implementieren
+
+---
+
+## 📚 Changelog
+
+Siehe [CHANGELOG.md](CHANGELOG.md) für eine vollständige Versionshistorie.
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Grundlegendes Dashboard mit Mock-Daten
+- [x] Binance API Integration (Testnet & Live)
+- [x] TradingView Charts mit Candlesticks
+- [x] RSI & SMA Indikatoren
+- [x] Strategieverwaltung
+- [x] Echtzeit-Updates via WebSocket
+- [x] Settings-Persistenz
+- [x] Inline-Editing
+- [x] RSI Subchart
+- [x] Strategy Signal Detection
+- [x] Lokale Zeitformatierung
 - [ ] Vollständiger Pine Script Interpreter
 - [ ] Backtesting-Funktionalität
-- [ ] Erweiterte Order-Typen (OCO, etc.)
+- [ ] Erweiterte Order-Typen (OCO, Trailing Stop, etc.)
 - [ ] Portfolio-Management
 - [ ] Trading-Bot mit ML-Integration
-- [ ] Multi-Exchange Support
+- [ ] Multi-Exchange Support (Coinbase, Kraken, etc.)
 - [ ] Telegram/Discord Benachrichtigungen
+- [ ] Mobile App (React Native)
 
-## Lizenz
+---
 
-Dieses Projekt ist unter der MIT-Lizenz mit Trading-Disclaimer lizenziert. Siehe [LICENSE](LICENSE) für Details.
+## 📄 Lizenz
+
+Dieses Projekt ist unter der MIT-Lizenz mit Trading-Disclaimer lizenziert.
 
 **Zusammenfassung:**
 - ✅ Freie Nutzung, Modifikation und Distribution
@@ -258,10 +508,21 @@ Dieses Projekt ist unter der MIT-Lizenz mit Trading-Disclaimer lizenziert. Siehe
 - ⚠️ Autor übernimmt keine Haftung für Trading-Verluste
 - ⚠️ Nutzung erfolgt ausschließlich auf eigenes Risiko
 
-## Support
+---
 
-Bei Fragen oder Problemen erstelle bitte ein Issue im Repository.
+## 🤝 Support
+
+Bei Fragen oder Problemen:
+1. Checke dieses README
+2. Überprüfe die [Troubleshooting](#-troubleshooting) Sektion
+3. Erstelle ein Issue im Repository
 
 ---
 
-**Hinweis**: Dies ist ein Bildungsprojekt. Trading mit Kryptowährungen birgt erhebliche Risiken. Investiere nur Geld, das du bereit bist zu verlieren.
+## 👨‍💻 Autor
+
+Entwickelt als Bildungsprojekt zur Demonstration moderner Web-Technologien und Trading-Konzepte.
+
+---
+
+**Hinweis**: Dies ist ein Bildungsprojekt. Trading mit Kryptowährungen birgt erhebliche Risiken. **Investiere niemals Geld, das du dir nicht leisten kannst zu verlieren!**
