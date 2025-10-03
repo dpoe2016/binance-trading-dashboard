@@ -29,6 +29,9 @@ export class StrategyManagerComponent implements OnInit {
     useRSI: true,
     useAroon: false,
     aroonPeriod: 25,
+    useATR: false,
+    atrPeriod: 14,
+    useVolume: false,
     quantity: '0.001',
     autoExecute: false
   };
@@ -87,6 +90,9 @@ if (ta.crossunder(sma20, sma50))
         useRSI: this.newStrategy.useRSI,
         useAroon: this.newStrategy.useAroon,
         aroonPeriod: this.newStrategy.aroonPeriod,
+        useATR: this.newStrategy.useATR,
+        atrPeriod: this.newStrategy.atrPeriod,
+        useVolume: this.newStrategy.useVolume,
         quantity: this.newStrategy.quantity,
         autoExecute: this.newStrategy.autoExecute
       },
@@ -126,6 +132,9 @@ if (ta.crossunder(sma20, sma50))
       useRSI: true,
       useAroon: false,
       aroonPeriod: 25,
+      useATR: false,
+      atrPeriod: 14,
+      useVolume: false,
       quantity: '0.001',
       autoExecute: false
     };
@@ -177,6 +186,9 @@ if (ta.crossunder(sma20, sma50))
     }
     if (this.editingStrategy.parameters['bbStdDev'] === undefined) {
       this.editingStrategy.parameters['bbStdDev'] = 2;
+    }
+    if (this.editingStrategy.parameters['atrPeriod'] === undefined) {
+      this.editingStrategy.parameters['atrPeriod'] = 14;
     }
   }
 

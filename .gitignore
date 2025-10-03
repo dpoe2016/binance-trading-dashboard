@@ -58,3 +58,6 @@ GEMINI.md
 
 # no screenshots
 iScreen*.png
+
+# package lock
+package-lock.json

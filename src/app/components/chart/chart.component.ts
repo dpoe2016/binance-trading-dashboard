@@ -36,6 +36,10 @@ export class ChartComponent implements OnInit, OnDestroy {
   private bbUpperSeries?: any;
   private bbMiddleSeries?: any;
   private bbLowerSeries?: any;
+  private stochKSeries?: any;
+  private stochDSeries?: any;
+  private atrSeries?: any;
+  private volumeSeries?: any;
   private seriesMarkers?: any; // v5 marker primitive
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
@@ -661,6 +665,111 @@ export class ChartComponent implements OnInit, OnDestroy {
       console.log('📊 Choppiness Index not enabled in strategy parameters:', strategy.parameters);
     }
 
+    // Add Stochastic Oscillator as subchart
+    if (strategy.parameters['useStochastic']) {
+      console.log('📊 Adding Stochastic Oscillator to chart');
+      const stochKPeriod = strategy.parameters['stochKPeriod'] || 14;
+      const stochDPeriod = strategy.parameters['stochDPeriod'] || 3;
+      const stochData = this.calculateStochastic(this.currentCandles, stochKPeriod, stochDPeriod);
+      console.log(`📊 Stochastic data calculated: %K=${stochData.k.length}, %D=${stochData.d.length} data points`);
+
+      // Add %K line
+      if (!this.stochKSeries && this.chart) {
+        this.stochKSeries = this.chart.addSeries(LineSeries, {
+          color: '#2196F3', // Blue
+          lineWidth: 2,
+          title: '%K',
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 5); // New pane (pane 5)
+        console.log('📊 Stochastic %K series added to chart');
+      }
+
+      // Add %D line
+      if (!this.stochDSeries && this.chart) {
+        this.stochDSeries = this.chart.addSeries(LineSeries, {
+          color: '#FF5722', // Red-Orange
+          lineWidth: 2,
+          title: '%D',
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 5); // Same pane as %K
+        console.log('📊 Stochastic %D series added to chart');
+      }
+
+      // Set data for Stochastic series
+      if (this.stochKSeries && stochData.k.length > 0) {
+        this.stochKSeries.setData(stochData.k);
+        console.log('📊 Stochastic %K data set');
+      }
+
+      if (this.stochDSeries && stochData.d.length > 0) {
+        this.stochDSeries.setData(stochData.d);
+        console.log('📊 Stochastic %D data set');
+      }
+    } else {
+      console.log('📊 Stochastic not enabled in strategy parameters:', strategy.parameters);
+    }
+
+    // Add ATR (Average True Range) as subchart
+    if (strategy.parameters['useATR']) {
+      console.log('📊 Adding ATR indicator to chart');
+      const atrPeriod = strategy.parameters['atrPeriod'] || 14;
+      const atrData = this.calculateATR(this.currentCandles, atrPeriod);
+      console.log(`📊 ATR data calculated: ${atrData.length} data points`);
+
+      // Add ATR series
+      if (!this.atrSeries && this.chart) {
+        this.atrSeries = this.chart.addSeries(LineSeries, {
+          color: '#9C27B0', // Purple
+          lineWidth: 2,
+          title: `ATR (${atrPeriod})`,
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 6); // New pane (pane 6)
+        console.log('📊 ATR series added to chart');
+      }
+
+      // Set data for ATR series
+      if (this.atrSeries && atrData.length > 0) {
+        this.atrSeries.setData(atrData);
+        console.log('📊 ATR data set');
+      }
+    } else {
+      console.log('📊 ATR not enabled in strategy parameters:', strategy.parameters);
+    }
+
+    // Add Volume as subchart
+    if (strategy.parameters['useVolume']) {
+      console.log('📊 Adding Volume indicator to chart');
+      const volumeData = this.calculateVolumeData(this.currentCandles);
+      console.log(`📊 Volume data calculated: ${volumeData.length} data points`);
+
+      // Add Volume series
+      if (!this.volumeSeries && this.chart) {
+        this.volumeSeries = this.chart.addSeries(HistogramSeries, {
+          priceFormat: {
+            type: 'volume',
+          },
+          priceScaleId: 'right',
+          lastValueVisible: false,
+          priceLineVisible: false,
+        }, 7); // New pane (pane 7)
+        console.log('📊 Volume series added to chart');
+      }
+
+      // Set data for Volume series
+      if (this.volumeSeries && volumeData.length > 0) {
+        this.volumeSeries.setData(volumeData);
+        console.log('📊 Volume data set');
+      }
+    } else {
+      console.log('📊 Volume not enabled in strategy parameters:', strategy.parameters);
+    }
+
     // Generate and add strategy signals as markers
     this.addStrategySignals(strategy);
   }
@@ -756,6 +865,73 @@ export class ChartComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Stochastic Strategy signals
+    if (strategy.parameters['useStochastic']) {
+      const stochKPeriod = strategy.parameters['stochKPeriod'] || 14;
+      const stochDPeriod = strategy.parameters['stochDPeriod'] || 3;
+      const stochOversold = strategy.parameters['stochOversold'] || 20;
+      const stochOverbought = strategy.parameters['stochOverbought'] || 80;
+
+      const stochData = this.calculateStochastic(this.currentCandles, stochKPeriod, stochDPeriod);
+
+      // Start from index 1 and ensure we have enough data
+      for (let i = 1; i < stochData.k.length && i < stochData.d.length; i++) {
+        const prevK = stochData.k[i - 1].value;
+        const prevD = stochData.d[i - 1].value;
+        const currK = stochData.k[i].value;
+        const currD = stochData.d[i].value;
+        const candleIndex = stochKPeriod - 1 + i; // Offset by stochastic period
+
+        // Check bounds
+        if (candleIndex >= this.currentCandles.length) continue;
+        const candle = this.currentCandles[candleIndex];
+
+        // Buy signal: %K crosses above %D in oversold territory
+        if (prevK <= prevD && currK > currD && currK < stochOversold + 10) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'belowBar',
+            type: 'STOCH_BUY',
+            price: candle.low
+          });
+          buySignals++;
+        }
+
+        // Sell signal: %K crosses below %D in overbought territory
+        if (prevK >= prevD && currK < currD && currK > stochOverbought - 10) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'aboveBar',
+            type: 'STOCH_SELL',
+            price: candle.high
+          });
+          sellSignals++;
+        }
+
+        // Oversold bounce signal: %K crosses above oversold level
+        if (prevK <= stochOversold && currK > stochOversold) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'belowBar',
+            type: 'STOCH_OVERSOLD',
+            price: candle.low
+          });
+          buySignals++;
+        }
+
+        // Overbought reversal signal: %K crosses below overbought level
+        if (prevK >= stochOverbought && currK < stochOverbought) {
+          this.signalMarkers.push({
+            time: Math.floor(candle.time / 1000),
+            position: 'aboveBar',
+            type: 'STOCH_OVERBOUGHT',
+            price: candle.high
+          });
+          sellSignals++;
+        }
+      }
+    }
+
     // Log signals found
     if (this.signalMarkers.length > 0) {
       console.log(`📊 Strategy signals detected: ${buySignals} buy signals, ${sellSignals} sell signals`);
@@ -763,14 +939,17 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Apply markers to the candlestick series using v5 API
     if (this.candlestickSeries) {
-      const markers = this.signalMarkers.map(marker => ({
-        time: marker.time,
-        position: marker.position as 'aboveBar' | 'belowBar' | 'inBar',
-        price: marker.price, // v5 requires price property
-        color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
-        shape: (marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? 'arrowUp' : 'arrowDown') as 'arrowUp' | 'arrowDown' | 'circle' | 'square',
-        text: marker.type
-      }));
+      const markers = this.signalMarkers.map(marker => {
+        const isBuySignal = ['BUY', 'GOLDEN_CROSS', 'STOCH_BUY', 'STOCH_OVERSOLD'].includes(marker.type);
+        return {
+          time: marker.time,
+          position: marker.position as 'aboveBar' | 'belowBar' | 'inBar',
+          price: marker.price, // v5 requires price property
+          color: isBuySignal ? '#22c55e' : '#ef4444',
+          shape: (isBuySignal ? 'arrowUp' : 'arrowDown') as 'arrowUp' | 'arrowDown' | 'circle' | 'square',
+          text: marker.type
+        };
+      });
 
       // Create or update markers using v5 API
       if (!this.seriesMarkers) {
@@ -838,6 +1017,67 @@ export class ChartComponent implements OnInit, OnDestroy {
     if (this.aroonDownSeries && this.chart) {
       this.chart.removeSeries(this.aroonDownSeries);
       this.aroonDownSeries = undefined;
+    }
+
+    // Clear MACD series
+    if (this.macdLineSeries && this.chart) {
+      this.chart.removeSeries(this.macdLineSeries);
+      this.macdLineSeries = undefined;
+    }
+
+    if (this.macdSignalSeries && this.chart) {
+      this.chart.removeSeries(this.macdSignalSeries);
+      this.macdSignalSeries = undefined;
+    }
+
+    if (this.macdHistogramSeries && this.chart) {
+      this.chart.removeSeries(this.macdHistogramSeries);
+      this.macdHistogramSeries = undefined;
+    }
+
+    // Clear Choppiness Index series
+    if (this.choppinessSeries && this.chart) {
+      this.chart.removeSeries(this.choppinessSeries);
+      this.choppinessSeries = undefined;
+    }
+
+    // Clear Bollinger Bands series
+    if (this.bbUpperSeries && this.chart) {
+      this.chart.removeSeries(this.bbUpperSeries);
+      this.bbUpperSeries = undefined;
+    }
+
+    if (this.bbMiddleSeries && this.chart) {
+      this.chart.removeSeries(this.bbMiddleSeries);
+      this.bbMiddleSeries = undefined;
+    }
+
+    if (this.bbLowerSeries && this.chart) {
+      this.chart.removeSeries(this.bbLowerSeries);
+      this.bbLowerSeries = undefined;
+    }
+
+    // Clear Stochastic series
+    if (this.stochKSeries && this.chart) {
+      this.chart.removeSeries(this.stochKSeries);
+      this.stochKSeries = undefined;
+    }
+
+    if (this.stochDSeries && this.chart) {
+      this.chart.removeSeries(this.stochDSeries);
+      this.stochDSeries = undefined;
+    }
+
+    // Clear ATR series
+    if (this.atrSeries && this.chart) {
+      this.chart.removeSeries(this.atrSeries);
+      this.atrSeries = undefined;
+    }
+
+    // Clear Volume series
+    if (this.volumeSeries && this.chart) {
+      this.chart.removeSeries(this.volumeSeries);
+      this.volumeSeries = undefined;
     }
   }
 
@@ -1161,5 +1401,167 @@ export class ChartComponent implements OnInit, OnDestroy {
     });
 
     return { upper, middle, lower };
+  }
+
+  /**
+   * Calculate Stochastic Oscillator
+   * @param candles - Array of candlestick data
+   * @param kPeriod - %K period (default 14)
+   * @param dPeriod - %D period (default 3)
+   * @returns Object with %K and %D lines
+   */
+  private calculateStochastic(
+    candles: Candle[],
+    kPeriod: number = 14,
+    dPeriod: number = 3
+  ): { k: LineData[], d: LineData[] } {
+    const k: LineData[] = [];
+    const d: LineData[] = [];
+
+    if (candles.length < kPeriod) {
+      return { k, d };
+    }
+
+    // Calculate %K values
+    const kValues: number[] = [];
+    for (let i = kPeriod - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - kPeriod + 1, i + 1);
+
+      // Find highest high and lowest low
+      let highestHigh = slice[0].high;
+      let lowestLow = slice[0].low;
+
+      for (let j = 1; j < slice.length; j++) {
+        if (slice[j].high > highestHigh) highestHigh = slice[j].high;
+        if (slice[j].low < lowestLow) lowestLow = slice[j].low;
+      }
+
+      // Calculate %K: ((Current Close - Lowest Low) / (Highest High - Lowest Low)) * 100
+      const currentClose = candles[i].close;
+      const range = highestHigh - lowestLow;
+      const kValue = range > 0 ? ((currentClose - lowestLow) / range) * 100 : 50;
+
+      kValues.push(kValue);
+      k.push({
+        time: Math.floor(candles[i].time / 1000) as any,
+        value: kValue,
+      });
+    }
+
+    // Calculate %D (SMA of %K)
+    for (let i = dPeriod - 1; i < kValues.length; i++) {
+      const slice = kValues.slice(i - dPeriod + 1, i + 1);
+      const sum = slice.reduce((acc, val) => acc + val, 0);
+      const dValue = sum / dPeriod;
+
+      const candleIndex = kPeriod - 1 + i;
+      d.push({
+        time: Math.floor(candles[candleIndex].time / 1000) as any,
+        value: dValue,
+      });
+    }
+
+    console.log('📊 Stochastic calculated:', {
+      kPoints: k.length,
+      dPoints: d.length,
+      kPeriod,
+      dPeriod
+    });
+
+    return { k, d };
+  }
+
+  /**
+   * Calculate Average True Range (ATR)
+   * @param candles - Array of candlestick data
+   * @param period - Period for ATR calculation (default 14)
+   * @returns Array of ATR line data
+   */
+  private calculateATR(candles: Candle[], period: number = 14): LineData[] {
+    const atr: LineData[] = [];
+
+    if (candles.length < 2) {
+      return atr;
+    }
+
+    // Calculate true range for each candle
+    const trueRanges: number[] = [];
+    for (let i = 1; i < candles.length; i++) {
+      const high = candles[i].high;
+      const low = candles[i].low;
+      const prevClose = candles[i - 1].close;
+
+      const trueRange = Math.max(
+        high - low,
+        Math.abs(high - prevClose),
+        Math.abs(low - prevClose)
+      );
+
+      trueRanges.push(trueRange);
+    }
+
+    if (trueRanges.length < period) {
+      return atr;
+    }
+
+    // First ATR is SMA of first 'period' true ranges
+    let sum = 0;
+    for (let i = 0; i < period; i++) {
+      sum += trueRanges[i];
+    }
+    const firstATR = sum / period;
+    atr.push({
+      time: Math.floor(candles[period].time / 1000) as any,
+      value: firstATR,
+    });
+
+    // Subsequent ATRs use Wilder's smoothing: ATR = (prevATR * (period - 1) + currentTR) / period
+    for (let i = period; i < trueRanges.length; i++) {
+      const prevATR = atr[atr.length - 1].value;
+      const currentTR = trueRanges[i];
+      const newATR = (prevATR * (period - 1) + currentTR) / period;
+
+      atr.push({
+        time: Math.floor(candles[i + 1].time / 1000) as any,
+        value: newATR,
+      });
+    }
+
+    console.log('📊 ATR calculated:', {
+      dataPoints: atr.length,
+      period,
+      lastATR: atr[atr.length - 1]?.value.toFixed(4)
+    });
+
+    return atr;
+  }
+
+  /**
+   * Calculate Volume data with color coding
+   * @param candles - Array of candlestick data
+   * @returns Array of volume histogram data
+   */
+  private calculateVolumeData(candles: Candle[]): HistogramData[] {
+    const volumeData: HistogramData[] = [];
+
+    for (let i = 0; i < candles.length; i++) {
+      const candle = candles[i];
+
+      // Color based on price movement (green for up, red for down)
+      const color = candle.close >= candle.open ? '#26a69a' : '#ef5350';
+
+      volumeData.push({
+        time: Math.floor(candle.time / 1000) as any,
+        value: candle.volume,
+        color: color
+      });
+    }
+
+    console.log('📊 Volume data calculated:', {
+      dataPoints: volumeData.length,
+      averageVolume: volumeData.reduce((sum, v) => sum + v.value, 0) / volumeData.length
+    });
+
+    return volumeData;
   }
 }

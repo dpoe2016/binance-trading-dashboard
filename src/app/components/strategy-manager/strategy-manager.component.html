@@ -252,6 +252,32 @@
             </div>
 
             <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['useStochastic']">
+                Stochastic Oszillator verwenden
+              </label>
+            </div>
+
+            <div class="param-row" *ngIf="editingStrategy.parameters!['useStochastic']">
+              <div class="param-item">
+                <label>%K Periode</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['stochKPeriod']" placeholder="14" min="5" max="50">
+              </div>
+              <div class="param-item">
+                <label>%D Periode</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['stochDPeriod']" placeholder="3" min="1" max="20">
+              </div>
+              <div class="param-item">
+                <label>Überverkauft Level</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['stochOversold']" placeholder="20" min="0" max="50">
+              </div>
+              <div class="param-item">
+                <label>Überkauft Level</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['stochOverbought']" placeholder="80" min="50" max="100">
+              </div>
+            </div>
+
+            <div class="param-item">
               <label>Menge</label>
               <input type="text" [(ngModel)]="editingStrategy.parameters!['quantity']" placeholder="0.001">
             </div>

@@ -225,12 +225,12 @@ const server = http.createServer((req, res) => {
 });
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('='.repeat(60));
   console.log('🚀 Binance API Proxy Server');
   console.log('='.repeat(60));
-  console.log(`📍 Server running on: http://localhost:${PORT}`);
+  console.log(`📍 Server running on: http://0.0.0.0:${PORT}`);
   console.log(`📋 Trading Mode: ${TRADING_MODE.toUpperCase()}`);
 
   if (TRADING_MODE !== 'demo') {
@@ -241,7 +241,7 @@ server.listen(PORT, () => {
   console.log('');
   console.log('✅ Ready to proxy requests from Angular app');
   console.log('');
-  console.log('ℹ️  Configure Angular app to use: http://localhost:' + PORT);
+  console.log('ℹ️  Configure Angular app to use: http://<your-ip-address>:' + PORT);
   console.log('='.repeat(60));
   console.log('');
 });

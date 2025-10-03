@@ -103,6 +103,11 @@ export class BacktestingService {
       strategy.parameters['bbPeriod'] || 20,
       strategy.parameters['bbStdDev'] || 2
     ) : null;
+    const stochData = strategy.parameters['useStochastic'] ? this.calculateStochastic(
+      candles,
+      strategy.parameters['stochKPeriod'] || 14,
+      strategy.parameters['stochDPeriod'] || 3
+    ) : null;
 
     // Generate Bollinger Bands signals
     if (bbData && strategy.parameters['useBollingerBands']) {
@@ -319,6 +324,92 @@ export class BacktestingService {
             type: 'SELL',
             price: candle.close,
             reason: `MACD bearish crossover (${currMACD.histogram.toFixed(4)})`,
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+      }
+    }
+
+    // Generate Stochastic signals
+    if (stochData && strategy.parameters['useStochastic']) {
+      const stochKPeriod = strategy.parameters['stochKPeriod'] || 14;
+      const stochDPeriod = strategy.parameters['stochDPeriod'] || 3;
+      const stochOversold = strategy.parameters['stochOversold'] || 20;
+      const stochOverbought = strategy.parameters['stochOverbought'] || 80;
+      const startIndex = stochKPeriod + stochDPeriod - 2;
+
+      for (let i = 1; i < stochData.length; i++) {
+        const prevStoch = stochData[i - 1];
+        const currStoch = stochData[i];
+        const candleIndex = startIndex + i;
+
+        if (candleIndex >= candles.length) continue;
+        const candle = candles[candleIndex];
+
+        // Check choppiness filter
+        const choppinessValue = choppinessData && candleIndex < choppinessData.length
+          ? choppinessData[candleIndex]
+          : 0;
+        const passesChoppinessFilter = !choppinessData || choppinessValue < 38.2;
+
+        // Bullish crossover: %K crosses above %D in oversold territory
+        if (prevStoch.k <= prevStoch.d && currStoch.k > currStoch.d &&
+            currStoch.k < stochOversold + 10 && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'BUY',
+            price: candle.close,
+            reason: `Stochastic bullish crossover (%K: ${currStoch.k.toFixed(2)}, %D: ${currStoch.d.toFixed(2)})`,
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+
+        // Bearish crossover: %K crosses below %D in overbought territory
+        if (prevStoch.k >= prevStoch.d && currStoch.k < currStoch.d &&
+            currStoch.k > stochOverbought - 10 && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'SELL',
+            price: candle.close,
+            reason: `Stochastic bearish crossover (%K: ${currStoch.k.toFixed(2)}, %D: ${currStoch.d.toFixed(2)})`,
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+
+        // Oversold bounce: %K crosses above oversold level
+        if (prevStoch.k <= stochOversold && currStoch.k > stochOversold && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'BUY',
+            price: candle.close,
+            reason: `Stochastic oversold bounce (%K: ${currStoch.k.toFixed(2)})`,
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+
+        // Overbought reversal: %K crosses below overbought level
+        if (prevStoch.k >= stochOverbought && currStoch.k < stochOverbought && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'SELL',
+            price: candle.close,
+            reason: `Stochastic overbought reversal (%K: ${currStoch.k.toFixed(2)})`,
             rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
               ? rsiData[candleIndex - 14]
               : undefined,
@@ -681,5 +772,98 @@ export class BacktestingService {
     }
 
     return result;
+  }
+
+  private calculateStochastic(
+    candles: Candle[],
+    kPeriod: number = 14,
+    dPeriod: number = 3
+  ): Array<{k: number, d: number}> {
+    const result: Array<{k: number, d: number}> = [];
+
+    if (candles.length < kPeriod) {
+      return result;
+    }
+
+    // Calculate %K values
+    const kValues: number[] = [];
+    for (let i = kPeriod - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - kPeriod + 1, i + 1);
+
+      // Find highest high and lowest low
+      let highestHigh = slice[0].high;
+      let lowestLow = slice[0].low;
+
+      for (let j = 1; j < slice.length; j++) {
+        if (slice[j].high > highestHigh) highestHigh = slice[j].high;
+        if (slice[j].low < lowestLow) lowestLow = slice[j].low;
+      }
+
+      // Calculate %K: ((Current Close - Lowest Low) / (Highest High - Lowest Low)) * 100
+      const currentClose = candles[i].close;
+      const range = highestHigh - lowestLow;
+      const kValue = range > 0 ? ((currentClose - lowestLow) / range) * 100 : 50;
+
+      kValues.push(kValue);
+    }
+
+    // Calculate %D (SMA of %K)
+    for (let i = dPeriod - 1; i < kValues.length; i++) {
+      const slice = kValues.slice(i - dPeriod + 1, i + 1);
+      const sum = slice.reduce((acc, val) => acc + val, 0);
+      const dValue = sum / dPeriod;
+
+      result.push({
+        k: kValues[i],
+        d: dValue
+      });
+    }
+
+    return result;
+  }
+
+  private calculateATR(candles: Candle[], period: number = 14): number[] {
+    const atr: number[] = [];
+
+    if (candles.length < 2) {
+      return atr;
+    }
+
+    // Calculate true range for each candle
+    const trueRanges: number[] = [];
+    for (let i = 1; i < candles.length; i++) {
+      const high = candles[i].high;
+      const low = candles[i].low;
+      const prevClose = candles[i - 1].close;
+
+      const trueRange = Math.max(
+        high - low,
+        Math.abs(high - prevClose),
+        Math.abs(low - prevClose)
+      );
+
+      trueRanges.push(trueRange);
+    }
+
+    if (trueRanges.length < period) {
+      return atr;
+    }
+
+    // First ATR is SMA of first 'period' true ranges
+    let sum = 0;
+    for (let i = 0; i < period; i++) {
+      sum += trueRanges[i];
+    }
+    atr.push(sum / period);
+
+    // Subsequent ATRs use Wilder's smoothing: ATR = (prevATR * (period - 1) + currentTR) / period
+    for (let i = period; i < trueRanges.length; i++) {
+      const prevATR = atr[atr.length - 1];
+      const currentTR = trueRanges[i];
+      const newATR = (prevATR * (period - 1) + currentTR) / period;
+      atr.push(newATR);
+    }
+
+    return atr;
   }
 }

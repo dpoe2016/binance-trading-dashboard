@@ -1,0 +1,186 @@
+<div class="order-history-container">
+  <div class="order-history-card">
+    <!-- Header with tabs -->
+    <div class="header">
+      <div class="tabs">
+        <button class="tab-button"
+                [class.active]="selectedTab === 'open'"
+                (click)="selectTab('open')">
+          Open Orders ({{ openOrders.length }})
+        </button>
+        <button class="tab-button"
+                [class.active]="selectedTab === 'history'"
+                (click)="selectTab('history')">
+          Order History ({{ orderHistory.length }})
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-outline refresh-btn"
+                (click)="refreshOrders()"
+                [disabled]="isLoading">
+          <span *ngIf="isLoading">⟳</span>
+          <span *ngIf="!isLoading">↻</span>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="summary-stats" *ngIf="selectedTab === 'open' && openOrders.length > 0">
+      <div class="stat-item">
+        <span class="stat-label">Total Orders:</span>
+        <span class="stat-value">{{ getOrderCount() }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Total Value:</span>
+        <span class="stat-value">{{ getTotalValue(openOrders) | currency:'USD':'symbol':'1.2-2' }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">New:</span>
+        <span class="stat-value status-new">{{ getOrderCount(OrderStatus.NEW) }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Partial:</span>
+        <span class="stat-value status-partial">{{ getOrderCount(OrderStatus.PARTIALLY_FILLED) }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loading-spinner"></div>
+      <p>Loading orders...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading && selectedTab === 'open' && openOrders.length === 0">
+      <div class="empty-icon">📋</div>
+      <h3>No Open Orders</h3>
+      <p>You don't have any open orders at the moment.</p>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading && selectedTab === 'history' && orderHistory.length === 0">
+      <div class="empty-icon">📈</div>
+      <h3>No Order History</h3>
+      <p>Your completed orders will appear here.</p>
+    </div>
+
+    <!-- Open Orders Table -->
+    <div class="table-container" *ngIf="!isLoading && selectedTab === 'open' && openOrders.length > 0">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Type</th>
+            <th>Side</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Filled</th>
+            <th>Status</th>
+            <th>Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of openOrders; trackBy: trackByOrderId" class="order-row">
+            <td class="symbol-cell">{{ order.symbol }}</td>
+            <td class="type-cell">{{ getOrderTypeLabel(order.type) }}</td>
+            <td class="side-cell">
+              <span [class]="getSideClass(order.side)">{{ order.side }}</span>
+            </td>
+            <td class="quantity-cell">{{ formatPrice(order.origQty) }}</td>
+            <td class="price-cell">
+              <span *ngIf="order.price && order.price !== '0'; else noPriceTemplate">
+                {{ formatPrice(order.price) | currency:'USD':'symbol':'1.2-8' }}
+              </span>
+              <ng-template #noPriceTemplate>Market</ng-template>
+            </td>
+            <td class="filled-cell">
+              <div class="filled-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="calculateFilled(order)"></div>
+                </div>
+                <span class="progress-text">{{ calculateFilled(order).toFixed(1) }}%</span>
+              </div>
+            </td>
+            <td class="status-cell">
+              <span class="status-badge" [class]="getOrderStatusClass(order.status)">
+                {{ order.status }}
+              </span>
+            </td>
+            <td class="time-cell">{{ formatDateTime(order.time) }}</td>
+            <td class="actions-cell">
+              <div class="action-buttons">
+                <button class="btn btn-sm btn-outline"
+                        *ngIf="canModifyOrder(order)"
+                        (click)="modifyOrder(order)"
+                        title="Modify Order">
+                  ✏️
+                </button>
+                <button class="btn btn-sm btn-danger"
+                        *ngIf="canCancelOrder(order)"
+                        (click)="cancelOrder(order)"
+                        [disabled]="cancellingOrderId === order.orderId"
+                        title="Cancel Order">
+                  <span *ngIf="cancellingOrderId === order.orderId">⟳</span>
+                  <span *ngIf="cancellingOrderId !== order.orderId">✕</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Order History Table -->
+    <div class="table-container" *ngIf="!isLoading && selectedTab === 'history' && orderHistory.length > 0">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Type</th>
+            <th>Side</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Executed</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of orderHistory; trackBy: trackByOrderId" class="order-row">
+            <td class="symbol-cell">{{ order.symbol }}</td>
+            <td class="type-cell">{{ getOrderTypeLabel(order.type) }}</td>
+            <td class="side-cell">
+              <span [class]="getSideClass(order.side)">{{ order.side }}</span>
+            </td>
+            <td class="quantity-cell">{{ formatPrice(order.origQty) }}</td>
+            <td class="price-cell">
+              <span *ngIf="order.price && order.price !== '0'; else noPriceTemplate2">
+                {{ formatPrice(order.price) | currency:'USD':'symbol':'1.2-8' }}
+              </span>
+              <ng-template #noPriceTemplate2>Market</ng-template>
+            </td>
+            <td class="executed-cell">
+              <span *ngIf="order.executedQty && order.executedQty !== '0'; else noExecutedTemplate">
+                {{ formatPrice(order.executedQty) }}
+              </span>
+              <ng-template #noExecutedTemplate>-</ng-template>
+            </td>
+            <td class="status-cell">
+              <span class="status-badge" [class]="getOrderStatusClass(order.status)">
+                {{ order.status }}
+              </span>
+            </td>
+            <td class="time-cell">{{ formatDateTime(order.updateTime) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination placeholder (for future implementation) -->
+    <div class="pagination" *ngIf="(selectedTab === 'open' ? openOrders.length : orderHistory.length) > 50">
+      <!-- Pagination controls would go here -->
+    </div>
+  </div>
+</div>

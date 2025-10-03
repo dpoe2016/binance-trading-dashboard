@@ -22,11 +22,83 @@ export interface Order {
   price: string;
   origQty: string;
   executedQty: string;
-  status: string;
-  type: string;
-  side: string;
+  status: OrderStatus;
+  type: OrderType;
+  side: OrderSide;
   time: number;
   updateTime: number;
+  timeInForce?: TimeInForce;
+  stopPrice?: string;
+  icebergQty?: string;
+  fills?: OrderFill[];
+  commission?: string;
+  commissionAsset?: string;
+}
+
+export enum OrderStatus {
+  NEW = 'NEW',
+  PARTIALLY_FILLED = 'PARTIALLY_FILLED',
+  FILLED = 'FILLED',
+  CANCELED = 'CANCELED',
+  PENDING_CANCEL = 'PENDING_CANCEL',
+  REJECTED = 'REJECTED',
+  EXPIRED = 'EXPIRED'
+}
+
+export enum OrderType {
+  MARKET = 'MARKET',
+  LIMIT = 'LIMIT',
+  STOP_LOSS = 'STOP_LOSS',
+  STOP_LOSS_LIMIT = 'STOP_LOSS_LIMIT',
+  TAKE_PROFIT = 'TAKE_PROFIT',
+  TAKE_PROFIT_LIMIT = 'TAKE_PROFIT_LIMIT',
+  LIMIT_MAKER = 'LIMIT_MAKER'
+}
+
+export enum OrderSide {
+  BUY = 'BUY',
+  SELL = 'SELL'
+}
+
+export enum TimeInForce {
+  GTC = 'GTC', // Good Till Cancel
+  IOC = 'IOC', // Immediate or Cancel
+  FOK = 'FOK'  // Fill or Kill
+}
+
+export interface OrderFill {
+  price: string;
+  qty: string;
+  commission: string;
+  commissionAsset: string;
+  tradeId: number;
+}
+
+export interface CreateOrderRequest {
+  symbol: string;
+  side: OrderSide;
+  type: OrderType;
+  quantity: string;
+  price?: string;
+  stopPrice?: string;
+  timeInForce?: TimeInForce;
+  reduceOnly?: boolean;
+  closePosition?: boolean;
+  positionSide?: 'BOTH' | 'LONG' | 'SHORT';
+}
+
+export interface OrderValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface OrderConfirmation {
+  order: CreateOrderRequest;
+  estimatedFees: string;
+  estimatedTotal: string;
+  marketImpact?: number;
+  confirmation: boolean;
 }
 
 export interface TradingStrategy {

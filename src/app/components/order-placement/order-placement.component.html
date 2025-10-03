@@ -1,0 +1,245 @@
+<div class="order-placement-container">
+  <div class="order-form-card">
+    <h2>Place Order</h2>
+
+    <form [formGroup]="orderForm" (ngSubmit)="openConfirmationDialog()">
+      <!-- Symbol Selection -->
+      <div class="form-group">
+        <label for="symbol">Symbol</label>
+        <select id="symbol" formControlName="symbol" class="form-control" (change)="onSymbolChange()">
+          <option value="BTCUSDT">BTC/USDT</option>
+          <option value="ETHUSDT">ETH/USDT</option>
+          <option value="ADAUSDT">ADA/USDT</option>
+          <option value="BNBUSDT">BNB/USDT</option>
+          <option value="SOLUSDT">SOL/USDT</option>
+        </select>
+      </div>
+
+      <!-- Current Price Display -->
+      <div class="current-price" *ngIf="currentPrice > 0">
+        Current Price: <strong>{{ currentPrice | currency:'USD':'symbol':'1.2-8' }}</strong>
+      </div>
+
+      <!-- Side Selection -->
+      <div class="form-group">
+        <label>Order Side</label>
+        <div class="button-group">
+          <button type="button"
+                  [class.active]="orderForm.get('side')?.value === OrderSide.BUY"
+                  (click)="orderForm.patchValue({side: OrderSide.BUY})"
+                  class="btn btn-success">
+            Buy
+          </button>
+          <button type="button"
+                  [class.active]="orderForm.get('side')?.value === OrderSide.SELL"
+                  (click)="orderForm.patchValue({side: OrderSide.SELL})"
+                  class="btn btn-danger">
+            Sell
+          </button>
+        </div>
+      </div>
+
+      <!-- Order Type Selection -->
+      <div class="form-group">
+        <label for="type">Order Type</label>
+        <select id="type" formControlName="type" class="form-control" (change)="onOrderTypeChange()">
+          <option [value]="OrderType.MARKET">{{ getOrderTypeLabel(OrderType.MARKET) }}</option>
+          <option [value]="OrderType.LIMIT">{{ getOrderTypeLabel(OrderType.LIMIT) }}</option>
+          <option [value]="OrderType.STOP_LOSS">{{ getOrderTypeLabel(OrderType.STOP_LOSS) }}</option>
+          <option [value]="OrderType.STOP_LOSS_LIMIT">{{ getOrderTypeLabel(OrderType.STOP_LOSS_LIMIT) }}</option>
+          <option [value]="OrderType.TAKE_PROFIT">{{ getOrderTypeLabel(OrderType.TAKE_PROFIT) }}</option>
+          <option [value]="OrderType.TAKE_PROFIT_LIMIT">{{ getOrderTypeLabel(OrderType.TAKE_PROFIT_LIMIT) }}</option>
+        </select>
+      </div>
+
+      <!-- Quantity -->
+      <div class="form-group">
+        <label for="quantity">Quantity</label>
+        <div class="input-with-button">
+          <input id="quantity"
+                 formControlName="quantity"
+                 type="number"
+                 step="0.00000001"
+                 class="form-control"
+                 [class.error]="isFieldRequired('quantity')"
+                 placeholder="Enter quantity">
+          <button type="button" class="btn btn-outline" (click)="useMaxQuantity()">Max</button>
+        </div>
+        <div class="error-message" *ngIf="isFieldRequired('quantity')">
+          {{ getFieldError('quantity') }}
+        </div>
+      </div>
+
+      <!-- Price (for limit orders) -->
+      <div class="form-group" *ngIf="orderForm.get('type')?.value === OrderType.LIMIT ||
+                                    orderForm.get('type')?.value === OrderType.STOP_LOSS_LIMIT ||
+                                    orderForm.get('type')?.value === OrderType.TAKE_PROFIT_LIMIT">
+        <label for="price">Price</label>
+        <input id="price"
+               formControlName="price"
+               type="number"
+               step="0.00000001"
+               class="form-control"
+               [class.error]="isFieldRequired('price')"
+               placeholder="Enter price">
+        <div class="error-message" *ngIf="isFieldRequired('price')">
+          {{ getFieldError('price') }}
+        </div>
+      </div>
+
+      <!-- Stop Price (for stop orders) -->
+      <div class="form-group" *ngIf="orderForm.get('type')?.value === OrderType.STOP_LOSS ||
+                                    orderForm.get('type')?.value === OrderType.STOP_LOSS_LIMIT ||
+                                    orderForm.get('type')?.value === OrderType.TAKE_PROFIT ||
+                                    orderForm.get('type')?.value === OrderType.TAKE_PROFIT_LIMIT">
+        <label for="stopPrice">Stop Price</label>
+        <input id="stopPrice"
+               formControlName="stopPrice"
+               type="number"
+               step="0.00000001"
+               class="form-control"
+               [class.error]="isFieldRequired('stopPrice')"
+               placeholder="Enter stop price">
+        <div class="error-message" *ngIf="isFieldRequired('stopPrice')">
+          {{ getFieldError('stopPrice') }}
+        </div>
+      </div>
+
+      <!-- Time in Force (for limit orders) -->
+      <div class="form-group" *ngIf="orderForm.get('type')?.value !== OrderType.MARKET">
+        <label for="timeInForce">Time in Force</label>
+        <select id="timeInForce" formControlName="timeInForce" class="form-control">
+          <option [value]="TimeInForce.GTC">Good Till Cancel (GTC)</option>
+          <option [value]="TimeInForce.IOC">Immediate or Cancel (IOC)</option>
+          <option [value]="TimeInForce.FOK">Fill or Kill (FOK)</option>
+        </select>
+      </div>
+
+      <!-- Advanced Options -->
+      <div class="advanced-options">
+        <h4>Advanced Options</h4>
+
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="reduceOnly">
+            <span class="checkmark"></span>
+            Reduce Only
+          </label>
+        </div>
+
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="closePosition">
+            <span class="checkmark"></span>
+            Close Position
+          </label>
+        </div>
+      </div>
+
+      <!-- Order Validation -->
+      <div class="validation-section" *ngIf="orderValidation">
+        <!-- Errors -->
+        <div class="validation-errors" *ngIf="orderValidation.errors.length > 0">
+          <h4>Errors:</h4>
+          <ul>
+            <li *ngFor="let error of orderValidation.errors" class="error">{{ error }}</li>
+          </ul>
+        </div>
+
+        <!-- Warnings -->
+        <div class="validation-warnings" *ngIf="orderValidation.warnings.length > 0">
+          <h4>Warnings:</h4>
+          <ul>
+            <li *ngFor="let warning of orderValidation.warnings" class="warning">{{ warning }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit"
+              class="btn btn-primary btn-large"
+              [disabled]="!orderValidation?.isValid || orderForm.invalid">
+        Review Order
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Confirmation Dialog -->
+<div class="modal-overlay" *ngIf="confirmationDialog" (click)="closeConfirmationDialog()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Order Confirmation</h3>
+      <button type="button" class="close-btn" (click)="closeConfirmationDialog()">&times;</button>
+    </div>
+
+    <div class="modal-body" *ngIf="orderConfirmation">
+      <div class="order-summary">
+        <h4>Order Summary</h4>
+
+        <div class="summary-row">
+          <span class="label">Symbol:</span>
+          <span class="value">{{ orderConfirmation.order.symbol }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span class="label">Side:</span>
+          <span class="value" [class.buy]="orderConfirmation.order.side === OrderSide.BUY"
+                              [class.sell]="orderConfirmation.order.side === OrderSide.SELL">
+            {{ orderConfirmation.order.side }}
+          </span>
+        </div>
+
+        <div class="summary-row">
+          <span class="label">Type:</span>
+          <span class="value">{{ getOrderTypeLabel(orderConfirmation.order.type) }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span class="label">Quantity:</span>
+          <span class="value">{{ orderConfirmation.order.quantity }}</span>
+        </div>
+
+        <div class="summary-row" *ngIf="orderConfirmation.order.price">
+          <span class="label">Price:</span>
+          <span class="value">{{ orderConfirmation.order.price | currency:'USD':'symbol':'1.2-8' }}</span>
+        </div>
+
+        <div class="summary-row" *ngIf="orderConfirmation.order.stopPrice">
+          <span class="label">Stop Price:</span>
+          <span class="value">{{ orderConfirmation.order.stopPrice | currency:'USD':'symbol':'1.2-8' }}</span>
+        </div>
+
+        <div class="summary-divider"></div>
+
+        <div class="summary-row">
+          <span class="label">Estimated Fees:</span>
+          <span class="value">{{ orderConfirmation.estimatedFees | currency:'USD':'symbol':'1.2-8' }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span class="label">Estimated Total:</span>
+          <span class="value total">{{ orderConfirmation.estimatedTotal | currency:'USD':'symbol':'1.2-8' }}</span>
+        </div>
+
+        <div class="summary-row" *ngIf="orderConfirmation.marketImpact">
+          <span class="label">Market Impact:</span>
+          <span class="value">{{ orderConfirmation.marketImpact }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeConfirmationDialog()">
+        Cancel
+      </button>
+      <button type="button"
+              class="btn btn-primary"
+              [disabled]="isPlacingOrder"
+              (click)="confirmOrder()">
+        <span *ngIf="isPlacingOrder">Placing Order...</span>
+        <span *ngIf="!isPlacingOrder">Confirm & Place Order</span>
+      </button>
+    </div>
+  </div>
+</div>
