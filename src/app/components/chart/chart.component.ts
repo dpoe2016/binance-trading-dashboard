@@ -375,36 +375,39 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Add RSI indicator as subchart
     if (strategy.parameters['useRSI']) {
-      this.initRSIChart();
-      const rsiData = this.calculateRSIData(this.currentCandles, 14);
+      // Use setTimeout to ensure DOM has updated before initializing RSI chart
+      setTimeout(() => {
+        this.initRSIChart();
+        const rsiData = this.calculateRSIData(this.currentCandles, 14);
 
-      if (this.rsiSeries) {
-        this.rsiSeries.setData(rsiData);
-      }
+        if (this.rsiSeries) {
+          this.rsiSeries.setData(rsiData);
+        }
 
-      // Auto-fit RSI chart
-      if (this.rsiChart) {
-        this.rsiChart.timeScale().fitContent();
-      }
+        // Auto-fit RSI chart
+        if (this.rsiChart) {
+          this.rsiChart.timeScale().fitContent();
+        }
 
-      // Hide time axis on main chart when RSI is visible and resize
-      if (this.chart && this.chartContainer) {
-        this.chart.applyOptions({
-          timeScale: {
-            visible: false,
-          },
-        });
+        // Hide time axis on main chart when RSI is visible and resize
+        if (this.chart && this.chartContainer) {
+          this.chart.applyOptions({
+            timeScale: {
+              visible: false,
+            },
+          });
 
-        // Trigger resize after DOM updates
-        setTimeout(() => {
-          if (this.chart && this.chartContainer) {
-            const newHeight = this.chartContainer.nativeElement.clientHeight;
-            this.chart.applyOptions({
-              height: newHeight,
-            });
-          }
-        }, 0);
-      }
+          // Trigger resize after DOM updates
+          setTimeout(() => {
+            if (this.chart && this.chartContainer) {
+              const newHeight = this.chartContainer.nativeElement.clientHeight;
+              this.chart.applyOptions({
+                height: newHeight,
+              });
+            }
+          }, 0);
+        }
+      }, 100);
     }
 
     // Generate and add strategy signals as markers
@@ -507,10 +510,15 @@ export class ChartComponent implements OnInit, OnDestroy {
       this.sma50Series = undefined;
     }
 
+    // Clear RSI chart and series
+    if (this.rsiSeries && this.rsiChart) {
+      this.rsiChart.removeSeries(this.rsiSeries);
+      this.rsiSeries = undefined;
+    }
+
     if (this.rsiChart) {
       this.rsiChart.remove();
       this.rsiChart = undefined;
-      this.rsiSeries = undefined;
 
       // Show time axis on main chart again when RSI is removed and resize
       if (this.chart && this.chartContainer) {
