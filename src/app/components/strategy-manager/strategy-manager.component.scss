@@ -190,6 +190,33 @@
           background-color: rgba(220, 38, 38, 0.9);
         }
       }
+
+      .btn-edit {
+        background-color: rgba(59, 130, 246, 0.9);
+        color: white;
+
+        &:hover {
+          background-color: rgba(37, 99, 235, 0.9);
+        }
+      }
+
+      .btn-save {
+        background-color: rgba(34, 197, 94, 0.9);
+        color: white;
+
+        &:hover {
+          background-color: rgba(22, 163, 74, 0.9);
+        }
+      }
+
+      .btn-cancel-edit {
+        background-color: rgba(107, 114, 128, 0.9);
+        color: white;
+
+        &:hover {
+          background-color: rgba(75, 85, 99, 0.9);
+        }
+      }
     }
   }
 
@@ -198,6 +225,40 @@
 
     .description {
       color: #666;
+      margin-bottom: 20px;
+    }
+
+    .edit-input,
+    .edit-select,
+    .edit-textarea {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background-color: white;
+
+      &:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+    }
+
+    .edit-input {
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .edit-select {
+      cursor: pointer;
+      min-width: 150px;
+    }
+
+    .edit-textarea {
+      width: 100%;
+      resize: vertical;
+      font-family: inherit;
       margin-bottom: 20px;
     }
 
@@ -210,10 +271,12 @@
       .detail-item {
         display: flex;
         gap: 10px;
+        align-items: center;
 
         .label {
           font-weight: 600;
           color: #666;
+          min-width: 120px;
         }
 
         .value {

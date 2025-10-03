@@ -15,6 +15,10 @@ export class StrategyManagerComponent implements OnInit {
   strategies: TradingStrategy[] = [];
   showAddForm = false;
 
+  // Edit mode tracking
+  editingStrategyId: string | null = null;
+  editingStrategy: Partial<TradingStrategy> = {};
+
   newStrategy = {
     name: '',
     description: '',
@@ -124,5 +128,27 @@ if (ta.crossunder(sma20, sma50))
   formatDate(date: Date | undefined): string {
     if (!date) return 'Nie';
     return new Date(date).toLocaleString();
+  }
+
+  // Edit strategy methods
+  startEditStrategy(strategy: TradingStrategy): void {
+    this.editingStrategyId = strategy.id;
+    this.editingStrategy = { ...strategy };
+  }
+
+  saveEditedStrategy(): void {
+    if (this.editingStrategyId && this.editingStrategy) {
+      this.strategyService.updateStrategy(this.editingStrategyId, this.editingStrategy);
+      this.cancelEditStrategy();
+    }
+  }
+
+  cancelEditStrategy(): void {
+    this.editingStrategyId = null;
+    this.editingStrategy = {};
+  }
+
+  isEditing(strategyId: string): boolean {
+    return this.editingStrategyId === strategyId;
   }
 }

@@ -146,6 +146,11 @@ export class ChartComponent implements OnInit, OnDestroy {
         this.updateStrategyIndicators();
       }
 
+      // Auto-scale chart to fit all data
+      if (this.chart) {
+        this.chart.timeScale().fitContent();
+      }
+
       // Subscribe to real-time updates
       this.subscribeToUpdates();
     } catch (error) {
@@ -195,9 +200,15 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     if (this.selectedStrategy) {
       const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
-      if (strategy && strategy.symbol !== this.selectedSymbol) {
-        // Switch to strategy's symbol
-        this.selectedSymbol = strategy.symbol;
+      if (strategy) {
+        // Apply all strategy parameters
+        if (strategy.symbol !== this.selectedSymbol) {
+          this.selectedSymbol = strategy.symbol;
+        }
+        if (strategy.timeframe !== this.selectedInterval) {
+          this.selectedInterval = strategy.timeframe;
+        }
+        // Reload chart with strategy's parameters
         this.loadChartData();
       } else {
         this.updateStrategyIndicators();

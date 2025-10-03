@@ -79,30 +79,45 @@
     <div class="strategy-card" *ngFor="let strategy of strategies">
       <div class="strategy-header">
         <div class="strategy-title">
-          <h3>{{ strategy.name }}</h3>
+          <h3 *ngIf="!isEditing(strategy.id)">{{ strategy.name }}</h3>
+          <input *ngIf="isEditing(strategy.id)" class="edit-input" type="text" [(ngModel)]="editingStrategy.name" placeholder="Name">
           <span class="status-badge" [class.active]="strategy.isActive" [class.inactive]="!strategy.isActive">
             {{ strategy.isActive ? 'Aktiv' : 'Inaktiv' }}
           </span>
         </div>
         <div class="strategy-actions">
-          <button class="btn-toggle" (click)="toggleStrategy(strategy.id, !strategy.isActive)">
-            {{ strategy.isActive ? 'Stoppen' : 'Starten' }}
-          </button>
-          <button class="btn-delete" (click)="deleteStrategy(strategy.id)">Löschen</button>
+          <ng-container *ngIf="!isEditing(strategy.id)">
+            <button class="btn-toggle" (click)="toggleStrategy(strategy.id, !strategy.isActive)">
+              {{ strategy.isActive ? 'Stoppen' : 'Starten' }}
+            </button>
+            <button class="btn-edit" (click)="startEditStrategy(strategy)">Bearbeiten</button>
+            <button class="btn-delete" (click)="deleteStrategy(strategy.id)">Löschen</button>
+          </ng-container>
+          <ng-container *ngIf="isEditing(strategy.id)">
+            <button class="btn-save" (click)="saveEditedStrategy()">Speichern</button>
+            <button class="btn-cancel-edit" (click)="cancelEditStrategy()">Abbrechen</button>
+          </ng-container>
         </div>
       </div>
 
       <div class="strategy-body">
-        <p class="description" *ngIf="strategy.description">{{ strategy.description }}</p>
+        <p class="description" *ngIf="!isEditing(strategy.id) && strategy.description">{{ strategy.description }}</p>
+        <textarea *ngIf="isEditing(strategy.id)" class="edit-textarea" [(ngModel)]="editingStrategy.description" rows="2" placeholder="Beschreibung"></textarea>
 
         <div class="strategy-details">
           <div class="detail-item">
             <span class="label">Symbol:</span>
-            <span class="value">{{ strategy.symbol }}</span>
+            <span class="value" *ngIf="!isEditing(strategy.id)">{{ strategy.symbol }}</span>
+            <select *ngIf="isEditing(strategy.id)" class="edit-select" [(ngModel)]="editingStrategy.symbol">
+              <option *ngFor="let sym of symbols" [value]="sym">{{ sym }}</option>
+            </select>
           </div>
           <div class="detail-item">
             <span class="label">Zeitrahmen:</span>
-            <span class="value">{{ strategy.timeframe }}</span>
+            <span class="value" *ngIf="!isEditing(strategy.id)">{{ strategy.timeframe }}</span>
+            <select *ngIf="isEditing(strategy.id)" class="edit-select" [(ngModel)]="editingStrategy.timeframe">
+              <option *ngFor="let tf of timeframes" [value]="tf">{{ tf }}</option>
+            </select>
           </div>
           <div class="detail-item">
             <span class="label">Letzte Ausführung:</span>
