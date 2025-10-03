@@ -140,6 +140,7 @@ export class ChartComponent implements OnInit, OnDestroy {
             return `${hours}:${minutes}`;
           }
         },
+        rightOffset: 10, // Add a small offset to prevent price scale overlap
       },
       localization: {
         locale: navigator.language,
@@ -657,6 +658,7 @@ export class ChartComponent implements OnInit, OnDestroy {
             return `${hours}:${minutes}`;
           }
         },
+        rightOffset: 10, // Add a small offset to prevent price scale overlap
       },
       rightPriceScale: {
         borderVisible: true,
