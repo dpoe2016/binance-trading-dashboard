@@ -399,22 +399,10 @@ export class ChartComponent implements OnInit, OnDestroy {
           color: '#9C27B0',
           lineWidth: 2,
           title: 'RSI (14)',
-          priceScaleId: 'rsi-scale', // Assign to a new price scale
+          priceScaleId: 'right', // Use the default right price scale
+          lastValueVisible: true,
+          priceLineVisible: true,
         }, 1); // Move to a new pane
-
-        // Configure the new price scale
-        this.chart.priceScale('rsi-scale').applyOptions({
-          autoScale: true,
-          visible: true,
-          borderVisible: true,
-          borderColor: '#737375',
-          mode: 2, // PriceScaleMode.Normal
-          alignLabels: true,
-          scaleMargins: {
-            top: 0.1, // 10% margin at the top
-            bottom: 0.1, // 10% margin at the bottom
-          },
-        });
       }
 
       const rsiData = this.calculateRSIData(this.currentCandles, 14);
