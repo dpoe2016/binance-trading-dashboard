@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] - 2025-10-03
+
+### Added
+- Bollinger Bands indicator overlaid on main price chart
+- Upper, middle, and lower bands visualization
+- Configurable period (default 20) and standard deviation (default 2)
+- Bollinger Band breakout signals (upper and lower band)
+- Mean reversion signals (band bounce detection)
+- Bollinger Bands support in backtesting service
+- Bollinger Bands parameter editing in strategy manager UI
+
 ## [0.5.5] - 2025-10-03
 
 ### Added

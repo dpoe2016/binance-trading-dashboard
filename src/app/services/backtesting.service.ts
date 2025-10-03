@@ -98,6 +98,92 @@ export class BacktestingService {
       candles,
       strategy.parameters['choppinessPeriod'] || 14
     ) : null;
+    const bbData = strategy.parameters['useBollingerBands'] ? this.calculateBollingerBands(
+      candles,
+      strategy.parameters['bbPeriod'] || 20,
+      strategy.parameters['bbStdDev'] || 2
+    ) : null;
+
+    // Generate Bollinger Bands signals
+    if (bbData && strategy.parameters['useBollingerBands']) {
+      const bbPeriod = strategy.parameters['bbPeriod'] || 20;
+
+      for (let i = 1; i < bbData.length; i++) {
+        const candleIndex = bbPeriod - 1 + i;
+        if (candleIndex >= candles.length) continue;
+
+        const current = bbData[i];
+        const previous = bbData[i - 1];
+        const candle = candles[candleIndex];
+        const prevCandle = candles[candleIndex - 1];
+
+        // Check choppiness filter
+        const choppinessValue = choppinessData && candleIndex < choppinessData.length
+          ? choppinessData[candleIndex]
+          : 0;
+        const passesChoppinessFilter = !choppinessData || choppinessValue < 38.2;
+
+        // Upper band breakout (buy)
+        if (prevCandle.close <= previous.upper && candle.close > current.upper && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'BUY',
+            price: candle.close,
+            reason: 'BB Upper Band Breakout',
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+
+        // Lower band breakout (sell)
+        if (prevCandle.close >= previous.lower && candle.close < current.lower && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'SELL',
+            price: candle.close,
+            reason: 'BB Lower Band Breakout',
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+
+        // Lower band bounce (mean reversion buy)
+        if (prevCandle.close < previous.lower && candle.close >= current.lower && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'BUY',
+            price: candle.close,
+            reason: 'BB Lower Band Bounce',
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+
+        // Upper band bounce (mean reversion sell)
+        if (prevCandle.close > previous.upper && candle.close <= current.upper && passesChoppinessFilter) {
+          signals.push({
+            time: candle.time,
+            type: 'SELL',
+            price: candle.close,
+            reason: 'BB Upper Band Bounce',
+            rsi: rsiData && (candleIndex - 14) >= 0 && (candleIndex - 14) < rsiData.length
+              ? rsiData[candleIndex - 14]
+              : undefined,
+            sma20: sma20Data && candleIndex < sma20Data.length ? sma20Data[candleIndex] : undefined,
+            sma50: sma50Data && candleIndex < sma50Data.length ? sma50Data[candleIndex] : undefined,
+          });
+        }
+      }
+    }
 
     // Generate RSI signals
     if (rsiData && strategy.parameters['useRSI']) {
@@ -562,5 +648,38 @@ export class BacktestingService {
     }
 
     return choppiness;
+  }
+
+  private calculateBollingerBands(
+    candles: Candle[],
+    period: number = 20,
+    stdDev: number = 2
+  ): Array<{upper: number, middle: number, lower: number}> {
+    const result: Array<{upper: number, middle: number, lower: number}> = [];
+
+    if (candles.length < period) {
+      return result;
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+
+      // Calculate SMA (middle band)
+      const sum = slice.reduce((acc, c) => acc + c.close, 0);
+      const sma = sum / period;
+
+      // Calculate standard deviation
+      const squaredDiffs = slice.map(c => Math.pow(c.close - sma, 2));
+      const variance = squaredDiffs.reduce((acc, val) => acc + val, 0) / period;
+      const standardDeviation = Math.sqrt(variance);
+
+      // Calculate bands
+      const upper = sma + (stdDev * standardDeviation);
+      const lower = sma - (stdDev * standardDeviation);
+
+      result.push({ upper, middle: sma, lower });
+    }
+
+    return result;
   }
 }

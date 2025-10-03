@@ -172,6 +172,12 @@ if (ta.crossunder(sma20, sma50))
     if (this.editingStrategy.parameters['choppinessPeriod'] === undefined) {
       this.editingStrategy.parameters['choppinessPeriod'] = 14;
     }
+    if (this.editingStrategy.parameters['bbPeriod'] === undefined) {
+      this.editingStrategy.parameters['bbPeriod'] = 20;
+    }
+    if (this.editingStrategy.parameters['bbStdDev'] === undefined) {
+      this.editingStrategy.parameters['bbStdDev'] = 2;
+    }
   }
 
   saveEditedStrategy(): void {

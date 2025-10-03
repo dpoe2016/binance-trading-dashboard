@@ -12,7 +12,7 @@ import { SettingsService } from './services/settings.service';
 })
 export class App implements OnInit {
   title = 'Binance Trading System';
-  version = '0.5.5'; // Updated automatically by version script
+  version = '0.5.6'; // Updated automatically by version script
 
   selectedTradingMode: 'testnet' | 'live' | 'demo';
 

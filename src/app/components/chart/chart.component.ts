@@ -33,6 +33,9 @@ export class ChartComponent implements OnInit, OnDestroy {
   private macdSignalSeries?: any;
   private macdHistogramSeries?: any;
   private choppinessSeries?: any;
+  private bbUpperSeries?: any;
+  private bbMiddleSeries?: any;
+  private bbLowerSeries?: any;
   private seriesMarkers?: any; // v5 marker primitive
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
@@ -406,6 +409,70 @@ export class ChartComponent implements OnInit, OnDestroy {
         const sma200Data = this.calculateSMAData(this.currentCandles, 200);
         this.sma200Series.setData(sma200Data);
       }
+    }
+
+    // Add Bollinger Bands
+    if (strategy.parameters['useBollingerBands']) {
+      console.log('📊 Adding Bollinger Bands to chart');
+      const bbPeriod = strategy.parameters['bbPeriod'] || 20;
+      const bbStdDev = strategy.parameters['bbStdDev'] || 2;
+      const bbData = this.calculateBollingerBands(this.currentCandles, bbPeriod, bbStdDev);
+      console.log(`📊 Bollinger Bands data calculated: ${bbData.middle.length} data points`);
+
+      // Add Upper Band
+      if (!this.bbUpperSeries && this.chart) {
+        this.bbUpperSeries = this.chart.addSeries(LineSeries, {
+          color: 'rgba(33, 150, 243, 0.5)', // Semi-transparent blue
+          lineWidth: 1,
+          title: 'BB Upper',
+          lastValueVisible: false,
+          priceLineVisible: false,
+        }, 0); // Same pane as price (pane 0)
+        console.log('📊 BB Upper series added to chart');
+      }
+
+      // Add Middle Band (SMA)
+      if (!this.bbMiddleSeries && this.chart) {
+        this.bbMiddleSeries = this.chart.addSeries(LineSeries, {
+          color: 'rgba(33, 150, 243, 0.8)', // Blue
+          lineWidth: 1,
+          lineStyle: 2, // Dashed line
+          title: 'BB Middle',
+          lastValueVisible: false,
+          priceLineVisible: false,
+        }, 0); // Same pane as price
+        console.log('📊 BB Middle series added to chart');
+      }
+
+      // Add Lower Band
+      if (!this.bbLowerSeries && this.chart) {
+        this.bbLowerSeries = this.chart.addSeries(LineSeries, {
+          color: 'rgba(33, 150, 243, 0.5)', // Semi-transparent blue
+          lineWidth: 1,
+          title: 'BB Lower',
+          lastValueVisible: false,
+          priceLineVisible: false,
+        }, 0); // Same pane as price
+        console.log('📊 BB Lower series added to chart');
+      }
+
+      // Set data for Bollinger Bands
+      if (this.bbUpperSeries && bbData.upper.length > 0) {
+        this.bbUpperSeries.setData(bbData.upper);
+        console.log('📊 BB Upper data set');
+      }
+
+      if (this.bbMiddleSeries && bbData.middle.length > 0) {
+        this.bbMiddleSeries.setData(bbData.middle);
+        console.log('📊 BB Middle data set');
+      }
+
+      if (this.bbLowerSeries && bbData.lower.length > 0) {
+        this.bbLowerSeries.setData(bbData.lower);
+        console.log('📊 BB Lower data set');
+      }
+    } else {
+      console.log('📊 Bollinger Bands not enabled in strategy parameters:', strategy.parameters);
     }
 
     // Add RSI indicator as subchart
@@ -1042,5 +1109,57 @@ export class ChartComponent implements OnInit, OnDestroy {
     });
 
     return choppiness;
+  }
+
+  /**
+   * Calculate Bollinger Bands
+   * @param candles - Array of candlestick data
+   * @param period - Period for moving average (default 20)
+   * @param stdDev - Number of standard deviations (default 2)
+   * @returns Object with upper, middle, and lower bands
+   */
+  private calculateBollingerBands(
+    candles: Candle[],
+    period: number = 20,
+    stdDev: number = 2
+  ): { upper: LineData[], middle: LineData[], lower: LineData[] } {
+    const upper: LineData[] = [];
+    const middle: LineData[] = [];
+    const lower: LineData[] = [];
+
+    if (candles.length < period) {
+      return { upper, middle, lower };
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+
+      // Calculate SMA (middle band)
+      const sum = slice.reduce((acc, c) => acc + c.close, 0);
+      const sma = sum / period;
+
+      // Calculate standard deviation
+      const squaredDiffs = slice.map(c => Math.pow(c.close - sma, 2));
+      const variance = squaredDiffs.reduce((acc, val) => acc + val, 0) / period;
+      const standardDeviation = Math.sqrt(variance);
+
+      // Calculate bands
+      const upperBand = sma + (stdDev * standardDeviation);
+      const lowerBand = sma - (stdDev * standardDeviation);
+
+      const time = Math.floor(candles[i].time / 1000) as any;
+
+      upper.push({ time, value: upperBand });
+      middle.push({ time, value: sma });
+      lower.push({ time, value: lowerBand });
+    }
+
+    console.log('📊 Bollinger Bands calculated:', {
+      dataPoints: middle.length,
+      period,
+      stdDev
+    });
+
+    return { upper, middle, lower };
   }
 }

@@ -200,6 +200,71 @@ export class StrategyService {
       }
     }
 
+    // Bollinger Bands breakout signals
+    if (strategy.parameters['useBollingerBands'] && candles.length >= 2) {
+      const bbPeriod = strategy.parameters['bbPeriod'] || 20;
+      const bbStdDev = strategy.parameters['bbStdDev'] || 2;
+      const bbData = this.calculateBollingerBands(candles, bbPeriod, bbStdDev);
+
+      if (bbData.length >= 2) {
+        const current = bbData[bbData.length - 1];
+        const previous = bbData[bbData.length - 2];
+        const prevCandle = candles[candles.length - 2];
+
+        // Bullish breakout: Price crosses above upper band
+        if (prevCandle.close <= previous.upper && lastCandle.close > current.upper && choppinessFilter) {
+          return {
+            strategyId: strategy.id,
+            symbol: strategy.symbol,
+            action: 'BUY',
+            price: lastCandle.close,
+            quantity: parseFloat(strategy.parameters['quantity'] || '0'),
+            timestamp: new Date(),
+            reason: 'BB Upper Band Breakout'
+          };
+        }
+
+        // Bearish breakout: Price crosses below lower band
+        if (prevCandle.close >= previous.lower && lastCandle.close < current.lower && choppinessFilter) {
+          return {
+            strategyId: strategy.id,
+            symbol: strategy.symbol,
+            action: 'SELL',
+            price: lastCandle.close,
+            quantity: parseFloat(strategy.parameters['quantity'] || '0'),
+            timestamp: new Date(),
+            reason: 'BB Lower Band Breakout'
+          };
+        }
+
+        // Mean reversion: Price bounces off lower band (buy)
+        if (prevCandle.close < previous.lower && lastCandle.close >= current.lower && choppinessFilter) {
+          return {
+            strategyId: strategy.id,
+            symbol: strategy.symbol,
+            action: 'BUY',
+            price: lastCandle.close,
+            quantity: parseFloat(strategy.parameters['quantity'] || '0'),
+            timestamp: new Date(),
+            reason: 'BB Lower Band Bounce'
+          };
+        }
+
+        // Mean reversion: Price bounces off upper band (sell)
+        if (prevCandle.close > previous.upper && lastCandle.close <= current.upper && choppinessFilter) {
+          return {
+            strategyId: strategy.id,
+            symbol: strategy.symbol,
+            action: 'SELL',
+            price: lastCandle.close,
+            quantity: parseFloat(strategy.parameters['quantity'] || '0'),
+            timestamp: new Date(),
+            reason: 'BB Upper Band Bounce'
+          };
+        }
+      }
+    }
+
     // Example: Simple RSI strategy
     if (strategy.parameters['useRSI']) {
       if (indicators.rsi < 30 && choppinessFilter) {
@@ -377,6 +442,39 @@ export class StrategyService {
     }
 
     return 100; // Return high value if calculation fails
+  }
+
+  private calculateBollingerBands(
+    candles: Candle[],
+    period: number = 20,
+    stdDev: number = 2
+  ): Array<{upper: number, middle: number, lower: number}> {
+    const result: Array<{upper: number, middle: number, lower: number}> = [];
+
+    if (candles.length < period) {
+      return result;
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+
+      // Calculate SMA (middle band)
+      const sum = slice.reduce((acc, c) => acc + c.close, 0);
+      const sma = sum / period;
+
+      // Calculate standard deviation
+      const squaredDiffs = slice.map(c => Math.pow(c.close - sma, 2));
+      const variance = squaredDiffs.reduce((acc, val) => acc + val, 0) / period;
+      const standardDeviation = Math.sqrt(variance);
+
+      // Calculate bands
+      const upper = sma + (stdDev * standardDeviation);
+      const lower = sma - (stdDev * standardDeviation);
+
+      result.push({ upper, middle: sma, lower });
+    }
+
+    return result;
   }
 
   // Signal Management
