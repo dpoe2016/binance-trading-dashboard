@@ -1,7 +1,12 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData, SeriesMarker } from 'lightweight-charts';
+
+interface ICandlestickSeriesApiWithMarkers extends ISeriesApi<'Candlestick'> {
+  setMarkers(markers: SeriesMarker<any>[]): void;
+}
+
 import { BinanceService } from '../../services/binance.service';
 import { StrategyService } from '../../services/strategy.service';
 import { SettingsService } from '../../services/settings.service';
@@ -22,7 +27,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   private chart?: IChartApi;
   private rsiChart?: IChartApi;
-  private candlestickSeries?: ISeriesApi<'Candlestick'>;
+  private candlestickSeries?: ICandlestickSeriesApiWithMarkers;
   private sma20Series?: ISeriesApi<'Line'>;
   private sma50Series?: ISeriesApi<'Line'>;
   private rsiSeries?: ISeriesApi<'Line'>;
@@ -155,7 +160,7 @@ export class ChartComponent implements OnInit, OnDestroy {
       borderVisible: false,
       wickUpColor: '#22c55e',
       wickDownColor: '#ef4444',
-    });
+    }) as ICandlestickSeriesApiWithMarkers;
 
     // Handle container resize using ResizeObserver
     this.chartResizeObserver = new ResizeObserver(entries => {
@@ -286,6 +291,7 @@ export class ChartComponent implements OnInit, OnDestroy {
       const rsiData = this.calculateRSIData(this.currentCandles, 14);
       if (rsiData.length > 0) {
         this.rsiSeries.update(rsiData[rsiData.length - 1]);
+        this.updateRsiPriceScale(rsiData);
       }
     }
   }
@@ -381,6 +387,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
         if (this.rsiSeries) {
           this.rsiSeries.setData(rsiData);
+          this.updateRsiPriceScale(rsiData);
         }
 
         // Auto-fit RSI chart
@@ -496,7 +503,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Apply markers to the candlestick series
     if (this.candlestickSeries) {
-      (this.candlestickSeries as any).setMarkers(this.signalMarkers.map(marker => ({
+      this.candlestickSeries.setMarkers(this.signalMarkers.map(marker => ({
         time: marker.time,
         position: marker.position as any,
         color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
@@ -512,7 +519,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Clear signal markers from chart
     if (this.candlestickSeries) {
-      (this.candlestickSeries as any).setMarkers([]);
+      this.candlestickSeries.setMarkers([]);
     }
 
     if (this.sma20Series && this.chart) {
@@ -650,16 +657,6 @@ export class ChartComponent implements OnInit, OnDestroy {
       priceLineVisible: true,
     });
 
-    // Set fixed price scale for RSI (0-100)
-    this.rsiSeries.applyOptions({
-      autoscaleInfoProvider: () => ({
-        priceRange: {
-          minValue: 0,
-          maxValue: 100,
-        },
-      }),
-    } as any);
-
     // Synchronize time scales with main chart
     if (this.chart) {
       const mainTimeScale = this.chart.timeScale();
@@ -726,5 +723,27 @@ export class ChartComponent implements OnInit, OnDestroy {
     }
 
     return data;
+  }
+
+  private updateRsiPriceScale(rsiData: LineData[]): void {
+    if (!this.rsiSeries || rsiData.length === 0) return;
+
+    const values = rsiData.map(d => d.value);
+    const minRsi = Math.min(...values);
+    const maxRsi = Math.max(...values);
+
+    // Add some padding to the min/max values
+    const padding = (maxRsi - minRsi) * 0.1; // 10% padding
+    const minValue = Math.max(0, minRsi - padding);
+    const maxValue = Math.min(100, maxRsi + padding);
+
+    this.rsiSeries.applyOptions({
+      autoscaleInfoProvider: () => ({
+        priceRange: {
+          minValue: minValue,
+          maxValue: maxValue,
+        },
+      }),
+    } as any);
   }
 }
