@@ -22,6 +22,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   strategies: TradingStrategy[] = [];
   signals: StrategySignal[] = [];
 
+  // Filtered data
+  filteredBalances: AccountBalance[] = [];
+  filteredPositions: Position[] = [];
+  filteredOpenOrders: Order[] = [];
+  filteredStrategies: TradingStrategy[] = [];
+  filteredSignals: StrategySignal[] = [];
+
+  // Search
+  searchTerm: string = '';
+
   // Edit mode tracking
   editingStrategyId: string | null = null;
   editingStrategy: Partial<TradingStrategy> = {};
@@ -45,6 +55,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.binanceService.getAccountBalances().subscribe(balances => {
         this.balances = balances;
+        this.applyFilters();
       })
     );
 
@@ -52,6 +63,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.binanceService.getPositions().subscribe(positions => {
         this.positions = positions;
+        this.applyFilters();
       })
     );
 
@@ -59,6 +71,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.binanceService.getOpenOrders().subscribe(orders => {
         this.openOrders = orders;
+        this.applyFilters();
       })
     );
 
@@ -66,6 +79,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.strategyService.getStrategies().subscribe(strategies => {
         this.strategies = strategies;
+        this.applyFilters();
       })
     );
 
@@ -73,6 +87,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.strategyService.getSignals().subscribe(signals => {
         this.signals = signals.slice(0, 10); // Show last 10 signals
+        this.applyFilters();
       })
     );
 
@@ -129,6 +144,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
   deleteStrategy(strategyId: string): void {
     if (confirm('Möchten Sie diese Strategie wirklich löschen?')) {
       this.strategyService.deleteStrategy(strategyId);
+    }
+  }
+
+  // Search and filter methods
+  onSearchChange(): void {
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    const term = this.searchTerm.toLowerCase().trim();
+
+    if (!term) {
+      // No search term, show all
+      this.filteredBalances = this.balances;
+      this.filteredPositions = this.positions;
+      this.filteredOpenOrders = this.openOrders;
+      this.filteredStrategies = this.strategies;
+      this.filteredSignals = this.signals;
+    } else {
+      // Filter by symbol/asset
+      this.filteredBalances = this.balances.filter(b =>
+        b.asset.toLowerCase().includes(term)
+      );
+
+      this.filteredPositions = this.positions.filter(p =>
+        p.symbol.toLowerCase().includes(term)
+      );
+
+      this.filteredOpenOrders = this.openOrders.filter(o =>
+        o.symbol.toLowerCase().includes(term)
+      );
+
+      this.filteredStrategies = this.strategies.filter(s =>
+        s.symbol.toLowerCase().includes(term) ||
+        s.name.toLowerCase().includes(term)
+      );
+
+      this.filteredSignals = this.signals.filter(s =>
+        s.symbol.toLowerCase().includes(term)
+      );
     }
   }
 

@@ -16,6 +16,12 @@
     gap: 12px;
   }
 
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
   h1 {
     margin: 0;
     color: #333;
@@ -29,6 +35,39 @@
     padding: 4px 8px;
     background-color: #f3f4f6;
     border-radius: 4px;
+  }
+}
+
+.search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .search-input {
+    padding: 10px 40px 10px 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    width: 250px;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+  }
+
+  .search-icon {
+    position: absolute;
+    right: 12px;
+    font-size: 1.2rem;
+    pointer-events: none;
+    color: #6b7280;
   }
 }
 

@@ -4,7 +4,19 @@
       <h1>Binance Trading Dashboard</h1>
       <span class="version">v{{ version }}</span>
     </div>
-    <button class="btn-refresh" (click)="refreshData()">Aktualisieren</button>
+    <div class="header-right">
+      <div class="search-container">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Symbol suchen..."
+          [(ngModel)]="searchTerm"
+          (input)="onSearchChange()"
+        />
+        <span class="search-icon">🔍</span>
+      </div>
+      <button class="btn-refresh" (click)="refreshData()">Aktualisieren</button>
+    </div>
   </div>
 
   <!-- Account Statistics -->
@@ -48,14 +60,17 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let balance of balances">
+            <tr *ngFor="let balance of filteredBalances">
               <td><strong>{{ balance.asset }}</strong></td>
               <td>{{ formatNumber(balance.free, 8) }}</td>
               <td>{{ formatNumber(balance.locked, 8) }}</td>
               <td>{{ formatNumber(toNumber(balance.free) + toNumber(balance.locked), 8) }}</td>
             </tr>
-            <tr *ngIf="balances.length === 0">
+            <tr *ngIf="filteredBalances.length === 0 && !searchTerm">
               <td colspan="4" class="no-data">Keine Guthaben verfügbar</td>
+            </tr>
+            <tr *ngIf="filteredBalances.length === 0 && searchTerm">
+              <td colspan="4" class="no-data">Keine Ergebnisse für "{{ searchTerm }}"</td>
             </tr>
           </tbody>
         </table>
@@ -78,7 +93,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let position of positions">
+            <tr *ngFor="let position of filteredPositions">
               <td><strong>{{ position.symbol }}</strong></td>
               <td>{{ formatNumber(position.positionAmt, 4) }}</td>
               <td>{{ formatNumber(position.entryPrice, 2) }}</td>
@@ -88,8 +103,11 @@
               </td>
               <td>{{ position.leverage }}x</td>
             </tr>
-            <tr *ngIf="positions.length === 0">
+            <tr *ngIf="filteredPositions.length === 0 && !searchTerm">
               <td colspan="6" class="no-data">Keine offenen Positionen</td>
+            </tr>
+            <tr *ngIf="filteredPositions.length === 0 && searchTerm">
+              <td colspan="6" class="no-data">Keine Ergebnisse für "{{ searchTerm }}"</td>
             </tr>
           </tbody>
         </table>
@@ -113,7 +131,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let order of openOrders">
+            <tr *ngFor="let order of filteredOpenOrders">
               <td><strong>{{ order.symbol }}</strong></td>
               <td>{{ order.type }}</td>
               <td [class.buy]="order.side === 'BUY'" [class.sell]="order.side === 'SELL'">{{ order.side }}</td>
@@ -124,8 +142,11 @@
                 <button class="btn-cancel" (click)="cancelOrder(order.symbol, order.orderId)">Stornieren</button>
               </td>
             </tr>
-            <tr *ngIf="openOrders.length === 0">
+            <tr *ngIf="filteredOpenOrders.length === 0 && !searchTerm">
               <td colspan="7" class="no-data">Keine offenen Orders</td>
+            </tr>
+            <tr *ngIf="filteredOpenOrders.length === 0 && searchTerm">
+              <td colspan="7" class="no-data">Keine Ergebnisse für "{{ searchTerm }}"</td>
             </tr>
           </tbody>
         </table>
@@ -148,7 +169,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let strategy of strategies">
+            <tr *ngFor="let strategy of filteredStrategies">
               <!-- Edit mode -->
               <ng-container *ngIf="isEditing(strategy.id)">
                 <td><input type="text" [(ngModel)]="editingStrategy.name" class="edit-input" /></td>
@@ -195,8 +216,11 @@
                 </td>
               </ng-container>
             </tr>
-            <tr *ngIf="strategies.length === 0">
+            <tr *ngIf="filteredStrategies.length === 0 && !searchTerm">
               <td colspan="6" class="no-data">Keine Strategien definiert</td>
+            </tr>
+            <tr *ngIf="filteredStrategies.length === 0 && searchTerm">
+              <td colspan="6" class="no-data">Keine Ergebnisse für "{{ searchTerm }}"</td>
             </tr>
           </tbody>
         </table>
@@ -219,7 +243,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let signal of signals">
+            <tr *ngFor="let signal of filteredSignals">
               <td>{{ formatDate(signal.timestamp) }}</td>
               <td><strong>{{ signal.symbol }}</strong></td>
               <td [class.buy]="signal.action === 'BUY'" [class.sell]="signal.action === 'SELL'">{{ signal.action }}</td>
@@ -227,8 +251,11 @@
               <td>{{ formatNumber(signal.quantity, 4) }}</td>
               <td>{{ signal.reason }}</td>
             </tr>
-            <tr *ngIf="signals.length === 0">
+            <tr *ngIf="filteredSignals.length === 0 && !searchTerm">
               <td colspan="6" class="no-data">Keine Signale vorhanden</td>
+            </tr>
+            <tr *ngIf="filteredSignals.length === 0 && searchTerm">
+              <td colspan="6" class="no-data">Keine Ergebnisse für "{{ searchTerm }}"</td>
             </tr>
           </tbody>
         </table>
