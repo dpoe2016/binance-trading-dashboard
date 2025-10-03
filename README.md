@@ -1,6 +1,8 @@
-# Binance Trading System
+# AlgoTrader Pro
 
-Ein modernes Handelssystem für Kryptowährungen auf Binance, gebaut mit Angular 20.
+A professional algorithmic trading platform for cryptocurrency markets, built with Angular 20.
+
+**Supports multiple exchanges including Binance** - A modern, feature-rich trading system with advanced indicators, backtesting, and strategy automation.
 
 ---
 

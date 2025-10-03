@@ -1,4 +1,4 @@
-# Binance Trading System - Setup Anleitung
+# AlgoTrader Pro - Setup Guide (Binance Exchange)
 
 ---
 

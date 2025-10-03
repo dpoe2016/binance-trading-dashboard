@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-10-03
+
+### Changed
+- **REBRANDING:** Project renamed from "Binance Trading System" to "AlgoTrader Pro"
+- Updated all references to reflect new professional name
+- Clarified multi-exchange support capability (currently Binance, expandable to others)
+- Enhanced project description as "Professional Algorithmic Trading Platform"
+
 ## [0.5.6] - 2025-10-03
 
 ### Added
@@ -147,7 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-10-03
 
 ### Added
-- Complete Binance trading system with Angular 20
+- Complete cryptocurrency trading system with Angular 20 (supports Binance and other exchanges)
 - Dashboard with account statistics, balances, positions, and orders
 - Trading chart component with TradingView lightweight-charts
 - Real-time WebSocket integration for live data

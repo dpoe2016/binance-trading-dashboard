@@ -11,8 +11,8 @@ import { SettingsService } from './services/settings.service';
   styleUrl: './app.scss'
 })
 export class App implements OnInit {
-  title = 'Binance Trading System';
-  version = '0.5.6'; // Updated automatically by version script
+  title = 'AlgoTrader Pro';
+  version = '0.6.0'; // Updated automatically by version script
 
   selectedTradingMode: 'testnet' | 'live' | 'demo';
 
