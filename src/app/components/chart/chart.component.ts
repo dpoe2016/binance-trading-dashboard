@@ -1,8 +1,11 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData } from 'lightweight-charts';
 import { BinanceService } from '../../services/binance.service';
+import { StrategyService } from '../../services/strategy.service';
+import { TradingStrategy, Candle } from '../../models/trading.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chart',
@@ -17,10 +20,17 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   private chart?: IChartApi;
   private candlestickSeries?: ISeriesApi<'Candlestick'>;
+  private sma20Series?: ISeriesApi<'Line'>;
+  private sma50Series?: ISeriesApi<'Line'>;
   private priceUpdateCleanup?: () => void;
+  private subscriptions: Subscription[] = [];
 
   selectedSymbol: string = 'BTCUSDT';
   selectedInterval: string = '15m';
+  selectedStrategy: string | null = null;
+  strategies: TradingStrategy[] = [];
+
+  private currentCandles: Candle[] = [];
 
   symbols = [
     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'DOGEUSDT',
@@ -36,12 +46,16 @@ export class ChartComponent implements OnInit, OnDestroy {
     { label: '1d', value: '1d' }
   ];
 
-  constructor(private binanceService: BinanceService) {}
+  constructor(
+    private binanceService: BinanceService,
+    private strategyService: StrategyService
+  ) {}
 
   ngOnInit(): void {
     this.selectedSymbol = this.symbol;
     this.initChart();
     this.loadChartData();
+    this.loadStrategies();
   }
 
   ngOnDestroy(): void {
@@ -51,6 +65,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     if (this.chart) {
       this.chart.remove();
     }
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   private initChart(): void {
@@ -59,7 +74,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     // Create chart with proper configuration
     this.chart = createChart(container, {
       width: container.clientWidth,
-      height: 500,
+      height: container.clientHeight,
       layout: {
         background: { type: 'solid' as any, color: '#ffffff' },
         textColor: '#333',
@@ -92,6 +107,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     if (this.chart && this.chartContainer) {
       this.chart.applyOptions({
         width: this.chartContainer.nativeElement.clientWidth,
+        height: this.chartContainer.nativeElement.clientHeight,
       });
     }
   }
@@ -104,6 +120,8 @@ export class ChartComponent implements OnInit, OnDestroy {
         500
       );
 
+      this.currentCandles = candles;
+
       const chartData: CandlestickData[] = candles.map(c => ({
         time: Math.floor(c.time / 1000) as any,
         open: c.open,
@@ -114,6 +132,11 @@ export class ChartComponent implements OnInit, OnDestroy {
 
       if (this.candlestickSeries) {
         this.candlestickSeries.setData(chartData);
+      }
+
+      // Update strategy indicators if selected
+      if (this.selectedStrategy) {
+        this.updateStrategyIndicators();
       }
 
       // Subscribe to real-time updates
@@ -147,5 +170,103 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   onIntervalChange(): void {
     this.loadChartData();
+  }
+
+  private loadStrategies(): void {
+    this.subscriptions.push(
+      this.strategyService.getStrategies().subscribe(strategies => {
+        this.strategies = strategies;
+      })
+    );
+  }
+
+  onStrategyChange(): void {
+    if (this.selectedStrategy) {
+      const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+      if (strategy && strategy.symbol !== this.selectedSymbol) {
+        // Switch to strategy's symbol
+        this.selectedSymbol = strategy.symbol;
+        this.loadChartData();
+      } else {
+        this.updateStrategyIndicators();
+      }
+    } else {
+      // Clear strategy indicators
+      this.clearStrategyIndicators();
+    }
+  }
+
+  private updateStrategyIndicators(): void {
+    if (!this.selectedStrategy || this.currentCandles.length === 0) return;
+
+    const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+    if (!strategy) return;
+
+    // Calculate indicators
+    const closes = this.currentCandles.map(c => c.close);
+
+    // Add SMA lines
+    if (strategy.parameters['useSMA'] !== false) {
+      const sma20Data = this.calculateSMAData(this.currentCandles, 20);
+      const sma50Data = this.calculateSMAData(this.currentCandles, 50);
+
+      if (!this.sma20Series && this.chart) {
+        this.sma20Series = this.chart.addSeries(LineSeries, {
+          color: '#2196F3',
+          lineWidth: 2,
+          title: 'SMA 20',
+        });
+      }
+
+      if (!this.sma50Series && this.chart) {
+        this.sma50Series = this.chart.addSeries(LineSeries, {
+          color: '#FF9800',
+          lineWidth: 2,
+          title: 'SMA 50',
+        });
+      }
+
+      if (this.sma20Series) {
+        this.sma20Series.setData(sma20Data);
+      }
+
+      if (this.sma50Series) {
+        this.sma50Series.setData(sma50Data);
+      }
+    }
+  }
+
+  private clearStrategyIndicators(): void {
+    if (this.sma20Series && this.chart) {
+      this.chart.removeSeries(this.sma20Series);
+      this.sma20Series = undefined;
+    }
+
+    if (this.sma50Series && this.chart) {
+      this.chart.removeSeries(this.sma50Series);
+      this.sma50Series = undefined;
+    }
+  }
+
+  private calculateSMAData(candles: Candle[], period: number): LineData[] {
+    const data: LineData[] = [];
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+      const sum = slice.reduce((acc, c) => acc + c.close, 0);
+      const sma = sum / period;
+
+      data.push({
+        time: Math.floor(candles[i].time / 1000) as any,
+        value: sma,
+      });
+    }
+
+    return data;
+  }
+
+  getStrategyName(strategyId: string): string {
+    const strategy = this.strategies.find(s => s.id === strategyId);
+    return strategy ? strategy.name : '';
   }
 }

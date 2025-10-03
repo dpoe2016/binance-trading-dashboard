@@ -14,7 +14,34 @@
       </select>
     </div>
 
+    <div class="control-group">
+      <label for="strategy">Strategie:</label>
+      <select id="strategy" [(ngModel)]="selectedStrategy" (change)="onStrategyChange()">
+        <option [value]="null">Keine Strategie</option>
+        <option *ngFor="let strategy of strategies" [value]="strategy.id">
+          {{ strategy.name }} ({{ strategy.symbol }})
+        </option>
+      </select>
+    </div>
+
     <button class="btn-refresh" (click)="loadChartData()">Aktualisieren</button>
+  </div>
+
+  <div class="strategy-info" *ngIf="selectedStrategy">
+    <div class="info-badge">
+      <span class="label">Aktive Strategie:</span>
+      <span class="value">{{ getStrategyName(selectedStrategy) }}</span>
+    </div>
+    <div class="indicator-legend">
+      <div class="legend-item">
+        <span class="color-box" style="background-color: #2196F3;"></span>
+        <span>SMA 20</span>
+      </div>
+      <div class="legend-item">
+        <span class="color-box" style="background-color: #FF9800;"></span>
+        <span>SMA 50</span>
+      </div>
+    </div>
   </div>
 
   <div class="chart-container" #chartContainer></div>
