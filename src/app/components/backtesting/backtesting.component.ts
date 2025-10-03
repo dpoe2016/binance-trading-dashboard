@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { createChart, IChartApi, CandlestickSeries, LineSeries, LineData, CandlestickData } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickSeries, LineSeries, LineData, CandlestickData, createSeriesMarkers } from 'lightweight-charts';
 
 import { BacktestingService, BacktestResults, BacktestTrade, BacktestSignal } from '../../services/backtesting.service';
 import { StrategyService } from '../../services/strategy.service';
@@ -32,6 +32,7 @@ export class BacktestingComponent implements OnInit, OnDestroy {
 
   private chart?: IChartApi;
   private candlestickSeries?: any;
+  private seriesMarkers?: any; // v5 marker primitive
   private subscriptions: Subscription[] = [];
   private chartResizeObserver?: ResizeObserver;
 
@@ -189,10 +190,16 @@ export class BacktestingComponent implements OnInit, OnDestroy {
 
     this.candlestickSeries.setData(chartData);
 
-    // Add trade markers
+    // Add trade markers using v5 API
     const markers = this.createTradeMarkers(this.results.trades);
-    if (typeof this.candlestickSeries.setMarkers === 'function') {
-      this.candlestickSeries.setMarkers(markers);
+    if (markers.length > 0) {
+      if (!this.seriesMarkers) {
+        this.seriesMarkers = createSeriesMarkers(this.candlestickSeries, markers);
+        console.log('📊 Backtesting: Created series markers with', markers.length, 'trade markers');
+      } else {
+        this.seriesMarkers.setMarkers(markers);
+        console.log('📊 Backtesting: Updated series markers with', markers.length, 'trade markers');
+      }
     }
 
     // Add equity curve
@@ -209,9 +216,10 @@ export class BacktestingComponent implements OnInit, OnDestroy {
       // Entry marker
       markers.push({
         time: Math.floor(trade.entryTime / 1000),
-        position: 'belowBar',
+        position: 'belowBar' as 'aboveBar' | 'belowBar' | 'inBar',
+        price: trade.entryPrice, // v5 requires price property
         color: '#22c55e',
-        shape: 'arrowUp',
+        shape: 'arrowUp' as 'arrowUp' | 'arrowDown' | 'circle' | 'square',
         text: `BUY @ ${trade.entryPrice.toFixed(2)}`,
       });
 
@@ -220,9 +228,10 @@ export class BacktestingComponent implements OnInit, OnDestroy {
         const isProfit = (trade.profit || 0) > 0;
         markers.push({
           time: Math.floor(trade.exitTime / 1000),
-          position: 'aboveBar',
+          position: 'aboveBar' as 'aboveBar' | 'belowBar' | 'inBar',
+          price: trade.exitPrice, // v5 requires price property
           color: isProfit ? '#22c55e' : '#ef4444',
-          shape: 'arrowDown',
+          shape: 'arrowDown' as 'arrowUp' | 'arrowDown' | 'circle' | 'square',
           text: `SELL @ ${trade.exitPrice.toFixed(2)} (${isProfit ? '+' : ''}${trade.profitPercent?.toFixed(2)}%)`,
         });
       }

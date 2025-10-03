@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData } from 'lightweight-charts';
+import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData, createSeriesMarkers } from 'lightweight-charts';
 
 import { BinanceService } from '../../services/binance.service';
 import { StrategyService } from '../../services/strategy.service';
@@ -29,6 +29,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   private rsiSeries?: any;
   private aroonUpSeries?: any;
   private aroonDownSeries?: any;
+  private seriesMarkers?: any; // v5 marker primitive
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
   private priceUpdateCleanup?: () => void;
@@ -569,18 +570,24 @@ export class ChartComponent implements OnInit, OnDestroy {
       console.log(`📊 Strategy signals detected: ${buySignals} buy signals, ${sellSignals} sell signals`);
     }
 
-    // Apply markers to the candlestick series
+    // Apply markers to the candlestick series using v5 API
     if (this.candlestickSeries) {
-      if (typeof this.candlestickSeries.setMarkers === 'function') {
-        this.candlestickSeries.setMarkers(this.signalMarkers.map(marker => ({
-          time: marker.time,
-          position: marker.position as any,
-          color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
-          shape: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? 'arrowUp' : 'arrowDown',
-          text: marker.type
-        })));
+      const markers = this.signalMarkers.map(marker => ({
+        time: marker.time,
+        position: marker.position as 'aboveBar' | 'belowBar' | 'inBar',
+        price: marker.price, // v5 requires price property
+        color: marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? '#22c55e' : '#ef4444',
+        shape: (marker.type === 'BUY' || marker.type === 'GOLDEN_CROSS' ? 'arrowUp' : 'arrowDown') as 'arrowUp' | 'arrowDown' | 'circle' | 'square',
+        text: marker.type
+      }));
+
+      // Create or update markers using v5 API
+      if (!this.seriesMarkers) {
+        this.seriesMarkers = createSeriesMarkers(this.candlestickSeries, markers);
+        console.log('📊 Created series markers primitive with', markers.length, 'markers');
       } else {
-        console.error("Error: setMarkers function not found on candlestickSeries. Cannot display markers.");
+        this.seriesMarkers.setMarkers(markers);
+        console.log('📊 Updated series markers with', markers.length, 'markers');
       }
     }
   }
@@ -589,13 +596,10 @@ export class ChartComponent implements OnInit, OnDestroy {
     // Clear signal markers
     this.signalMarkers = [];
 
-    // Clear signal markers from chart
-    if (this.candlestickSeries) {
-      if (typeof this.candlestickSeries.setMarkers === 'function') {
-        this.candlestickSeries.setMarkers([]);
-      } else {
-        console.error("Error: setMarkers function not found on candlestickSeries. Cannot clear markers.");
-      }
+    // Clear signal markers from chart using v5 API
+    if (this.seriesMarkers) {
+      this.seriesMarkers.setMarkers([]);
+      console.log('📊 Cleared all markers');
     }
 
     if (this.sma20Series && this.chart) {
