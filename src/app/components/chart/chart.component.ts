@@ -425,14 +425,20 @@ export class ChartComponent implements OnInit, OnDestroy {
     // RSI Strategy signals
     if (strategy.parameters['useRSI']) {
       const rsiData = this.calculateRSIData(this.currentCandles, 14);
+      const rsiOversold = strategy.parameters['rsiOversold'] || 30;
+      const rsiOverbought = strategy.parameters['rsiOverbought'] || 70;
 
       for (let i = 1; i < rsiData.length; i++) {
         const prevRSI = rsiData[i - 1].value;
         const currRSI = rsiData[i].value;
-        const candle = this.currentCandles[i + 14]; // Offset by RSI period
+        const candleIndex = i + 14; // Offset by RSI period
 
-        // Buy signal: RSI crosses below 30 (oversold)
-        if (prevRSI >= 30 && currRSI < 30) {
+        // Check bounds
+        if (candleIndex >= this.currentCandles.length) continue;
+        const candle = this.currentCandles[candleIndex];
+
+        // Buy signal: RSI crosses below oversold level
+        if (prevRSI >= rsiOversold && currRSI < rsiOversold) {
           this.signalMarkers.push({
             time: Math.floor(candle.time / 1000),
             position: 'belowBar',
@@ -442,8 +448,8 @@ export class ChartComponent implements OnInit, OnDestroy {
           buySignals++;
         }
 
-        // Sell signal: RSI crosses above 70 (overbought)
-        if (prevRSI <= 70 && currRSI > 70) {
+        // Sell signal: RSI crosses above overbought level
+        if (prevRSI <= rsiOverbought && currRSI > rsiOverbought) {
           this.signalMarkers.push({
             time: Math.floor(candle.time / 1000),
             position: 'aboveBar',
@@ -460,12 +466,21 @@ export class ChartComponent implements OnInit, OnDestroy {
       const sma20Data = this.calculateSMAData(this.currentCandles, 20);
       const sma50Data = this.calculateSMAData(this.currentCandles, 50);
 
-      for (let i = 1; i < Math.min(sma20Data.length, sma50Data.length); i++) {
-        const prevSMA20 = sma20Data[i - 1].value;
-        const prevSMA50 = sma50Data[i - 1].value;
-        const currSMA20 = sma20Data[i].value;
-        const currSMA50 = sma50Data[i].value;
-        const candle = this.currentCandles[i + 19]; // Offset by SMA period
+      // Start from index 1 and ensure we don't go out of bounds
+      const startIndex = 20; // SMA20 period
+      for (let i = startIndex; i < this.currentCandles.length; i++) {
+        const sma20Index = i - 20 + 1;
+        const sma50Index = i - 50 + 1;
+
+        // Skip if we don't have enough data for SMA50
+        if (sma50Index < 1 || sma20Index < 1) continue;
+        if (sma20Index >= sma20Data.length || sma50Index >= sma50Data.length) continue;
+
+        const prevSMA20 = sma20Data[sma20Index - 1].value;
+        const prevSMA50 = sma50Data[sma50Index - 1].value;
+        const currSMA20 = sma20Data[sma20Index].value;
+        const currSMA50 = sma50Data[sma50Index].value;
+        const candle = this.currentCandles[i];
 
         // Golden cross: SMA20 crosses above SMA50 (bullish)
         if (prevSMA20 <= prevSMA50 && currSMA20 > currSMA50) {

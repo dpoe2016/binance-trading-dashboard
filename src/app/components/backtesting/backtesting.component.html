@@ -1,0 +1,209 @@
+<div class="backtesting">
+  <div class="header">
+    <h1>Backtesting</h1>
+    <p>Test your trading strategies on historical data</p>
+  </div>
+
+  <div class="controls-panel">
+    <div class="control-group">
+      <label>Strategy</label>
+      <select [(ngModel)]="selectedStrategy" (change)="onStrategyChange()">
+        <option [value]="null">Select a strategy</option>
+        <option *ngFor="let strategy of strategies" [value]="strategy.id">
+          {{ strategy.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Symbol</label>
+      <select [(ngModel)]="selectedSymbol">
+        <option *ngFor="let symbol of symbols" [value]="symbol">
+          {{ symbol }}
+        </option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Timeframe</label>
+      <select [(ngModel)]="selectedInterval">
+        <option *ngFor="let interval of intervals" [value]="interval.value">
+          {{ interval.label }}
+        </option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Initial Capital (USDT)</label>
+      <input type="number" [(ngModel)]="initialCapital" min="100" step="100" />
+    </div>
+
+    <button
+      class="btn-run"
+      (click)="runBacktest()"
+      [disabled]="!selectedStrategy || isRunning">
+      {{ isRunning ? 'Running...' : 'Run Backtest' }}
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading historical data and running backtest...</p>
+  </div>
+
+  <div *ngIf="results && !isLoading" class="results">
+    <!-- Performance Metrics -->
+    <div class="metrics-section">
+      <h2>Performance Metrics</h2>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Return</div>
+          <div class="metric-value" [class.positive]="results.totalProfit > 0" [class.negative]="results.totalProfit < 0">
+            {{ formatCurrency(results.totalProfit) }}
+            <span class="metric-subtitle">{{ formatPercent(results.totalProfitPercent) }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Win Rate</div>
+          <div class="metric-value">
+            {{ formatPercent(results.winRate) }}
+            <span class="metric-subtitle">{{ results.winningTrades }}/{{ results.totalTrades }} trades</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Profit Factor</div>
+          <div class="metric-value">
+            {{ formatNumber(results.profitFactor) }}
+            <span class="metric-subtitle">{{ results.profitFactor > 1 ? 'Good' : 'Poor' }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Max Drawdown</div>
+          <div class="metric-value negative">
+            {{ formatCurrency(results.maxDrawdown) }}
+            <span class="metric-subtitle">{{ formatPercent(results.maxDrawdownPercent) }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Sharpe Ratio</div>
+          <div class="metric-value">
+            {{ formatNumber(results.sharpeRatio) }}
+            <span class="metric-subtitle">{{ results.sharpeRatio > 1 ? 'Good' : 'Fair' }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Avg Profit/Trade</div>
+          <div class="metric-value" [class.positive]="results.averageProfit > 0" [class.negative]="results.averageProfit < 0">
+            {{ formatCurrency(results.averageProfit) }}
+            <span class="metric-subtitle">{{ formatPercent(results.averageProfitPercent) }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Start Balance</div>
+          <div class="metric-value">
+            {{ formatCurrency(results.startBalance) }}
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">End Balance</div>
+          <div class="metric-value" [class.positive]="results.endBalance > results.startBalance" [class.negative]="results.endBalance < results.startBalance">
+            {{ formatCurrency(results.endBalance) }}
+            <span class="metric-subtitle">ROI: {{ formatPercent(results.roi) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <h2>Price Chart with Signals</h2>
+        <button class="btn-export" (click)="exportResults()">Export Results</button>
+      </div>
+      <div #chartContainer class="chart-container"></div>
+    </div>
+
+    <!-- Trade List -->
+    <div class="trades-section">
+      <h2>Trade History ({{ results.totalTrades }} trades)</h2>
+      <div class="trades-table-container">
+        <table class="trades-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Entry Time</th>
+              <th>Exit Time</th>
+              <th>Entry Price</th>
+              <th>Exit Price</th>
+              <th>Quantity</th>
+              <th>Profit/Loss</th>
+              <th>%</th>
+              <th>Entry Reason</th>
+              <th>Exit Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let trade of results.trades; let i = index" [class]="getTradeColor(trade)">
+              <td>{{ i + 1 }}</td>
+              <td>{{ formatDate(trade.entryTime) }}</td>
+              <td>{{ trade.exitTime ? formatDate(trade.exitTime) : 'Open' }}</td>
+              <td>{{ formatCurrency(trade.entryPrice) }}</td>
+              <td>{{ trade.exitPrice ? formatCurrency(trade.exitPrice) : '-' }}</td>
+              <td>{{ formatNumber(trade.quantity, 4) }}</td>
+              <td [class.positive]="(trade.profit || 0) > 0" [class.negative]="(trade.profit || 0) < 0">
+                {{ trade.profit ? formatCurrency(trade.profit) : '-' }}
+              </td>
+              <td [class.positive]="(trade.profitPercent || 0) > 0" [class.negative]="(trade.profitPercent || 0) < 0">
+                {{ trade.profitPercent ? formatPercent(trade.profitPercent) : '-' }}
+              </td>
+              <td>{{ trade.entrySignal.reason }}</td>
+              <td>{{ trade.exitSignal?.reason || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Signals List -->
+    <div class="signals-section">
+      <h2>All Signals ({{ results.signals.length }} signals)</h2>
+      <div class="signals-table-container">
+        <table class="signals-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Price</th>
+              <th>Reason</th>
+              <th>RSI</th>
+              <th>SMA20</th>
+              <th>SMA50</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let signal of results.signals; let i = index"
+                [class.buy]="signal.type === 'BUY' || signal.type === 'GOLDEN_CROSS'"
+                [class.sell]="signal.type === 'SELL' || signal.type === 'DEATH_CROSS'">
+              <td>{{ i + 1 }}</td>
+              <td>{{ formatDate(signal.time) }}</td>
+              <td><span class="signal-badge">{{ signal.type }}</span></td>
+              <td>{{ formatCurrency(signal.price) }}</td>
+              <td>{{ signal.reason }}</td>
+              <td>{{ signal.rsi ? formatNumber(signal.rsi) : '-' }}</td>
+              <td>{{ signal.sma20 ? formatCurrency(signal.sma20) : '-' }}</td>
+              <td>{{ signal.sma50 ? formatCurrency(signal.sma50) : '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

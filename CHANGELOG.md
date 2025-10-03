@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-10-03
+
+
+
+## [0.4.3] - 2025-10-03
+
+### Added
+- Comprehensive backtesting system with dedicated component and service
+- Performance metrics including win rate, profit factor, Sharpe ratio, and max drawdown
+- Visual backtesting results with equity curve overlay on price chart
+- Trade history table showing entry/exit points and P&L for each trade
+- Signal list showing all generated trading signals with indicator values
+- Export functionality to save backtesting results as JSON
+- Improved signal generation logic with configurable RSI thresholds
+- Better bounds checking to prevent out-of-range errors in signal generation
+
+### Fixed
+- RSI Y-axis scale visibility on chart pane
+- Signal display bugs with incorrect array indexing in SMA crossover detection
+- Array bounds checking in RSI and SMA signal generation
+
 ## [0.4.2] - 2025-10-03
 
 
