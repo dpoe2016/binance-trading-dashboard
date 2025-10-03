@@ -420,23 +420,13 @@ export class ChartComponent implements OnInit, OnDestroy {
           this.rsiChart.timeScale().fitContent();
         }
 
-        // Hide time axis on main chart when RSI is visible and resize
+        // Hide time axis on main chart when RSI is visible
         if (this.chart && this.chartContainer) {
           this.chart.applyOptions({
             timeScale: {
               visible: false,
             },
           });
-
-          // Trigger resize after DOM updates
-          setTimeout(() => {
-            if (this.chart && this.chartContainer) {
-              const newHeight = this.chartContainer.nativeElement.clientHeight;
-              this.chart.applyOptions({
-                height: newHeight,
-              });
-            }
-          }, 0);
         }
       }, 100);
     }
@@ -586,23 +576,13 @@ export class ChartComponent implements OnInit, OnDestroy {
       this.rsiChart.remove();
       this.rsiChart = undefined;
 
-      // Show time axis on main chart again when RSI is removed and resize
+      // Show time axis on main chart again when RSI is removed
       if (this.chart && this.chartContainer) {
         this.chart.applyOptions({
           timeScale: {
             visible: true,
           },
         });
-
-        // Trigger resize after DOM updates
-        setTimeout(() => {
-          if (this.chart && this.chartContainer) {
-            const newHeight = this.chartContainer.nativeElement.clientHeight;
-            this.chart.applyOptions({
-              height: newHeight,
-            });
-          }
-        }, 0);
       }
     }
   }
@@ -679,7 +659,7 @@ export class ChartComponent implements OnInit, OnDestroy {
         },
       },
       rightPriceScale: {
-        borderVisible: false,
+        borderVisible: true,
       },
       localization: {
         locale: navigator.language,
