@@ -139,7 +139,27 @@ if (ta.crossunder(sma20, sma50))
   // Edit strategy methods
   startEditStrategy(strategy: TradingStrategy): void {
     this.editingStrategyId = strategy.id;
-    this.editingStrategy = { ...strategy };
+    // Deep copy the strategy including parameters
+    this.editingStrategy = {
+      ...strategy,
+      parameters: { ...strategy.parameters }
+    };
+
+    // Ensure all parameter fields exist with defaults
+    if (!this.editingStrategy.parameters) {
+      this.editingStrategy.parameters = {};
+    }
+
+    // Set defaults for missing parameters
+    if (this.editingStrategy.parameters['rsiOversold'] === undefined) {
+      this.editingStrategy.parameters['rsiOversold'] = 30;
+    }
+    if (this.editingStrategy.parameters['rsiOverbought'] === undefined) {
+      this.editingStrategy.parameters['rsiOverbought'] = 70;
+    }
+    if (this.editingStrategy.parameters['aroonPeriod'] === undefined) {
+      this.editingStrategy.parameters['aroonPeriod'] = 25;
+    }
   }
 
   saveEditedStrategy(): void {

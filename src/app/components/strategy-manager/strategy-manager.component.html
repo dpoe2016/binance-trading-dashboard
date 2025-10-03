@@ -145,11 +145,72 @@
 
         <div class="strategy-parameters">
           <strong>Parameter:</strong>
-          <ul>
+
+          <!-- View mode -->
+          <ul *ngIf="!isEditing(strategy.id)">
             <li *ngFor="let param of strategy.parameters | keyvalue">
               {{ param.key }}: {{ param.value }}
             </li>
           </ul>
+
+          <!-- Edit mode -->
+          <div class="parameters-edit" *ngIf="isEditing(strategy.id) && editingStrategy.parameters">
+            <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['useRSI']">
+                RSI verwenden
+              </label>
+            </div>
+
+            <div class="param-row" *ngIf="editingStrategy.parameters!['useRSI']">
+              <div class="param-item">
+                <label>RSI Überverkauft</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['rsiOversold']" placeholder="30" min="0" max="100">
+              </div>
+              <div class="param-item">
+                <label>RSI Überkauft</label>
+                <input type="number" [(ngModel)]="editingStrategy.parameters!['rsiOverbought']" placeholder="70" min="0" max="100">
+              </div>
+            </div>
+
+            <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['useSMA']">
+                SMA verwenden
+              </label>
+            </div>
+
+            <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['useSMA200']">
+                SMA 200 verwenden
+              </label>
+            </div>
+
+            <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['useAroon']">
+                Aroon Indikator verwenden
+              </label>
+            </div>
+
+            <div class="param-item" *ngIf="editingStrategy.parameters!['useAroon']">
+              <label>Aroon Periode</label>
+              <input type="number" [(ngModel)]="editingStrategy.parameters!['aroonPeriod']" placeholder="25" min="5" max="100">
+            </div>
+
+            <div class="param-item">
+              <label>Menge</label>
+              <input type="text" [(ngModel)]="editingStrategy.parameters!['quantity']" placeholder="0.001">
+            </div>
+
+            <div class="param-item">
+              <label>
+                <input type="checkbox" [(ngModel)]="editingStrategy.parameters!['autoExecute']">
+                Automatische Ausführung
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
