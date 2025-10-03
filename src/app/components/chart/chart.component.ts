@@ -23,6 +23,7 @@ import { Subscription } from 'rxjs';
 export class ChartComponent implements OnInit, OnDestroy {
   @ViewChild('chartContainer', { static: true }) chartContainer!: ElementRef;
   @ViewChild('rsiContainer') rsiContainer?: ElementRef;
+  @ViewChild('chartWrapper', { static: true }) chartWrapper!: ElementRef;
   @Input() symbol: string = 'BTCUSDT';
 
   private chart?: IChartApi;
@@ -105,7 +106,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     // Create chart with proper configuration
     this.chart = createChart(container, {
-      width: container.clientWidth,
+      width: this.chartWrapper.nativeElement.clientWidth,
       height: containerHeight,
       layout: {
         background: { type: 'solid' as any, color: '#ffffff' },
@@ -169,8 +170,8 @@ export class ChartComponent implements OnInit, OnDestroy {
     this.chartResizeObserver = new ResizeObserver(entries => {
       for (let entry of entries) {
         if (entry.target === container && this.chart) {
-          const { width, height } = entry.contentRect;
-          this.chart.applyOptions({ width, height });
+          const { height } = entry.contentRect;
+          this.chart.applyOptions({ width: this.chartWrapper.nativeElement.clientWidth, height });
         }
       }
     });
@@ -623,7 +624,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     const container = this.rsiContainer.nativeElement;
 
     this.rsiChart = createChart(container, {
-      width: container.clientWidth,
+      width: this.chartWrapper.nativeElement.clientWidth,
       height: 180,
       layout: {
         background: { type: 'solid' as any, color: '#ffffff' },
@@ -712,8 +713,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     this.rsiChartResizeObserver = new ResizeObserver(entries => {
       for (let entry of entries) {
         if (entry.target === container && this.rsiChart) {
-          const { width } = entry.contentRect;
-          this.rsiChart.applyOptions({ width });
+          this.rsiChart.applyOptions({ width: this.chartWrapper.nativeElement.clientWidth });
         }
       }
     });
