@@ -50,5 +50,8 @@ Thumbs.db
 # Generated environment files (contain API keys from .env)
 src/environments/
 
+# Gemini context file
+GEMINI.md
+
 # API Keys and Secrets (NEVER COMMIT THESE!)
 # Note: API keys are loaded from .env file and generated into src/environments/
