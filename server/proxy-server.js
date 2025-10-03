@@ -179,6 +179,17 @@ const server = http.createServer((req, res) => {
   };
 
   const proxyReq = https.request(options, (proxyRes) => {
+    // Special handling for futures endpoints that might not be available
+    if (proxyRes.statusCode === 404 && pathWithoutQuery.includes('/fapi/')) {
+      console.warn('⚠️ Futures endpoint not available (404). Returning empty array.');
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify([]));
+      return;
+    }
+
     // Forward status code
     res.writeHead(proxyRes.statusCode, {
       'Content-Type': 'application/json',
