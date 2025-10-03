@@ -65,5 +65,8 @@
 
   <div class="chart-container" #chartContainer [class.with-rsi]="selectedStrategy && hasRSIIndicator()"></div>
 
-  <div class="rsi-container" #rsiContainer *ngIf="selectedStrategy && hasRSIIndicator()"></div>
+  <div class="rsi-chart-wrapper" *ngIf="selectedStrategy && hasRSIIndicator()">
+    <h2>RSI (14)</h2>
+    <div class="rsi-container" #rsiContainer></div>
+  </div>
 </div>
