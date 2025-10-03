@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 
 export interface UserSettings {
+  tradingMode: 'testnet' | 'live' | 'demo';
   dashboard: {
     searchTerm: string;
   };
@@ -18,6 +19,7 @@ export class SettingsService {
   private readonly STORAGE_KEY = 'binance-trading-settings';
 
   private defaultSettings: UserSettings = {
+    tradingMode: 'testnet',
     dashboard: {
       searchTerm: ''
     },

@@ -56,6 +56,44 @@
         font-weight: 600;
       }
     }
+
+    .trading-mode-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+
+      label {
+        font-size: 1rem;
+        font-weight: 500;
+      }
+
+      select {
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 0.9rem;
+        cursor: pointer;
+        appearance: none; /* Remove default select arrow */
+        background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M287%2C114.7L159.7%2C242c-3.2%2C3.2-8.3%2C3.2-11.5%2C0L5.4%2C114.7c-3.2-3.2-3.2-8.3%2C0-11.5l11.5-11.5c3.2-3.2%2C8.3-3.2%2C11.5%2C0l113.9%2C113.9L264%2C91.7c3.2-3.2%2C8.3-3.2%2C11.5%2C0l11.5%2C11.5C290.2%2C106.4%2C290.2%2C111.5%2C287%2C114.7z%22%2F%3E%3C%2Fsvg%3E');
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+
+        &:focus {
+          outline: none;
+          border-color: #a7b1ff;
+          box-shadow: 0 0 0 2px rgba(167, 177, 255, 0.5);
+        }
+
+        option {
+          background-color: #764ba2;
+          color: white;
+        }
+      }
+    }
   }
 }
 

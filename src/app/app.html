@@ -8,6 +8,14 @@
       <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
       <a routerLink="/chart" routerLinkActive="active">Charts</a>
       <a routerLink="/strategies" routerLinkActive="active">Strategien</a>
+      <div class="trading-mode-selector">
+        <label for="tradingMode">Modus:</label>
+        <select id="tradingMode" [(ngModel)]="selectedTradingMode" (change)="onTradingModeChange()">
+          <option value="testnet">Testnet</option>
+          <option value="live">Live</option>
+          <option value="demo">Demo</option>
+        </select>
+      </div>
     </div>
   </nav>
 

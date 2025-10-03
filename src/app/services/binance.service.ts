@@ -4,6 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AccountBalance, Position, Order, Candle, AccountStats } from '../models/trading.model';
 import { environment } from '../config/environment.config';
 import * as CryptoJS from 'crypto-js';
+import { SettingsService } from './settings.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,6 @@ export class BinanceService {
   private apiSecret: string = '';
   private baseUrl = environment.binance.apiUrl;
   private wsUrl = environment.binance.wsUrl;
-  private tradingMode = environment.tradingMode;
   private useProxy = environment.useProxy;
   private proxyUrl = environment.proxyUrl;
 
@@ -23,19 +23,21 @@ export class BinanceService {
   private accountStats$ = new BehaviorSubject<AccountStats | null>(null);
   private ws: WebSocket | null = null;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private settingsService: SettingsService) {
     this.initializeFromEnvironment();
   }
 
   private initializeFromEnvironment(): void {
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+
     // Select API endpoints based on trading mode
-    if (this.tradingMode === 'testnet') {
+    if (tradingMode === 'testnet') {
       this.baseUrl = environment.testnet.apiUrl;
       this.wsUrl = environment.testnet.wsUrl;
       this.apiKey = environment.testnet.apiKey;
       this.apiSecret = environment.testnet.apiSecret;
       console.log('🧪 Testnet mode activated - using real Binance Testnet API');
-    } else if (this.tradingMode === 'live') {
+    } else if (tradingMode === 'live') {
       this.baseUrl = environment.binance.apiUrl;
       this.wsUrl = environment.binance.wsUrl;
       this.apiKey = environment.binance.apiKey;
@@ -252,6 +254,12 @@ export class BinanceService {
 
   // Market Data
   async getCandles(symbol: string, interval: string, limit: number = 500): Promise<Candle[]> {
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
+      console.log('Demo mode: Using mock candles');
+      return this.getMockCandles();
+    }
+
     try {
       // Fetch public market data from Binance API (no authentication needed)
       const url = `${this.baseUrl}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
@@ -292,22 +300,48 @@ export class BinanceService {
 
   // Trading Operations
   async placeLimitOrder(symbol: string, side: 'BUY' | 'SELL', quantity: string, price: string): Promise<any> {
-    console.log('Placing limit order (demo mode):', { symbol, side, quantity, price });
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
+      console.log('Placing limit order (demo mode):', { symbol, side, quantity, price });
+      return { orderId: Date.now(), status: 'NEW' };
+    }
+    // TODO: Implement real limit order placement for testnet/live
+    console.log(`Placing limit order (${tradingMode} mode):`, { symbol, side, quantity, price });
     return { orderId: Date.now(), status: 'NEW' };
   }
 
   async placeMarketOrder(symbol: string, side: 'BUY' | 'SELL', quantity: string): Promise<any> {
-    console.log('Placing market order (demo mode):', { symbol, side, quantity });
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
+      console.log('Placing market order (demo mode):', { symbol, side, quantity });
+      return { orderId: Date.now(), status: 'FILLED' };
+    }
+    // TODO: Implement real market order placement for testnet/live
+    console.log(`Placing market order (${tradingMode} mode):`, { symbol, side, quantity });
     return { orderId: Date.now(), status: 'FILLED' };
   }
 
   async cancelOrder(symbol: string, orderId: number): Promise<any> {
-    console.log('Canceling order (demo mode):', { symbol, orderId });
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
+      console.log('Canceling order (demo mode):', { symbol, orderId });
+      return { orderId, status: 'CANCELED' };
+    }
+    // TODO: Implement real order cancellation for testnet/live
+    console.log(`Canceling order (${tradingMode} mode):`, { symbol, orderId });
     return { orderId, status: 'CANCELED' };
   }
 
   // WebSocket - Price Updates
   subscribeToPriceUpdates(symbol: string, callback: (price: string) => void): () => void {
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+
+    if (tradingMode === 'demo') {
+      console.log('Demo mode: Mocking price updates');
+      // Return a dummy cleanup function for demo mode
+      return () => { console.log('Demo mode: Price update subscription cleaned up'); };
+    }
+
     // Use production WebSocket for real-time data (public, no auth required)
     // Testnet doesn't have reliable WebSocket support
     const productionWsUrl = 'wss://stream.binance.com:9443/ws';
@@ -343,6 +377,12 @@ export class BinanceService {
 
   // Start auto-refresh
   startAutoRefresh(intervalMs: number = 10000): void {
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
+      console.log('Demo mode: Auto-refresh disabled');
+      return;
+    }
+
     interval(intervalMs).subscribe(() => {
       this.refreshAccountBalances();
       this.refreshPositions();
