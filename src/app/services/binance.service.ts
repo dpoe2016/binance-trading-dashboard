@@ -85,7 +85,8 @@ export class BinanceService {
   }
 
   async refreshAccountBalances(): Promise<void> {
-    if (this.tradingMode === 'demo') {
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
       // Demo mode - data already loaded in loadMockData()
       console.log('Demo mode: Using mock account balances');
       return;
@@ -117,7 +118,7 @@ export class BinanceService {
           parseFloat(b.free) > 0 || parseFloat(b.locked) > 0
         );
         this.accountBalances$.next(balances);
-        console.log(`✅ Loaded ${balances.length} account balances from ${this.tradingMode} API`);
+        console.log(`✅ Loaded ${balances.length} account balances from ${tradingMode} API`);
       }
 
       this.updateAccountStats();
@@ -134,7 +135,8 @@ export class BinanceService {
   }
 
   async refreshPositions(): Promise<void> {
-    if (this.tradingMode === 'demo') {
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
       // Demo mode - data already loaded in loadMockData()
       console.log('Demo mode: Using mock positions');
       return;
@@ -164,7 +166,7 @@ export class BinanceService {
       if (response && Array.isArray(response)) {
         const positions = response.filter((p: any) => parseFloat(p.positionAmt) !== 0);
         this.positions$.next(positions);
-        console.log(`✅ Loaded ${positions.length} positions from ${this.tradingMode} API`);
+        console.log(`✅ Loaded ${positions.length} positions from ${tradingMode} API`);
       }
 
       this.updateAccountStats();
@@ -187,7 +189,8 @@ export class BinanceService {
   }
 
   async refreshOpenOrders(symbol?: string): Promise<void> {
-    if (this.tradingMode === 'demo') {
+    const tradingMode = this.settingsService.getSettings().tradingMode;
+    if (tradingMode === 'demo') {
       // Demo mode - no open orders in demo
       console.log('Demo mode: No open orders');
       return;
@@ -217,7 +220,7 @@ export class BinanceService {
 
       if (response && Array.isArray(response)) {
         this.openOrders$.next(response);
-        console.log(`✅ Loaded ${response.length} open orders from ${this.tradingMode} API`);
+        console.log(`✅ Loaded ${response.length} open orders from ${tradingMode} API`);
       }
 
       this.updateAccountStats();

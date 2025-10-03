@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SettingsService } './services/settings.service';
+import { SettingsService } from './services/settings.service';
 
 @Component({
   selector: 'app-root',
