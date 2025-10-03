@@ -27,6 +27,8 @@ export class StrategyManagerComponent implements OnInit {
     pineScript: '',
     usePineScript: false,
     useRSI: true,
+    useAroon: false,
+    aroonPeriod: 25,
     quantity: '0.001',
     autoExecute: false
   };
@@ -83,6 +85,8 @@ if (ta.crossunder(sma20, sma50))
       pineScript: this.newStrategy.usePineScript ? this.newStrategy.pineScript : undefined,
       parameters: {
         useRSI: this.newStrategy.useRSI,
+        useAroon: this.newStrategy.useAroon,
+        aroonPeriod: this.newStrategy.aroonPeriod,
         quantity: this.newStrategy.quantity,
         autoExecute: this.newStrategy.autoExecute
       },
@@ -120,6 +124,8 @@ if (ta.crossunder(sma20, sma50))
       pineScript: '',
       usePineScript: false,
       useRSI: true,
+      useAroon: false,
+      aroonPeriod: 25,
       quantity: '0.001',
       autoExecute: false
     };

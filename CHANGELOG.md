@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-10-03
+
+### Added
+- Aroon indicator as additional pane to chart
+- Aroon Up and Aroon Down lines with configurable period (default 25)
+- Strategy manager UI support for Aroon indicator
+- Aroon period configuration in strategy parameters
+
 ## [0.5.0] - 2025-10-03
 
 

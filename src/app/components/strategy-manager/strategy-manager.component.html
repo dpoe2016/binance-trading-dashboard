@@ -61,6 +61,20 @@
       </label>
     </div>
 
+    <div class="form-group" *ngIf="!newStrategy.usePineScript">
+      <label>
+        <input type="checkbox" [(ngModel)]="newStrategy.useAroon">
+        Aroon Indikator anzeigen (Trendstärke und -richtung)
+      </label>
+    </div>
+
+    <div class="form-row" *ngIf="!newStrategy.usePineScript && newStrategy.useAroon">
+      <div class="form-group">
+        <label for="aroonPeriod">Aroon Periode</label>
+        <input type="number" id="aroonPeriod" [(ngModel)]="newStrategy.aroonPeriod" placeholder="25" min="5" max="100">
+      </div>
+    </div>
+
     <div class="form-group">
       <label>
         <input type="checkbox" [(ngModel)]="newStrategy.autoExecute">

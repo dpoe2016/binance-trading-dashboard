@@ -27,6 +27,8 @@ export class ChartComponent implements OnInit, OnDestroy {
   private sma50Series?: any;
   private sma200Series?: any;
   private rsiSeries?: any;
+  private aroonUpSeries?: any;
+  private aroonDownSeries?: any;
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
   private priceUpdateCleanup?: () => void;
@@ -411,6 +413,44 @@ export class ChartComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Add Aroon indicator as subchart
+    if (strategy.parameters['useAroon']) {
+      const aroonPeriod = strategy.parameters['aroonPeriod'] || 25;
+      const aroonData = this.calculateAroonData(this.currentCandles, aroonPeriod);
+
+      // Add Aroon Up series
+      if (!this.aroonUpSeries && this.chart) {
+        this.aroonUpSeries = this.chart.addSeries(LineSeries, {
+          color: '#22c55e',
+          lineWidth: 2,
+          title: 'Aroon Up',
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 2); // Move to a new pane (pane 2)
+      }
+
+      // Add Aroon Down series
+      if (!this.aroonDownSeries && this.chart) {
+        this.aroonDownSeries = this.chart.addSeries(LineSeries, {
+          color: '#ef4444',
+          lineWidth: 2,
+          title: 'Aroon Down',
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 2); // Same pane as Aroon Up
+      }
+
+      if (this.aroonUpSeries && aroonData.aroonUp.length > 0) {
+        this.aroonUpSeries.setData(aroonData.aroonUp);
+      }
+
+      if (this.aroonDownSeries && aroonData.aroonDown.length > 0) {
+        this.aroonDownSeries.setData(aroonData.aroonDown);
+      }
+    }
+
     // Generate and add strategy signals as markers
     this.addStrategySignals(strategy);
   }
@@ -575,6 +615,17 @@ export class ChartComponent implements OnInit, OnDestroy {
         });
       }
     }
+
+    // Clear Aroon series
+    if (this.aroonUpSeries && this.chart) {
+      this.chart.removeSeries(this.aroonUpSeries);
+      this.aroonUpSeries = undefined;
+    }
+
+    if (this.aroonDownSeries && this.chart) {
+      this.chart.removeSeries(this.aroonDownSeries);
+      this.aroonDownSeries = undefined;
+    }
   }
 
   private calculateSMAData(candles: Candle[], period: number): LineData[] {
@@ -637,5 +688,59 @@ export class ChartComponent implements OnInit, OnDestroy {
     }
 
     return data;
+  }
+
+  private calculateAroonData(candles: Candle[], period: number = 25): { aroonUp: LineData[], aroonDown: LineData[] } {
+    const aroonUp: LineData[] = [];
+    const aroonDown: LineData[] = [];
+
+    if (candles.length < period) {
+      return { aroonUp, aroonDown };
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+
+      // Find the index of highest high in the period
+      let highestIndex = 0;
+      let highestHigh = slice[0].high;
+      for (let j = 1; j < slice.length; j++) {
+        if (slice[j].high > highestHigh) {
+          highestHigh = slice[j].high;
+          highestIndex = j;
+        }
+      }
+
+      // Find the index of lowest low in the period
+      let lowestIndex = 0;
+      let lowestLow = slice[0].low;
+      for (let j = 1; j < slice.length; j++) {
+        if (slice[j].low < lowestLow) {
+          lowestLow = slice[j].low;
+          lowestIndex = j;
+        }
+      }
+
+      // Calculate Aroon Up and Aroon Down
+      // Aroon Up = ((period - periods since highest high) / period) * 100
+      // Aroon Down = ((period - periods since lowest low) / period) * 100
+      const periodsSinceHigh = period - 1 - highestIndex;
+      const periodsSinceLow = period - 1 - lowestIndex;
+
+      const aroonUpValue = ((period - periodsSinceHigh) / period) * 100;
+      const aroonDownValue = ((period - periodsSinceLow) / period) * 100;
+
+      aroonUp.push({
+        time: Math.floor(candles[i].time / 1000) as any,
+        value: aroonUpValue,
+      });
+
+      aroonDown.push({
+        time: Math.floor(candles[i].time / 1000) as any,
+        value: aroonDownValue,
+      });
+    }
+
+    return { aroonUp, aroonDown };
   }
 }
