@@ -79,8 +79,11 @@
 
     <!-- Positions -->
     <div class="section">
-      <h2>Positionen</h2>
-      <div class="table-container">
+      <div class="section-header" (click)="togglePositions()">
+        <h2>Positionen</h2>
+        <span class="toggle-icon">{{ isPositionsCollapsed ? '▶' : '▼' }}</span>
+      </div>
+      <div class="table-container" *ngIf="!isPositionsCollapsed">
         <table>
           <thead>
             <tr>
@@ -116,8 +119,11 @@
 
     <!-- Open Orders -->
     <div class="section">
-      <h2>Offene Orders</h2>
-      <div class="table-container">
+      <div class="section-header" (click)="toggleOpenOrders()">
+        <h2>Offene Orders</h2>
+        <span class="toggle-icon">{{ isOpenOrdersCollapsed ? '▶' : '▼' }}</span>
+      </div>
+      <div class="table-container" *ngIf="!isOpenOrdersCollapsed">
         <table>
           <thead>
             <tr>

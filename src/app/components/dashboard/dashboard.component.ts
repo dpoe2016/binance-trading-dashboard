@@ -36,6 +36,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   editingStrategyId: string | null = null;
   editingStrategy: Partial<TradingStrategy> = {};
 
+  // Collapsible sections
+  isPositionsCollapsed: boolean = false;
+  isOpenOrdersCollapsed: boolean = false;
+
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -226,5 +230,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.searchTerm = '';
       this.applyFilters();
     }
+  }
+
+  togglePositions(): void {
+    this.isPositionsCollapsed = !this.isPositionsCollapsed;
+  }
+
+  toggleOpenOrders(): void {
+    this.isOpenOrdersCollapsed = !this.isOpenOrdersCollapsed;
   }
 }
