@@ -25,6 +25,11 @@
     </div>
 
     <button class="btn-refresh" (click)="loadChartData()">Aktualisieren</button>
+
+    <div class="live-indicator" *ngIf="isLiveUpdating">
+      <span class="live-dot"></span>
+      <span>Live</span>
+    </div>
   </div>
 
   <div class="strategy-info" *ngIf="selectedStrategy">
@@ -41,8 +46,14 @@
         <span class="color-box" style="background-color: #FF9800;"></span>
         <span>SMA 50</span>
       </div>
+      <div class="legend-item" *ngIf="hasRSIIndicator()">
+        <span class="color-box" style="background-color: #9C27B0;"></span>
+        <span>RSI (14)</span>
+      </div>
     </div>
   </div>
 
-  <div class="chart-container" #chartContainer></div>
+  <div class="chart-container" #chartContainer [class.with-rsi]="selectedStrategy && hasRSIIndicator()"></div>
+
+  <div class="rsi-container" #rsiContainer *ngIf="selectedStrategy && hasRSIIndicator()"></div>
 </div>

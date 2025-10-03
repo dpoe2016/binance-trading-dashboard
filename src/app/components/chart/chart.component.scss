@@ -54,11 +54,54 @@
   }
 }
 
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: #dcfce7;
+  color: #166534;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .chart-container {
   width: 100%;
-  flex: 1;
   position: relative;
-  min-height: 400px;
+  flex: 1;
+  min-height: 0;
+
+  &.with-rsi {
+    flex: 0 0 auto;
+    height: calc(100% - 290px);
+    min-height: 300px;
+  }
+}
+
+.rsi-container {
+  width: 100%;
+  height: 180px;
+  position: relative;
+  margin-top: 10px;
+  flex: 0 0 auto;
 }
 
 .strategy-info {

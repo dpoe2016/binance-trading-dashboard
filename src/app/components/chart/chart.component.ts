@@ -17,12 +17,15 @@ import { Subscription } from 'rxjs';
 })
 export class ChartComponent implements OnInit, OnDestroy {
   @ViewChild('chartContainer', { static: true }) chartContainer!: ElementRef;
+  @ViewChild('rsiContainer') rsiContainer?: ElementRef;
   @Input() symbol: string = 'BTCUSDT';
 
   private chart?: IChartApi;
+  private rsiChart?: IChartApi;
   private candlestickSeries?: ISeriesApi<'Candlestick'>;
   private sma20Series?: ISeriesApi<'Line'>;
   private sma50Series?: ISeriesApi<'Line'>;
+  private rsiSeries?: ISeriesApi<'Line'>;
   private priceUpdateCleanup?: () => void;
   private subscriptions: Subscription[] = [];
 
@@ -30,6 +33,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   selectedInterval: string = '15m';
   selectedStrategy: string | null = null;
   strategies: TradingStrategy[] = [];
+  isLiveUpdating: boolean = false;
 
   private currentCandles: Candle[] = [];
 
@@ -72,16 +76,22 @@ export class ChartComponent implements OnInit, OnDestroy {
     if (this.chart) {
       this.chart.remove();
     }
+    if (this.rsiChart) {
+      this.rsiChart.remove();
+    }
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   private initChart(): void {
     const container = this.chartContainer.nativeElement;
 
+    // Calculate initial height
+    const containerHeight = container.clientHeight || 400;
+
     // Create chart with proper configuration
     this.chart = createChart(container, {
       width: container.clientWidth,
-      height: container.clientHeight,
+      height: containerHeight,
       layout: {
         background: { type: 'solid' as any, color: '#ffffff' },
         textColor: '#333',
@@ -93,6 +103,7 @@ export class ChartComponent implements OnInit, OnDestroy {
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
+        visible: true,
       },
     });
 
@@ -112,9 +123,19 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   private handleResize(): void {
     if (this.chart && this.chartContainer) {
+      const height = this.rsiChart
+        ? this.chartContainer.nativeElement.clientHeight
+        : this.chartContainer.nativeElement.clientHeight;
+
       this.chart.applyOptions({
         width: this.chartContainer.nativeElement.clientWidth,
-        height: this.chartContainer.nativeElement.clientHeight,
+        height: height,
+      });
+    }
+
+    if (this.rsiChart && this.rsiContainer) {
+      this.rsiChart.applyOptions({
+        width: this.rsiContainer.nativeElement.clientWidth,
       });
     }
   }
@@ -162,18 +183,75 @@ export class ChartComponent implements OnInit, OnDestroy {
     // Clean up previous subscription
     if (this.priceUpdateCleanup) {
       this.priceUpdateCleanup();
+      this.isLiveUpdating = false;
     }
 
     // Subscribe to price updates
     this.priceUpdateCleanup = this.binanceService.subscribeToPriceUpdates(
       this.selectedSymbol,
       (price: string) => {
-        // Update last candle with new price
-        // In a real implementation, you'd want to track the current candle
-        // and update it properly. This is a simplified version.
-        console.log(`${this.selectedSymbol} price update: ${price}`);
+        this.isLiveUpdating = true;
+        this.updateLastCandle(parseFloat(price));
       }
     );
+  }
+
+  private updateLastCandle(currentPrice: number): void {
+    if (!this.candlestickSeries || this.currentCandles.length === 0) return;
+
+    const lastCandle = this.currentCandles[this.currentCandles.length - 1];
+    const lastTime = Math.floor(lastCandle.time / 1000) as any;
+
+    // Update the last candle with new price
+    const updatedCandle: CandlestickData = {
+      time: lastTime,
+      open: lastCandle.open,
+      high: Math.max(lastCandle.high, currentPrice),
+      low: Math.min(lastCandle.low, currentPrice),
+      close: currentPrice,
+    };
+
+    // Update the candle in the series
+    this.candlestickSeries.update(updatedCandle);
+
+    // Update the last candle in our data array
+    lastCandle.close = currentPrice;
+    lastCandle.high = Math.max(lastCandle.high, currentPrice);
+    lastCandle.low = Math.min(lastCandle.low, currentPrice);
+
+    // Update indicators if strategy is active
+    if (this.selectedStrategy) {
+      this.updateIndicatorsRealtime();
+    }
+  }
+
+  private updateIndicatorsRealtime(): void {
+    if (!this.selectedStrategy || this.currentCandles.length === 0) return;
+
+    const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+    if (!strategy) return;
+
+    // Update SMA indicators
+    if (strategy.parameters['useSMA'] !== false) {
+      const sma20Data = this.calculateSMAData(this.currentCandles, 20);
+      const sma50Data = this.calculateSMAData(this.currentCandles, 50);
+
+      if (this.sma20Series && sma20Data.length > 0) {
+        this.sma20Series.update(sma20Data[sma20Data.length - 1]);
+      }
+
+      if (this.sma50Series && sma50Data.length > 0) {
+        this.sma50Series.update(sma50Data[sma50Data.length - 1]);
+      }
+    }
+
+    // Update RSI indicator
+    if (strategy.parameters['useRSI'] && this.rsiSeries) {
+      const rsiData = this.calculateRSIData(this.currentCandles, 14);
+      if (rsiData.length > 0) {
+        this.rsiSeries.update(rsiData[rsiData.length - 1]);
+      }
+    }
   }
 
   onSymbolChange(): void {
@@ -257,6 +335,40 @@ export class ChartComponent implements OnInit, OnDestroy {
         this.sma50Series.setData(sma50Data);
       }
     }
+
+    // Add RSI indicator as subchart
+    if (strategy.parameters['useRSI']) {
+      this.initRSIChart();
+      const rsiData = this.calculateRSIData(this.currentCandles, 14);
+
+      if (this.rsiSeries) {
+        this.rsiSeries.setData(rsiData);
+      }
+
+      // Auto-fit RSI chart
+      if (this.rsiChart) {
+        this.rsiChart.timeScale().fitContent();
+      }
+
+      // Hide time axis on main chart when RSI is visible and resize
+      if (this.chart && this.chartContainer) {
+        this.chart.applyOptions({
+          timeScale: {
+            visible: false,
+          },
+        });
+
+        // Trigger resize after DOM updates
+        setTimeout(() => {
+          if (this.chart && this.chartContainer) {
+            const newHeight = this.chartContainer.nativeElement.clientHeight;
+            this.chart.applyOptions({
+              height: newHeight,
+            });
+          }
+        }, 0);
+      }
+    }
   }
 
   private clearStrategyIndicators(): void {
@@ -268,6 +380,31 @@ export class ChartComponent implements OnInit, OnDestroy {
     if (this.sma50Series && this.chart) {
       this.chart.removeSeries(this.sma50Series);
       this.sma50Series = undefined;
+    }
+
+    if (this.rsiChart) {
+      this.rsiChart.remove();
+      this.rsiChart = undefined;
+      this.rsiSeries = undefined;
+
+      // Show time axis on main chart again when RSI is removed and resize
+      if (this.chart && this.chartContainer) {
+        this.chart.applyOptions({
+          timeScale: {
+            visible: true,
+          },
+        });
+
+        // Trigger resize after DOM updates
+        setTimeout(() => {
+          if (this.chart && this.chartContainer) {
+            const newHeight = this.chartContainer.nativeElement.clientHeight;
+            this.chart.applyOptions({
+              height: newHeight,
+            });
+          }
+        }, 0);
+      }
     }
   }
 
@@ -291,5 +428,122 @@ export class ChartComponent implements OnInit, OnDestroy {
   getStrategyName(strategyId: string): string {
     const strategy = this.strategies.find(s => s.id === strategyId);
     return strategy ? strategy.name : '';
+  }
+
+  hasRSIIndicator(): boolean {
+    if (!this.selectedStrategy) return false;
+    const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+    return strategy ? !!strategy.parameters['useRSI'] : false;
+  }
+
+  private initRSIChart(): void {
+    if (this.rsiChart || !this.rsiContainer) return;
+
+    const container = this.rsiContainer.nativeElement;
+
+    this.rsiChart = createChart(container, {
+      width: container.clientWidth,
+      height: 180,
+      layout: {
+        background: { type: 'solid' as any, color: '#ffffff' },
+        textColor: '#333',
+      },
+      grid: {
+        vertLines: { color: '#f0f0f0' },
+        horzLines: { color: '#f0f0f0' },
+      },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+        borderVisible: false,
+      },
+      rightPriceScale: {
+        borderVisible: false,
+      },
+    });
+
+    this.rsiSeries = this.rsiChart.addSeries(LineSeries, {
+      color: '#9C27B0',
+      lineWidth: 2,
+      title: 'RSI (14)',
+      priceScaleId: 'right',
+      lastValueVisible: true,
+      priceLineVisible: true,
+    });
+
+    // Set fixed price scale for RSI (0-100)
+    this.rsiSeries.applyOptions({
+      autoscaleInfoProvider: () => ({
+        priceRange: {
+          minValue: 0,
+          maxValue: 100,
+        },
+      }),
+    } as any);
+
+    // Synchronize time scales with main chart
+    if (this.chart) {
+      const mainTimeScale = this.chart.timeScale();
+      const rsiTimeScale = this.rsiChart.timeScale();
+
+      // Sync from main chart to RSI chart
+      mainTimeScale.subscribeVisibleLogicalRangeChange(() => {
+        const logicalRange = mainTimeScale.getVisibleLogicalRange();
+        if (logicalRange) {
+          rsiTimeScale.setVisibleLogicalRange(logicalRange);
+        }
+      });
+
+      // Sync from RSI chart to main chart
+      rsiTimeScale.subscribeVisibleLogicalRangeChange(() => {
+        const logicalRange = rsiTimeScale.getVisibleLogicalRange();
+        if (logicalRange) {
+          mainTimeScale.setVisibleLogicalRange(logicalRange);
+        }
+      });
+    }
+
+    // Handle window resize for RSI chart
+    window.addEventListener('resize', () => {
+      if (this.rsiChart && this.rsiContainer) {
+        this.rsiChart.applyOptions({
+          width: this.rsiContainer.nativeElement.clientWidth,
+        });
+      }
+    });
+  }
+
+  private calculateRSIData(candles: Candle[], period: number = 14): LineData[] {
+    const data: LineData[] = [];
+    const closes = candles.map(c => c.close);
+
+    if (closes.length < period + 1) return data;
+
+    // Calculate RSI
+    for (let i = period; i < closes.length; i++) {
+      let gains = 0;
+      let losses = 0;
+
+      for (let j = i - period; j < i; j++) {
+        const change = closes[j + 1] - closes[j];
+        if (change > 0) {
+          gains += change;
+        } else {
+          losses += Math.abs(change);
+        }
+      }
+
+      const avgGain = gains / period;
+      const avgLoss = losses / period;
+      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      const rsi = 100 - (100 / (1 + rs));
+
+      data.push({
+        time: Math.floor(candles[i].time / 1000) as any,
+        value: rsi,
+      });
+    }
+
+    return data;
   }
 }

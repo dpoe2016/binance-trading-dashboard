@@ -308,9 +308,16 @@ export class BinanceService {
 
   // WebSocket - Price Updates
   subscribeToPriceUpdates(symbol: string, callback: (price: string) => void): () => void {
-    // Create WebSocket connection for price updates
-    const wsUrl = `${this.wsUrl}/${symbol.toLowerCase()}@ticker`;
+    // Use production WebSocket for real-time data (public, no auth required)
+    // Testnet doesn't have reliable WebSocket support
+    const productionWsUrl = 'wss://stream.binance.com:9443/ws';
+    const wsUrl = `${productionWsUrl}/${symbol.toLowerCase()}@ticker`;
+
     this.ws = new WebSocket(wsUrl);
+
+    this.ws.onopen = () => {
+      console.log(`✅ WebSocket connected for ${symbol}`);
+    };
 
     this.ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -318,7 +325,11 @@ export class BinanceService {
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error(`❌ WebSocket error for ${symbol}:`, error);
+    };
+
+    this.ws.onclose = () => {
+      console.log(`🔌 WebSocket disconnected for ${symbol}`);
     };
 
     // Return cleanup function
