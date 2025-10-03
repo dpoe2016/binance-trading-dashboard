@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-03
+
+### Added
+- SMA 200 indicator to the chart.
+- RSI series integrated into the main chart as a new pane.
+
+### Fixed
+- Chart alignment issues between main and sub-chart by harmonizing timeScale and rightPriceScale options.
+- TypeScript errors related to `setMarkers` and `pane` property in Lightweight Charts.
+- Runtime error `TypeError: this.candlestickSeries.setMarkers is not a function`.
+
+### Changed
+- Removed RSI subchart and its related HTML/CSS.
+- Adjusted chart-container flex property for better alignment.
+
 ## [0.3.0] - 2025-10-03
 
 ### Added
