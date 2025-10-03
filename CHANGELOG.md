@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2025-10-03
+
+### Added
+- Strategy parameter editing in strategy manager
+- Edit controls for RSI thresholds (oversold/overbought)
+- Edit controls for Aroon period
+- Toggle controls for SMA, SMA200, RSI, and Aroon indicators
+- Styled parameter edit UI with responsive layout
+
+### Fixed
+- Deep copy strategy parameters when editing to prevent mutation
+- Set sensible defaults for missing parameters (RSI: 30/70, Aroon: 25)
+
+
+
 ## [0.5.1] - 2025-10-03
 
 ### Added
