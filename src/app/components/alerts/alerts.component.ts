@@ -52,6 +52,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
   // Available symbols
   availableSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOGEUSDT'];
 
+  // Expose AlertType enum to template
+  AlertType = AlertType;
+
   // Alert types for UI
   alertTypes = [
     { value: AlertType.PRICE_ABOVE, label: 'Price Above', requiresValue: true, requiresSecondary: false },
@@ -122,9 +125,11 @@ export class AlertsComponent implements OnInit, OnDestroy {
    */
   loadCurrentPrices(): void {
     this.availableSymbols.forEach(symbol => {
-      this.binanceService.getSymbolPrice(symbol).then(ticker => {
-        this.currentPrices.set(symbol, parseFloat(ticker.price));
-      }).catch(err => {
+      this.binanceService.getCandles(symbol, '1m', 1).then(candles => {
+        if (candles && candles.length > 0) {
+          this.currentPrices.set(symbol, candles[0].close);
+        }
+      }).catch((err: Error) => {
         console.error(`Error loading price for ${symbol}:`, err);
       });
     });
