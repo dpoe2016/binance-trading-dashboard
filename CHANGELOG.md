@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2025-10-04
+
+
+
 ### Fixed
 - **Dark Mode Colors**: Adjusted dark theme to use dark gray instead of pure black
   - Background primary: #1a1a1a → #2a2d35 (dark gray)

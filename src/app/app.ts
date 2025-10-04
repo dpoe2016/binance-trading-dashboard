@@ -13,7 +13,7 @@ import { ThemeService, ActiveTheme } from './services/theme.service';
 })
 export class App implements OnInit {
   title = 'AlgoTrader Pro';
-  version = '0.7.5'; // Updated automatically by version script
+  version = '0.8.0'; // Updated automatically by version script
 
   selectedTradingMode: 'testnet' | 'live' | 'demo';
   currentTheme: ActiveTheme = 'dark';

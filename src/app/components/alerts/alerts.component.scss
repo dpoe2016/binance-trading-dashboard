@@ -9,16 +9,18 @@
     align-items: center;
     margin-bottom: 30px;
 
-    h2 { margin: 0; color: var(--text-primary); font-size: 28px; font-weight: 600; }
+    h2 { margin: 0; color: var(--text-primary); font-size: 1.75rem; font-weight: 600; }
 
     .header-stats {
       display: flex;
       gap: 30px;
 
+      // Using global .metric-card pattern
       .stat {
         text-align: center;
-        .stat-value { display: block; font-size: 32px; font-weight: 700; color: var(--accent-primary); }
-        .stat-label { display: block; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        min-width: 80px;
+        .stat-value { display: block; font-size: 2rem; font-weight: 700; color: var(--accent-primary); }
+        .stat-label { display: block; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem; margin-top: 4px; }
       }
     }
   }
@@ -29,17 +31,20 @@
     margin-bottom: 20px;
     border-bottom: 2px solid var(--border-primary);
 
+    // Tab buttons use .btn as base but with custom styling for tabs
     .tab-button {
       padding: 12px 24px;
       background: transparent;
       color: var(--text-tertiary);
       cursor: pointer;
       font-weight: 500;
-      transition: all 0.3s;
+      transition: all 0.2s;
+      border: none;
+      border-radius: 0;
       border-bottom: 2px solid transparent;
       margin-bottom: -2px;
 
-      &:hover { color: var(--text-primary); }
+      &:hover { color: var(--text-primary); transform: none; }
       &.active { color: var(--text-primary); border-bottom-color: var(--accent-primary); }
     }
   }
@@ -48,14 +53,21 @@
 
   .alerts-list {
     display: grid;
-    gap: 20px;
+    gap: 16px;
 
+    // Using global .card pattern with custom alert styling
     .alert-card {
-      background: var(--bg-secondary);
-      border-radius: 12px;
+      background: var(--bg-primary);
+      border-radius: 8px;
       padding: 20px;
+      border: 1px solid var(--border-primary);
       border-left: 4px solid var(--border-secondary);
-      transition: all 0.3s;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      &:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
 
       &.active { border-left-color: var(--success); }
       &.triggered { border-left-color: var(--warning); background: var(--bg-tertiary); }
@@ -79,17 +91,18 @@
           display: flex;
           gap: 8px;
 
+          // Using global .btn .btn-sm pattern
           .btn-icon {
             background: var(--bg-tertiary);
             border: none;
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s;
-            &:hover { background: var(--bg-hover); }
-            &.active { background: var(--success); }
-            &.delete:hover { background: var(--danger); }
+            font-size: 1rem;
+            transition: all 0.2s;
+            &:hover { background: var(--bg-hover); transform: scale(1.05); }
+            &.active { background: var(--success); color: white; }
+            &.delete:hover { background: var(--danger); color: white; }
           }
         }
       }
@@ -212,46 +225,54 @@
     }
   }
 
+  // Using global .control-group for forms
   .create-form, .settings-form {
     max-width: 600px;
     margin: 0 auto;
 
-    h3 { margin: 0 0 30px 0; color: var(--text-primary); font-size: 24px; }
-    h4 { margin: 30px 0 20px 0; color: var(--text-primary); font-size: 18px; }
-    hr { margin: 30px 0; border: none; border-top: 1px solid var(--border-primary); }
+    h3 { margin: 0 0 24px 0; color: var(--text-primary); font-size: 1.5rem; font-weight: 600; }
+    h4 { margin: 24px 0 16px 0; color: var(--text-primary); font-size: 1.125rem; font-weight: 600; }
+    hr { margin: 24px 0; border: none; border-top: 1px solid var(--border-primary); }
 
     .form-group {
-      margin-bottom: 25px;
+      margin-bottom: 20px;
 
       label {
         display: block;
         color: var(--text-secondary);
-        margin-bottom: 8px;
-        font-weight: 500;
-        font-size: 14px;
-        .help-text { font-weight: 400; color: var(--text-tertiary); font-size: 12px; margin-left: 8px; }
+        margin-bottom: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        .help-text { font-weight: 400; color: var(--text-tertiary); font-size: 0.75rem; margin-left: 8px; }
       }
 
       .form-control {
         width: 100%;
-        padding: 12px 16px;
-        background: var(--bg-tertiary);
+        padding: 10px 12px;
+        background: var(--bg-primary);
         border: 1px solid var(--border-primary);
-        border-radius: 8px;
+        border-radius: 6px;
         color: var(--text-primary);
-        font-size: 14px;
-        &:focus { outline: none; border-color: var(--accent-primary); }
+        font-size: 0.875rem;
+        transition: all 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: var(--accent-primary);
+          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
         option { background: var(--bg-secondary); color: var(--text-primary); }
       }
 
       .price-display {
         padding: 12px 16px;
-        background: var(--success);
+        background: rgba(34, 197, 94, 0.15);
         border: 1px solid var(--success);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 18px;
-        font-weight: 600;
+        border-radius: 6px;
+        color: var(--success);
+        font-size: 1.125rem;
+        font-weight: 700;
         text-align: center;
       }
 
@@ -266,22 +287,11 @@
       }
     }
 
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .form-actions { display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
   }
 
-  .btn {
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    font-size: 14px;
-
-    &.btn-primary { background: var(--accent-primary); color: var(--text-primary); &:hover { background: var(--accent-secondary); } }
-    &.btn-secondary { background: var(--bg-secondary); color: var(--text-primary); &:hover { background: var(--bg-tertiary); } }
-  }
+  // Using global .btn classes
 }
 
 @media (max-width: 768px) {

@@ -39,21 +39,21 @@
     </div>
 
     <button
-      class="btn-run"
+      class="btn btn-primary btn-run"
       (click)="runBacktest()"
       [disabled]="!selectedStrategy || isRunning">
       {{ isRunning ? 'Running...' : 'Run Backtest' }}
     </button>
 
     <button
-      class="btn-compare"
+      class="btn btn-primary btn-compare"
       (click)="runMultiTimeframeBacktest()"
       [disabled]="!selectedStrategy || isRunning">
       {{ isRunning ? 'Running...' : 'Compare All Timeframes' }}
     </button>
 
     <button
-      class="btn-optimize"
+      class="btn btn-primary btn-optimize"
       (click)="toggleOptimization()"
       [disabled]="!selectedStrategy">
       {{ showOptimization ? '✕ Close Optimizer' : '🔧 Optimize Parameters' }}
@@ -66,11 +66,13 @@
   </div>
 
   <!-- Parameter Optimization -->
-  <div *ngIf="showOptimization && !isLoading" class="optimization-panel">
-    <h2>Parameter Optimization</h2>
-    <p class="optimization-description">
-      Use grid search to find the best parameters for your strategy by testing all combinations within the specified ranges.
-    </p>
+  <div *ngIf="showOptimization && !isLoading" class="panel optimization-panel">
+    <div class="panel-header">
+      <h2>Parameter Optimization</h2>
+      <p class="optimization-description">
+        Use grid search to find the best parameters for your strategy by testing all combinations within the specified ranges.
+      </p>
+    </div>
 
     <div class="optimization-config">
       <div class="control-group">
@@ -110,25 +112,25 @@
                 <option value="decimal">Decimal</option>
               </select>
             </div>
-            <button class="btn-remove" (click)="removeParameterRange(i)">✕</button>
+            <button class="btn btn-danger btn-sm" (click)="removeParameterRange(i)">✕</button>
           </div>
         </div>
 
-        <button class="btn-add-range" (click)="addParameterRange()">
+        <button class="btn btn-success" (click)="addParameterRange()">
           ➕ Add Parameter Range
         </button>
       </div>
 
       <div class="optimization-actions">
         <button
-          class="btn-optimize"
+          class="btn btn-primary btn-optimize"
           (click)="runOptimization()"
           [disabled]="isRunning || parameterRanges.length === 0">
           {{ isRunning ? 'Optimizing...' : '🚀 Run Optimization' }}
         </button>
         <button
           *ngIf="isRunning"
-          class="btn-cancel"
+          class="btn btn-danger"
           (click)="cancelOptimization()">
           Cancel
         </button>
@@ -146,13 +148,13 @@
     <div *ngIf="optimizationResults.length > 0" class="optimization-results">
       <div class="results-header">
         <h3>Optimization Results ({{ optimizationResults.length }} combinations tested)</h3>
-        <button class="btn-apply" (click)="applyBestParameters()">
+        <button class="btn btn-success" (click)="applyBestParameters()">
           ✓ Apply Best Parameters to Strategy
         </button>
       </div>
 
-      <div class="results-table-container table-responsive">
-        <table class="results-table">
+      <div class="table-container results-table-container">
+        <table class="table results-table">
           <thead>
             <tr>
               <th>Rank</th>

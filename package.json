@@ -1,6 +1,6 @@
 {
   "name": "algotrader-pro",
-  "version": "0.7.5",
+  "version": "0.8.0",
   "scripts": {
     "ng": "ng",
     "generate-env": "node scripts/generate-env.js",

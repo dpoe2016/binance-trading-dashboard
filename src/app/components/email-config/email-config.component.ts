@@ -9,7 +9,7 @@ import { EmailConfig } from '../../models/email-config.model';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './email-config.component.html',
-  styleUrls: ['./email-config.component.css']
+  styleUrls: ['./email-config.component.scss']
 })
 export class EmailConfigComponent implements OnInit {
   emailForm!: FormGroup;
