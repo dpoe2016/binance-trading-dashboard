@@ -331,15 +331,20 @@ export class BacktestingComponent implements OnInit, OnDestroy {
       for (const timeframe of timeframesToTest) {
         console.log(`Running backtest for ${timeframe}...`);
 
+        // Adjust limit and minimum candles based on timeframe
+        const timeframeConfig = this.getTimeframeConfig(timeframe);
+
         // Fetch candles for this timeframe
         const candles = await this.binanceService.getCandles(
           this.selectedSymbol,
           timeframe,
-          500 // Get more data for better results
+          timeframeConfig.limit
         );
 
-        if (!candles || candles.length < 50) {
-          console.warn(`Insufficient data for ${timeframe}`);
+        console.log(`Fetched ${candles?.length || 0} candles for ${timeframe}`);
+
+        if (!candles || candles.length < timeframeConfig.minCandles) {
+          console.warn(`Insufficient data for ${timeframe}: got ${candles?.length || 0}, need ${timeframeConfig.minCandles}`);
           continue;
         }
 
@@ -370,6 +375,27 @@ export class BacktestingComponent implements OnInit, OnDestroy {
     } finally {
       this.isRunning = false;
       this.isLoading = false;
+    }
+  }
+
+  private getTimeframeConfig(timeframe: string): { limit: number; minCandles: number } {
+    // Configure limits and minimum candles based on timeframe
+    // Longer timeframes need fewer candles for statistical significance
+    switch (timeframe) {
+      case '1m':
+        return { limit: 1000, minCandles: 100 };
+      case '5m':
+        return { limit: 1000, minCandles: 100 };
+      case '15m':
+        return { limit: 500, minCandles: 50 };
+      case '1h':
+        return { limit: 500, minCandles: 50 };
+      case '4h':
+        return { limit: 500, minCandles: 30 }; // 30 candles = 5 days of data
+      case '1d':
+        return { limit: 500, minCandles: 20 }; // 20 candles = 20 days of data
+      default:
+        return { limit: 500, minCandles: 50 };
     }
   }
 
