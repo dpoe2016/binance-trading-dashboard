@@ -41,27 +41,60 @@ Durch die Nutzung dieser Software akzeptieren Sie, dass:
 - **Inline-Editing**: Direkte Bearbeitung von Strategien
 - **Settings-Persistenz**: Speichert Benutzereinstellungen
 
-### Charts
+### Charts & Technical Analysis
 - **TradingView Lightweight Charts**: Professionelle Candlestick-Charts
 - **Echtzeit-Updates**: Live-Preisdaten via WebSocket
-- **Technische Indikatoren**:
-  - SMA 20 & SMA 50 (Simple Moving Average)
-  - RSI (14) Indikator mit separatem Subchart
+- **Erweiterte Technische Indikatoren**:
+  - **Trend-Indikatoren**: SMA 20 & 50, MACD (12, 26, 9), Bollinger Bands (20, 2)
+  - **Momentum-Indikatoren**: RSI (14), Stochastic Oscillator (%K, %D)
+  - **Volatilität**: ATR (Average True Range), Choppiness Index
+  - **Volumen**: Volume Bars mit Up/Down-Färbung
 - **Strategy Signals**: Visuelle Markierung von Buy/Sell-Signalen
   - RSI Oversold/Overbought (< 30 / > 70)
   - Golden Cross / Death Cross (SMA Crossover)
+  - MACD Crossovers
+  - Bollinger Band Breakouts
+  - Stochastic Crossovers
+- **Multi-Pane Charts**: Separate Subcharts für RSI, MACD, Stochastic, Volume
 - **Lokale Zeitformatierung**: X-Achse in lokaler Zeitzone
 - **Auto-Skalierung**: Automatische Anpassung an geladene Daten
 - **Zeitrahmen**: 1m, 5m, 15m, 1h, 4h, 1d
 - **Symbol-Auswahl**: BTC, ETH, BNB, ADA, DOGE, XRP, DOT, UNI, LTC, SOL
 
+### Order Management System ✨ NEW
+- **Order Types**: Market, Limit, Stop-Loss, Take-Profit
+- **Order Placement**: Intuitive UI mit Validierung
+- **Order History**: Vollständige Historie aller Orders
+- **Order Tracking**: Echtzeit-Status-Updates
+- **Order Notifications**: Browser-Benachrichtigungen bei Fills
+- **Order Modification**: Ändern von offenen Orders
+- **Order Cancellation**: Stornierung von Orders
+- **Confirmation Dialogs**: Sicherheitsabfragen vor kritischen Aktionen
+
+### Position Management ✨ NEW
+- **Position Tracking**: Echtzeit-Übersicht aller offenen Positionen
+- **P&L Dashboard**: Unrealized P&L, Position Value, Margin Used
+- **Position Details**: Entry Price, Mark Price, Liquidation Price
+- **Position Closing**: Volle oder partielle Schließung (1-100% Slider)
+- **Risk/Reward Calculator**:
+  - Entry Price, Stop Loss, Take Profit Eingabe
+  - Automatische R:R Ratio Berechnung
+  - Risk % und Reward % Anzeige
+  - Position Size Empfehlung
+- **Position Metrics**: Days Held, P&L %, Side (LONG/SHORT)
+
 ### Strategieverwaltung
 - **Strategy Builder**: Erstelle und konfiguriere Trading-Strategien
 - **Pine Script Support**: Grundlegende Unterstützung für Pine Script
-- **RSI-Strategie**: Vorkonfigurierte RSI-basierte Strategie
-- **SMA Crossover**: Golden Cross / Death Cross Strategie
+- **Vorkonfigurierte Strategien**:
+  - RSI-Strategie (Oversold/Overbought)
+  - SMA Crossover (Golden Cross / Death Cross)
+  - MACD Crossover
+  - Bollinger Band Breakout
+  - Stochastic Oscillator
 - **Auto-Execute**: Optionale automatische Ausführung
 - **Inline-Editing**: Bearbeite Strategien direkt in der Liste
+- **Multi-Indicator Strategies**: Kombiniere mehrere Indikatoren
 
 ---
 
@@ -478,25 +511,163 @@ Siehe [CHANGELOG.md](CHANGELOG.md) für eine vollständige Versionshistorie.
 
 ## 🗺️ Roadmap
 
+### ✅ Completed Features (Phase 1-2)
 - [x] Grundlegendes Dashboard mit Mock-Daten
 - [x] Binance API Integration (Testnet & Live)
 - [x] TradingView Charts mit Candlesticks
-- [x] RSI & SMA Indikatoren
-- [x] Strategieverwaltung
+- [x] **Advanced Technical Indicators** (Phase 1 Complete - 100%)
+  - [x] MACD (12, 26, 9) mit Histogram
+  - [x] Bollinger Bands (20, 2) mit Squeeze Detection
+  - [x] Stochastic Oscillator (%K, %D)
+  - [x] ATR (Average True Range)
+  - [x] Choppiness Index
+  - [x] Volume Indicators
+  - [x] RSI (14) & SMA (20, 50)
+- [x] **Order Management System** (Phase 2 - Task 2.1 Complete)
+  - [x] Market, Limit, Stop-Loss, Take-Profit Orders
+  - [x] Order Validation & Confirmation
+  - [x] Order History & Tracking
+  - [x] Real-time Order Status Updates
+  - [x] Order Fill Notifications
+  - [x] Order Modification & Cancellation
+- [x] **Position Management** (Phase 2 - Task 2.2 Complete)
+  - [x] Real-time Position Tracking
+  - [x] P&L Dashboard (Unrealized, Realized, Total)
+  - [x] Position Details Modal
+  - [x] Partial/Full Position Closing (1-100% Slider)
+  - [x] Risk/Reward Calculator
+  - [x] Position Metrics (Entry, Mark, Liquidation Price)
+- [x] Strategieverwaltung mit Multi-Indicator Support
 - [x] Echtzeit-Updates via WebSocket
 - [x] Settings-Persistenz
 - [x] Inline-Editing
-- [x] RSI Subchart
-- [x] Strategy Signal Detection
+- [x] Multi-Pane Charts (RSI, MACD, Stochastic, Volume)
+- [x] Strategy Signal Detection (RSI, MACD, SMA, Bollinger, Stochastic)
 - [x] Lokale Zeitformatierung
-- [ ] Vollständiger Pine Script Interpreter
-- [ ] Backtesting-Funktionalität
-- [ ] Erweiterte Order-Typen (OCO, Trailing Stop, etc.)
-- [ ] Portfolio-Management
-- [ ] Trading-Bot mit ML-Integration
-- [ ] Multi-Exchange Support (Coinbase, Kraken, etc.)
-- [ ] Telegram/Discord Benachrichtigungen
-- [ ] Mobile App (React Native)
+
+### 🚧 In Progress (Phase 2-3)
+- [ ] **Risk Management System** (Phase 2 - Task 2.3) - NEXT
+  - [ ] Account Risk Limits
+  - [ ] Position Size Limits
+  - [ ] Daily Loss Limits
+  - [ ] Drawdown Protection
+  - [ ] Risk Monitoring Dashboard
+  - [ ] Emergency Stop-All Feature
+- [ ] **Portfolio Management** (Phase 2 - Task 2.4)
+  - [ ] Multi-Asset Portfolio View
+  - [ ] Portfolio Performance Analytics
+  - [ ] Asset Allocation Charts
+  - [ ] Correlation Matrix
+  - [ ] Rebalancing Suggestions
+- [ ] **Performance Analytics** (Phase 2 - Task 2.5)
+  - [ ] Trade Performance Metrics
+  - [ ] Win/Loss Ratio
+  - [ ] Sharpe Ratio, Sortino Ratio
+  - [ ] Maximum Drawdown
+  - [ ] Performance Charts
+
+### 📅 Planned Features (Phase 3-13)
+
+**Phase 3: Backtesting Engine**
+- [ ] Historical Data Management
+- [ ] Strategy Backtesting Framework
+- [ ] Walk-Forward Analysis
+- [ ] Monte Carlo Simulation
+- [ ] Performance Reports
+- [ ] Parameter Optimization
+
+**Phase 4: Alert & Notification System**
+- [ ] Price Alerts
+- [ ] Indicator-Based Alerts
+- [ ] Browser Notifications
+- [ ] Email Notifications
+- [ ] Telegram Bot Integration
+- [ ] Discord Webhooks
+
+**Phase 5: Advanced Order Types**
+- [ ] OCO (One-Cancels-Other)
+- [ ] Trailing Stop Loss
+- [ ] Iceberg Orders
+- [ ] TWAP/VWAP Orders
+- [ ] Bracket Orders
+- [ ] Conditional Orders
+- [ ] Ladder Orders
+
+**Phase 6: Trading Bot Automation**
+- [ ] Auto-Trading Engine
+- [ ] Strategy Scheduler
+- [ ] Bot Performance Monitoring
+- [ ] Kill Switch System
+
+**Phase 7: Multi-Exchange Support**
+- [ ] Coinbase Pro Integration
+- [ ] Kraken Integration
+- [ ] Unified Exchange Interface
+
+**Phase 8: UI/UX Enhancements**
+- [ ] Dark/Light Theme Toggle
+- [ ] Customizable Dashboard Layouts
+- [ ] Keyboard Shortcuts
+- [ ] Advanced Filtering & Sorting
+- [ ] Data Export (CSV, JSON, PDF)
+
+**Phase 9: AI/ML Trading Features** (20 Tasks)
+- [ ] Predictive Price Models (LSTM, GRU, Transformer)
+- [ ] Sentiment Analysis (News, Social Media)
+- [ ] Anomaly Detection
+- [ ] Pattern Recognition (Chart Patterns)
+- [ ] Market Regime Detection
+- [ ] Trade Quality Scoring
+- [ ] Smart Order Routing
+- [ ] Reinforcement Learning Trading Agents
+- [ ] Portfolio Optimization with AI
+- [ ] Support/Resistance Level Detection
+- [ ] Volume Profile Analysis
+- [ ] Multi-Timeframe AI Confirmation
+- [ ] Market Microstructure Analysis
+- [ ] Execution Quality Analytics
+- [ ] Adaptive Strategy Parameters
+- [ ] Smart Entry/Exit Timing
+- [ ] Risk Score Prediction
+- [ ] Correlation-Based Hedging
+- [ ] Alternative Data Integration
+- [ ] AI-Powered Trade Journaling
+
+**Phase 10: Mobile & PWA**
+- [ ] Progressive Web App (PWA)
+- [ ] Responsive Mobile UI
+- [ ] Push Notifications
+- [ ] Offline Mode
+- [ ] Native Mobile App (React Native)
+
+**Phase 11: Social Trading**
+- [ ] Trade Copying
+- [ ] Leaderboards
+
+**Phase 12: Advanced Analytics**
+- [ ] Custom Indicators Builder
+- [ ] Advanced Statistical Analysis
+- [ ] Market Correlation Analysis
+- [ ] Heatmaps
+
+**Phase 13: Documentation & Education**
+- [ ] Interactive Documentation
+- [ ] API Documentation
+- [ ] Video Tutorials
+- [ ] Educational Content (Trading Concepts, Risk Management)
+
+---
+
+### 📊 Development Progress
+- **Phase 1:** ✅ 100% Complete (5/5 tasks) - Advanced Technical Indicators
+- **Phase 2:** 🚧 40% Complete (2/5 tasks) - Order & Position Management
+- **Phase 3-13:** 📅 Planned (250+ tasks remaining)
+
+**Next Priorities:**
+1. Risk Management System (Phase 2.3)
+2. Portfolio Management (Phase 2.4)
+3. Alert System (Phase 4)
+4. Backtesting Engine (Phase 3)
 
 ---
 
