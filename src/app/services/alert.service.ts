@@ -530,27 +530,26 @@ export class AlertService {
       return of(cached);
     }
 
-    // Fetch fresh data
-    return combineLatest([
-      this.binanceService.getSymbolPrice(symbol),
-      this.binanceService.getKlines(symbol, '1m', 100)
-    ]).pipe(
-      map(([price, klines]) => {
-        const candles = klines.map(k => ({
-          time: k[0],
-          open: parseFloat(k[1]),
-          high: parseFloat(k[2]),
-          low: parseFloat(k[3]),
-          close: parseFloat(k[4]),
-          volume: parseFloat(k[5])
-        }));
+    // Fetch fresh data using available methods
+    return new Observable(observer => {
+      let price = 0;
+      const unsubscribe = this.binanceService.subscribeToPriceUpdates(symbol, (priceStr: string) => {
+        price = parseFloat(priceStr);
+      });
 
-        const marketData = { price, candles, lastUpdate: now };
+      // Get candles
+      this.binanceService.getCandles(symbol, '1m', 100).then(candles => {
+        const marketData = { price: price || (candles.length > 0 ? candles[candles.length - 1].close : 0), candles, lastUpdate: now };
         this.marketDataCache.set(symbol, marketData);
-
-        return marketData;
-      })
-    );
+        observer.next(marketData);
+        observer.complete();
+        unsubscribe();
+      }).catch(error => {
+        console.error('Error fetching market data:', error);
+        observer.error(error);
+        unsubscribe();
+      });
+    });
   }
 
   /**

@@ -160,12 +160,12 @@ export class PositionManagementComponent implements OnInit, OnDestroy {
    * Load account balance
    */
   loadAccountBalance(): void {
-    this.binanceService.getAccountBalance()
+    this.binanceService.getAccountBalances()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (balances) => {
+        next: (balances: any) => {
           this.accountBalance = balances;
-          this.totalBalance = balances.reduce((total, balance) => {
+          this.totalBalance = balances.reduce((total: number, balance: any) => {
             const value = parseFloat(balance.free) + parseFloat(balance.locked);
             // Convert to USD equivalent (simplified - would need price conversion)
             if (balance.asset === 'USDT') {
@@ -174,7 +174,7 @@ export class PositionManagementComponent implements OnInit, OnDestroy {
             return total;
           }, 0);
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading account balance:', error);
         }
       });

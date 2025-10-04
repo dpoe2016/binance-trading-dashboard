@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, throwError, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { BehaviorSubject, Observable, throwError, of, interval } from 'rxjs';
+import { map, catchError, takeWhile } from 'rxjs/operators';
 import {
   Order,
   CreateOrderRequest,
@@ -10,7 +10,8 @@ import {
   OrderType,
   OrderSide,
   TimeInForce,
-  AccountBalance
+  AccountBalance,
+  OrderFillNotification
 } from '../models/trading.model';
 import { BinanceService } from './binance.service';
 
@@ -20,13 +21,19 @@ import { BinanceService } from './binance.service';
 export class OrderService {
   private ordersSubject = new BehaviorSubject<Order[]>([]);
   private orderHistorySubject = new BehaviorSubject<Order[]>([]);
+  private notificationsSubject = new BehaviorSubject<OrderFillNotification[]>([]);
 
   public orders$ = this.ordersSubject.asObservable();
   public orderHistory$ = this.orderHistorySubject.asObservable();
+  public notifications$ = this.notificationsSubject.asObservable();
+
+  // Track orders being monitored for status updates
+  private monitoredOrders = new Set<number>();
 
   constructor(private binanceService: BinanceService) {
     this.loadOpenOrders();
     this.loadOrderHistory();
+    this.startOrderMonitoring();
   }
 
   /**
@@ -84,29 +91,17 @@ export class OrderService {
    * Create order confirmation details
    */
   createOrderConfirmation(orderRequest: CreateOrderRequest): Observable<OrderConfirmation> {
-    return this.binanceService.getSymbolInfo(orderRequest.symbol).pipe(
-      map(symbolInfo => {
-        const estimatedFees = this.calculateEstimatedFees(orderRequest, symbolInfo);
-        const estimatedTotal = this.calculateEstimatedTotal(orderRequest, estimatedFees);
+    // Calculate without symbol info for now
+    const estimatedFees = this.calculateEstimatedFees(orderRequest, null);
+    const estimatedTotal = this.calculateEstimatedTotal(orderRequest, estimatedFees);
 
-        return {
-          order: orderRequest,
-          estimatedFees: estimatedFees.toFixed(8),
-          estimatedTotal: estimatedTotal.toFixed(8),
-          marketImpact: this.estimateMarketImpact(orderRequest),
-          confirmation: false
-        };
-      }),
-      catchError(error => {
-        console.error('Error creating order confirmation:', error);
-        return of({
-          order: orderRequest,
-          estimatedFees: '0',
-          estimatedTotal: '0',
-          confirmation: false
-        });
-      })
-    );
+    return of({
+      order: orderRequest,
+      estimatedFees: estimatedFees.toFixed(8),
+      estimatedTotal: estimatedTotal.toFixed(8),
+      marketImpact: this.estimateMarketImpact(orderRequest),
+      confirmation: false
+    });
   }
 
   /**
@@ -150,22 +145,31 @@ export class OrderService {
   cancelOrder(symbol: string, orderId: number): Observable<Order> {
     console.log('Canceling order:', orderId);
 
-    return this.binanceService.cancelOrder(symbol, orderId).pipe(
-      map((response: any) => {
+    return new Observable(observer => {
+      this.binanceService.cancelOrder(symbol, orderId).then((response: any) => {
         const canceledOrder: Order = {
           ...response,
+          symbol,
+          orderId,
+          clientOrderId: response.clientOrderId || '',
+          price: '0',
+          origQty: '0',
+          executedQty: '0',
           status: OrderStatus.CANCELED,
+          type: OrderType.MARKET,
+          side: OrderSide.BUY,
+          time: Date.now(),
           updateTime: Date.now()
         };
 
         this.updateOrderInList(canceledOrder);
-        return canceledOrder;
-      }),
-      catchError(error => {
+        observer.next(canceledOrder);
+        observer.complete();
+      }).catch(error => {
         console.error('Error canceling order:', error);
-        return throwError(() => new Error(`Failed to cancel order: ${error.message}`));
-      })
-    );
+        observer.error(new Error(`Failed to cancel order: ${error.message}`));
+      });
+    });
   }
 
   /**
@@ -174,15 +178,26 @@ export class OrderService {
   modifyOrder(originalOrderId: number, newOrderRequest: CreateOrderRequest): Observable<Order> {
     console.log('Modifying order:', originalOrderId, newOrderRequest);
 
-    return this.cancelOrder(newOrderRequest.symbol, originalOrderId).pipe(
-      map(() => this.placeOrder(newOrderRequest))
-    ).pipe(
-      map(result => result as Order),
-      catchError(error => {
-        console.error('Error modifying order:', error);
-        return throwError(() => new Error(`Failed to modify order: ${error.message}`));
-      })
-    );
+    return new Observable(observer => {
+      this.cancelOrder(newOrderRequest.symbol, originalOrderId).subscribe({
+        next: () => {
+          this.placeOrder(newOrderRequest).subscribe({
+            next: (order) => {
+              observer.next(order);
+              observer.complete();
+            },
+            error: (error) => {
+              console.error('Error placing replacement order:', error);
+              observer.error(new Error(`Failed to place replacement order: ${error.message}`));
+            }
+          });
+        },
+        error: (error) => {
+          console.error('Error modifying order:', error);
+          observer.error(new Error(`Failed to modify order: ${error.message}`));
+        }
+      });
+    });
   }
 
   /**
@@ -323,5 +338,166 @@ export class OrderService {
     if (quantity > 1000) return 0.5; // High impact
     if (quantity > 100) return 0.2;  // Medium impact
     return 0.1; // Low impact
+  }
+
+  /**
+   * Start monitoring open orders for status updates
+   */
+  private startOrderMonitoring(): void {
+    // Check order statuses every 3 seconds
+    interval(3000).subscribe(() => {
+      this.checkOrderUpdates();
+    });
+  }
+
+  /**
+   * Check for order status updates
+   */
+  private checkOrderUpdates(): void {
+    const openOrders = this.ordersSubject.value;
+
+    openOrders.forEach(order => {
+      if (!this.monitoredOrders.has(order.orderId)) {
+        this.monitoredOrders.add(order.orderId);
+        this.monitorOrderStatus(order);
+      }
+    });
+  }
+
+  /**
+   * Monitor a specific order until it's filled or canceled
+   */
+  private monitorOrderStatus(order: Order): void {
+    interval(2000)
+      .pipe(
+        takeWhile(() => {
+          const currentOrder = this.ordersSubject.value.find(o => o.orderId === order.orderId);
+          return currentOrder !== undefined &&
+            currentOrder.status !== OrderStatus.FILLED &&
+            currentOrder.status !== OrderStatus.CANCELED &&
+            currentOrder.status !== OrderStatus.REJECTED &&
+            currentOrder.status !== OrderStatus.EXPIRED;
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.getOrderStatus(order.symbol, order.orderId).subscribe({
+            next: (updatedOrder) => {
+              this.handleOrderStatusUpdate(order, updatedOrder);
+            },
+            error: (error) => {
+              console.error('Error monitoring order status:', error);
+            }
+          });
+        },
+        complete: () => {
+          this.monitoredOrders.delete(order.orderId);
+        }
+      });
+  }
+
+  /**
+   * Handle order status update and send notifications
+   */
+  private handleOrderStatusUpdate(originalOrder: Order, updatedOrder: Order): void {
+    // Check if status has changed
+    if (originalOrder.status !== updatedOrder.status) {
+      this.updateOrderInList(updatedOrder);
+
+      // Send notification
+      this.sendOrderNotification(updatedOrder);
+    }
+
+    // Check for partial fills
+    if (updatedOrder.executedQty !== originalOrder.executedQty &&
+        parseFloat(updatedOrder.executedQty) > 0 &&
+        updatedOrder.status !== OrderStatus.FILLED) {
+      this.sendOrderNotification(updatedOrder, true);
+    }
+  }
+
+  /**
+   * Send order fill notification
+   */
+  private sendOrderNotification(order: Order, isPartialFill: boolean = false): void {
+    let notificationType: 'FILLED' | 'PARTIALLY_FILLED' | 'CANCELED' | 'REJECTED';
+    let message: string;
+
+    if (isPartialFill || order.status === OrderStatus.PARTIALLY_FILLED) {
+      notificationType = 'PARTIALLY_FILLED';
+      const fillPercent = (parseFloat(order.executedQty) / parseFloat(order.origQty)) * 100;
+      message = `Order partially filled: ${order.symbol} ${order.side} ${order.executedQty}/${order.origQty} (${fillPercent.toFixed(1)}%)`;
+    } else if (order.status === OrderStatus.FILLED) {
+      notificationType = 'FILLED';
+      const totalValue = parseFloat(order.executedQty) * parseFloat(order.price);
+      message = `Order filled: ${order.side} ${order.executedQty} ${order.symbol} @ ${order.price} (Total: ${totalValue.toFixed(2)})`;
+    } else if (order.status === OrderStatus.CANCELED) {
+      notificationType = 'CANCELED';
+      message = `Order canceled: ${order.symbol} ${order.side} ${order.origQty}`;
+    } else if (order.status === OrderStatus.REJECTED) {
+      notificationType = 'REJECTED';
+      message = `Order rejected: ${order.symbol} ${order.side} ${order.origQty}`;
+    } else {
+      return;
+    }
+
+    const notification: OrderFillNotification = {
+      order,
+      message,
+      timestamp: new Date(),
+      type: notificationType
+    };
+
+    // Add to notifications list
+    const currentNotifications = this.notificationsSubject.value;
+    this.notificationsSubject.next([notification, ...currentNotifications.slice(0, 99)]);
+
+    // Send browser notification
+    this.sendBrowserNotification(notification);
+
+    // Log to console
+    console.log(`📢 ORDER NOTIFICATION: ${message}`);
+  }
+
+  /**
+   * Send browser notification
+   */
+  private sendBrowserNotification(notification: OrderFillNotification): void {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const icon = notification.type === 'FILLED' ? '✅' :
+                   notification.type === 'PARTIALLY_FILLED' ? '⏳' :
+                   notification.type === 'CANCELED' ? '🚫' : '❌';
+
+      new Notification(`${icon} Order ${notification.type}`, {
+        body: notification.message,
+        icon: '/favicon.ico',
+        tag: `order_${notification.order.orderId}`
+      });
+    }
+  }
+
+  /**
+   * Get order notifications
+   */
+  getNotifications(): Observable<OrderFillNotification[]> {
+    return this.notifications$;
+  }
+
+  /**
+   * Clear all notifications
+   */
+  clearNotifications(): void {
+    this.notificationsSubject.next([]);
+  }
+
+  /**
+   * Request notification permission
+   */
+  requestNotificationPermission(): void {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log(`Notification permission: ${permission}`);
+      });
+    }
   }
 }

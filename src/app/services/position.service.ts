@@ -89,9 +89,9 @@ export class PositionService {
    * Load all positions
    */
   loadPositions(): Observable<Position[]> {
-    return this.binanceService.getFuturesPositions().pipe(
-      map(positions => positions.filter(pos => parseFloat(pos.positionAmt) !== 0)),
-      catchError(error => {
+    return this.binanceService.getPositions().pipe(
+      map((positions: Position[]) => positions.filter((pos: any) => parseFloat(pos.positionAmt) !== 0)),
+      catchError((error: any) => {
         console.error('Error loading positions:', error);
         return of([]);
       })
@@ -334,37 +334,36 @@ export class PositionService {
     const position = this.positions.find(pos => pos.symbol === symbol);
     if (!position) return;
 
-    // Get current price
-    this.binanceService.getSymbolPrice(symbol).subscribe({
-      next: (currentPrice) => {
-        const averageEntryPrice = this.calculateAverageEntryPrice(symbol, orders);
-        const positionSize = parseFloat(position.positionAmt);
-        const positionValue = Math.abs(positionSize) * currentPrice;
+    // Get current price using subscribeToPriceUpdates
+    const unsubscribe = this.binanceService.subscribeToPriceUpdates(symbol, (priceStr: string) => {
+      const currentPrice = parseFloat(priceStr);
+      const averageEntryPrice = this.calculateAverageEntryPrice(symbol, orders);
+      const positionSize = parseFloat(position.positionAmt);
+      const positionValue = Math.abs(positionSize) * currentPrice;
 
-        const unrealizedPnL = parseFloat(position.unRealizedProfit);
-        const unrealizedPnLPercent = averageEntryPrice > 0 ?
-          ((currentPrice - averageEntryPrice) / averageEntryPrice) * 100 * Math.sign(positionSize) : 0;
+      const unrealizedPnL = parseFloat(position.unRealizedProfit);
+      const unrealizedPnLPercent = averageEntryPrice > 0 ?
+        ((currentPrice - averageEntryPrice) / averageEntryPrice) * 100 * Math.sign(positionSize) : 0;
 
-        const metrics: PositionMetrics = {
-          position,
-          unrealizedPnL,
-          unrealizedPnLPercent,
-          realizedPnL: 0, // Would need to track this separately
-          totalPnL: unrealizedPnL,
-          averageEntryPrice,
-          currentPrice,
-          positionValue,
-          marginUsed: positionValue / parseFloat(position.leverage),
-          liquidationPrice: parseFloat(position.liquidationPrice),
-          daysHeld: this.calculateDaysHeld(orders)
-        };
+      const metrics: PositionMetrics = {
+        position,
+        unrealizedPnL,
+        unrealizedPnLPercent,
+        realizedPnL: 0, // Would need to track this separately
+        totalPnL: unrealizedPnL,
+        averageEntryPrice,
+        currentPrice,
+        positionValue,
+        marginUsed: positionValue / parseFloat(position.leverage),
+        liquidationPrice: parseFloat(position.liquidationPrice),
+        daysHeld: this.calculateDaysHeld(orders)
+      };
 
-        this.positionMetrics.set(symbol, metrics);
-        this.positionMetricsSubject.next(new Map(this.positionMetrics));
-      },
-      error: (error) => {
-        console.error(`Error getting price for ${symbol}:`, error);
-      }
+      this.positionMetrics.set(symbol, metrics);
+      this.positionMetricsSubject.next(new Map(this.positionMetrics));
+
+      // Unsubscribe after first update
+      unsubscribe();
     });
   }
 
@@ -373,8 +372,9 @@ export class PositionService {
    */
   private updatePositionMetrics(): void {
     this.positions.forEach(position => {
-      this.orderService.getOrderHistory(position.symbol).subscribe(orders => {
-        this.updatePositionMetricsForSymbol(position.symbol, orders);
+      this.orderService.orderHistory$.subscribe((orders: any) => {
+        const symbolOrders = orders.filter((o: any) => o.symbol === position.symbol);
+        this.updatePositionMetricsForSymbol(position.symbol, symbolOrders);
       });
     });
   }

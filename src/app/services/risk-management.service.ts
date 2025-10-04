@@ -210,7 +210,7 @@ export class RiskManagementService {
     });
 
     // Get account balance
-    this.binanceService.getAccountBalance().subscribe(balances => {
+    this.binanceService.getAccountBalances().subscribe((balances: any) => {
       const totalBalance = this.calculateTotalBalance(balances);
 
       // Initialize account values if needed
@@ -466,8 +466,8 @@ export class RiskManagementService {
   emergencyStop(): Observable<Order[]> {
     console.log('🛑 EMERGENCY STOP: Closing all positions');
 
-    return this.positionService.positions$.pipe(
-      map(positions => {
+    return new Observable(observer => {
+      this.positionService.positions$.subscribe(positions => {
         const closeOrders: Observable<Order>[] = [];
 
         positions.forEach(position => {
@@ -476,9 +476,29 @@ export class RiskManagementService {
           }
         });
 
-        return closeOrders;
-      })
-    );
+        // Wait for all close orders to complete
+        if (closeOrders.length === 0) {
+          observer.next([]);
+          observer.complete();
+        } else {
+          const results: Order[] = [];
+          let completed = 0;
+          closeOrders.forEach(orderObs => {
+            orderObs.subscribe({
+              next: (order) => {
+                results.push(order);
+                completed++;
+                if (completed === closeOrders.length) {
+                  observer.next(results);
+                  observer.complete();
+                }
+              },
+              error: (err) => observer.error(err)
+            });
+          });
+        }
+      });
+    });
   }
 
   /**
@@ -550,7 +570,7 @@ export class RiskManagementService {
    * Reset daily metrics
    */
   private resetDailyMetrics(): void {
-    this.binanceService.getAccountBalance().subscribe(balances => {
+    this.binanceService.getAccountBalances().subscribe((balances: any) => {
       this.dailyStartValue = this.calculateTotalBalance(balances);
       console.log('🔄 Daily risk metrics reset');
     });

@@ -9,7 +9,8 @@ import {
   TimeInForce,
   OrderValidation,
   OrderConfirmation,
-  AccountBalance
+  AccountBalance,
+  OrderFillNotification
 } from '../../models/trading.model';
 import { OrderService } from '../../services/order.service';
 import { BinanceService } from '../../services/binance.service';
@@ -31,6 +32,7 @@ export class OrderPlacementComponent implements OnInit, OnDestroy {
   accountBalance: AccountBalance[] = [];
   currentPrice: number = 0;
   isPlacingOrder = false;
+  notifications: OrderFillNotification[] = [];
 
   // Enums for template
   OrderType = OrderType;
@@ -48,6 +50,8 @@ export class OrderPlacementComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadAccountBalance();
     this.setupFormValidation();
+    this.loadNotifications();
+    this.requestNotificationPermission();
   }
 
   ngOnDestroy(): void {
@@ -125,14 +129,14 @@ export class OrderPlacementComponent implements OnInit, OnDestroy {
   }
 
   private loadAccountBalance(): void {
-    this.binanceService.getAccountBalance()
+    this.binanceService.getAccountBalances()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (balance) => {
+        next: (balance: AccountBalance[]) => {
           this.accountBalance = balance;
           this.validateForm();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading account balance:', error);
         }
       });
@@ -146,21 +150,18 @@ export class OrderPlacementComponent implements OnInit, OnDestroy {
   }
 
   private loadCurrentPrice(symbol: string): void {
-    this.binanceService.getSymbolPrice(symbol)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (price) => {
-          this.currentPrice = parseFloat(price.price);
+    // Subscribe to price updates from WebSocket
+    const unsubscribe = this.binanceService.subscribeToPriceUpdates(symbol, (price: string) => {
+      this.currentPrice = parseFloat(price);
 
-          // Auto-fill price for limit orders
-          if (this.orderForm.get('type')?.value === OrderType.LIMIT) {
-            this.orderForm.patchValue({ price: price.price });
-          }
-        },
-        error: (error) => {
-          console.error('Error loading current price:', error);
-        }
-      });
+      // Auto-fill price for limit orders
+      if (this.orderForm.get('type')?.value === OrderType.LIMIT) {
+        this.orderForm.patchValue({ price: price });
+      }
+    });
+
+    // Unsubscribe on destroy
+    this.destroy$.subscribe(() => unsubscribe());
   }
 
   onOrderTypeChange(): void {
@@ -296,6 +297,51 @@ export class OrderPlacementComponent implements OnInit, OnDestroy {
     if (symbol.endsWith('BUSD')) return symbol.slice(0, -4);
     if (symbol.endsWith('BTC')) return symbol.slice(0, -3);
     return symbol.slice(0, -4);
+  }
+
+  private loadNotifications(): void {
+    this.orderService.getNotifications()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (notifications) => {
+          this.notifications = notifications.slice(0, 5); // Show only last 5
+        },
+        error: (error) => {
+          console.error('Error loading notifications:', error);
+        }
+      });
+  }
+
+  private requestNotificationPermission(): void {
+    this.orderService.requestNotificationPermission();
+  }
+
+  dismissNotification(index: number): void {
+    this.notifications.splice(index, 1);
+  }
+
+  clearAllNotifications(): void {
+    this.orderService.clearNotifications();
+  }
+
+  getNotificationIcon(type: string): string {
+    switch (type) {
+      case 'FILLED': return '✅';
+      case 'PARTIALLY_FILLED': return '⏳';
+      case 'CANCELED': return '🚫';
+      case 'REJECTED': return '❌';
+      default: return '📢';
+    }
+  }
+
+  getNotificationClass(type: string): string {
+    switch (type) {
+      case 'FILLED': return 'notification-success';
+      case 'PARTIALLY_FILLED': return 'notification-info';
+      case 'CANCELED': return 'notification-warning';
+      case 'REJECTED': return 'notification-error';
+      default: return 'notification-default';
+    }
   }
 
   // Helper methods for template

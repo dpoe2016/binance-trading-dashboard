@@ -1,4 +1,23 @@
 <div class="order-placement-container">
+  <!-- Order Notifications -->
+  <div class="notifications-panel" *ngIf="notifications.length > 0">
+    <div class="notifications-header">
+      <h4>📢 Order Notifications</h4>
+      <button type="button" class="btn-clear" (click)="clearAllNotifications()">Clear All</button>
+    </div>
+    <div class="notifications-list">
+      <div *ngFor="let notification of notifications; let i = index"
+           [class]="'notification-item ' + getNotificationClass(notification.type)">
+        <div class="notification-icon">{{ getNotificationIcon(notification.type) }}</div>
+        <div class="notification-content">
+          <div class="notification-message">{{ notification.message }}</div>
+          <div class="notification-time">{{ notification.timestamp | date:'short' }}</div>
+        </div>
+        <button type="button" class="btn-dismiss" (click)="dismissNotification(i)">&times;</button>
+      </div>
+    </div>
+  </div>
+
   <div class="order-form-card">
     <h2>Place Order</h2>
 

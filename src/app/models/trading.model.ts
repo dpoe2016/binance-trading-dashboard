@@ -147,3 +147,10 @@ export interface AccountStats {
   positionCount: number;
   openOrdersCount: number;
 }
+
+export interface OrderFillNotification {
+  order: Order;
+  message: string;
+  timestamp: Date;
+  type: 'FILLED' | 'PARTIALLY_FILLED' | 'CANCELED' | 'REJECTED';
+}

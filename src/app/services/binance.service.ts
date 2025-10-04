@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, interval } from 'rxjs';
+import { BehaviorSubject, Observable, interval, of } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AccountBalance, Position, Order, Candle, AccountStats } from '../models/trading.model';
 import { environment } from '../config/environment.config';
@@ -333,6 +333,68 @@ export class BinanceService {
     // TODO: Implement real order cancellation for testnet/live
     console.log(`Canceling order (${tradingMode} mode):`, { symbol, orderId });
     return { orderId, status: 'CANCELED' };
+  }
+
+  createOrder(orderRequest: any): Observable<any> {
+    // Map order request to appropriate order type
+    if (orderRequest.type === 'MARKET') {
+      return new Observable(observer => {
+        this.placeMarketOrder(orderRequest.symbol, orderRequest.side, orderRequest.quantity)
+          .then(result => {
+            observer.next(result);
+            observer.complete();
+          })
+          .catch(error => observer.error(error));
+      });
+    } else if (orderRequest.type === 'LIMIT') {
+      return new Observable(observer => {
+        this.placeLimitOrder(orderRequest.symbol, orderRequest.side, orderRequest.quantity, orderRequest.price)
+          .then(result => {
+            observer.next(result);
+            observer.complete();
+          })
+          .catch(error => observer.error(error));
+      });
+    } else {
+      // For other order types, return mock response for now
+      return of({
+        symbol: orderRequest.symbol,
+        orderId: Date.now(),
+        clientOrderId: `client_${Date.now()}`,
+        transactTime: Date.now(),
+        price: orderRequest.price || '0',
+        origQty: orderRequest.quantity,
+        executedQty: '0',
+        status: 'NEW',
+        type: orderRequest.type,
+        side: orderRequest.side,
+        fills: []
+      });
+    }
+  }
+
+  getOrder(symbol: string, orderId: number): Observable<any> {
+    // For now, return mock response
+    // In production, this would call the actual Binance API
+    return of({
+      symbol,
+      orderId,
+      clientOrderId: `client_${orderId}`,
+      price: '0',
+      origQty: '0',
+      executedQty: '0',
+      status: 'FILLED',
+      type: 'MARKET',
+      side: 'BUY',
+      time: Date.now(),
+      updateTime: Date.now()
+    });
+  }
+
+  getOrderHistory(): Observable<any[]> {
+    // For now, return empty array
+    // In production, this would fetch actual order history
+    return of([]);
   }
 
   // WebSocket - Price Updates
