@@ -1,0 +1,351 @@
+<div class="alerts-container">
+  <!-- Header -->
+  <div class="alerts-header">
+    <h2>🔔 Alert Management</h2>
+    <div class="header-stats">
+      <div class="stat">
+        <span class="stat-value">{{ getActiveAlertsCount() }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ getTriggeredAlertsCount() }}</span>
+        <span class="stat-label">Triggered</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">{{ alertHistory.length }}</span>
+        <span class="stat-label">History</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="alerts-tabs">
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'active'"
+      (click)="setTab('active')">
+      Active Alerts
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'history'"
+      (click)="setTab('history')">
+      History
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'create'"
+      (click)="setTab('create')">
+      {{ editingAlert ? 'Edit Alert' : 'Create Alert' }}
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'settings'"
+      (click)="setTab('settings')">
+      Settings
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    <!-- Active Alerts Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'active'">
+      <div class="alerts-list" *ngIf="alerts.length > 0; else noAlerts">
+        <div
+          class="alert-card"
+          *ngFor="let alert of alerts"
+          [class]="getAlertStatusClass(alert)">
+          <div class="alert-header">
+            <div class="alert-title">
+              <span class="alert-icon">{{ getAlertIcon(alert.type) }}</span>
+              <span class="alert-name">{{ alert.name }}</span>
+            </div>
+            <div class="alert-actions">
+              <button
+                class="btn-icon"
+                [class.active]="alert.isActive"
+                (click)="toggleAlert(alert.id)"
+                [title]="alert.isActive ? 'Deactivate' : 'Activate'">
+                {{ alert.isActive ? '🔔' : '🔕' }}
+              </button>
+              <button
+                class="btn-icon"
+                (click)="editAlert(alert)"
+                title="Edit">
+                ✏️
+              </button>
+              <button
+                class="btn-icon delete"
+                (click)="deleteAlert(alert.id)"
+                title="Delete">
+                🗑️
+              </button>
+            </div>
+          </div>
+
+          <div class="alert-details">
+            <div class="detail-row">
+              <span class="label">Symbol:</span>
+              <span class="value">{{ alert.symbol }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Type:</span>
+              <span class="value">{{ getAlertTypeLabel(alert.type) }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Target:</span>
+              <span class="value">{{ alert.value }}</span>
+            </div>
+            <div class="detail-row" *ngIf="alert.type.includes('PRICE')">
+              <span class="label">Current:</span>
+              <span class="value">{{ getCurrentPrice(alert.symbol).toFixed(2) }}</span>
+            </div>
+            <div class="detail-row" *ngIf="alert.lastChecked">
+              <span class="label">Last Checked:</span>
+              <span class="value">{{ formatDate(alert.lastChecked) }}</span>
+            </div>
+          </div>
+
+          <div class="alert-status" *ngIf="alert.triggered">
+            <span class="status-badge triggered">
+              ✅ Triggered {{ formatDate(alert.triggeredAt) }}
+            </span>
+            <div class="alert-message" *ngIf="alert.message">
+              {{ alert.message }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noAlerts>
+        <div class="empty-state">
+          <div class="empty-icon">🔔</div>
+          <h3>No Alerts Yet</h3>
+          <p>Create your first price alert to get notified when your target is reached</p>
+          <button class="btn btn-primary" (click)="setTab('create')">
+            Create Alert
+          </button>
+        </div>
+      </ng-template>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions" *ngIf="alerts.length > 0">
+        <h4>Quick Create</h4>
+        <div class="quick-buttons">
+          <button
+            *ngFor="let symbol of availableSymbols.slice(0, 4)"
+            class="btn-quick"
+            (click)="quickCreatePriceAlert(symbol, 'above')">
+            {{ symbol }} ⬆️
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'history'">
+      <div class="history-header">
+        <h3>Alert History</h3>
+        <button class="btn btn-secondary" (click)="clearHistory()">
+          Clear History
+        </button>
+      </div>
+
+      <div class="history-list" *ngIf="alertHistory.length > 0; else noHistory">
+        <div class="history-item" *ngFor="let item of alertHistory">
+          <div class="history-time">
+            {{ formatDate(item.triggeredAt) }}
+          </div>
+          <div class="history-content">
+            <div class="history-name">{{ item.alert.name }}</div>
+            <div class="history-message">{{ item.message }}</div>
+            <div class="history-details">
+              <span class="badge">{{ item.alert.symbol }}</span>
+              <span class="badge">{{ getAlertTypeLabel(item.alert.type) }}</span>
+              <span class="badge price">Price: {{ item.price.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noHistory>
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <h3>No History</h3>
+          <p>Alert history will appear here when alerts are triggered</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Create/Edit Alert Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'create'">
+      <div class="create-form">
+        <h3>{{ editingAlert ? 'Edit Alert' : 'Create New Alert' }}</h3>
+
+        <div class="form-group">
+          <label>Alert Name *</label>
+          <input
+            type="text"
+            [(ngModel)]="newAlert.name"
+            placeholder="e.g., BTC Above 50k"
+            class="form-control">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Symbol *</label>
+            <select [(ngModel)]="newAlert.symbol" class="form-control">
+              <option *ngFor="let symbol of availableSymbols" [value]="symbol">
+                {{ symbol }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Current Price</label>
+            <div class="price-display">
+              {{ getCurrentPrice(newAlert.symbol).toFixed(2) }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Alert Type *</label>
+          <select [(ngModel)]="newAlert.type" class="form-control">
+            <optgroup label="Price Alerts">
+              <option [value]="AlertType.PRICE_ABOVE">Price Above</option>
+              <option [value]="AlertType.PRICE_BELOW">Price Below</option>
+              <option [value]="AlertType.PRICE_CROSS_ABOVE">Price Cross Above</option>
+              <option [value]="AlertType.PRICE_CROSS_BELOW">Price Cross Below</option>
+              <option [value]="AlertType.PERCENTAGE_CHANGE">Percentage Change</option>
+            </optgroup>
+            <optgroup label="Indicator Alerts">
+              <option [value]="AlertType.RSI_ABOVE">RSI Above</option>
+              <option [value]="AlertType.RSI_BELOW">RSI Below</option>
+            </optgroup>
+            <optgroup label="Volume Alerts">
+              <option [value]="AlertType.VOLUME_SPIKE">Volume Spike</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Target Value *
+            <span class="help-text" *ngIf="newAlert.type === AlertType.PERCENTAGE_CHANGE">
+              (Enter percentage, e.g., 5 for 5%)
+            </span>
+            <span class="help-text" *ngIf="newAlert.type === AlertType.VOLUME_SPIKE">
+              (Enter multiplier, e.g., 2 for 2x volume)
+            </span>
+          </label>
+          <input
+            type="number"
+            [(ngModel)]="newAlert.value"
+            [placeholder]="newAlert.type.includes('PRICE') ? 'e.g., 50000' : 'e.g., 70'"
+            class="form-control"
+            step="0.01">
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="newAlert.isActive">
+            <span>Activate immediately</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" (click)="resetCreateForm(); setTab('active')">
+            Cancel
+          </button>
+          <button
+            class="btn btn-primary"
+            (click)="editingAlert ? updateAlert() : createAlert()">
+            {{ editingAlert ? 'Update Alert' : 'Create Alert' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'settings'">
+      <div class="settings-form">
+        <h3>Notification Settings</h3>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="notificationSettings.browserNotifications"
+              (change)="updateNotificationSettings()">
+            <span>Browser Notifications</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="notificationSettings.soundAlerts"
+              (change)="updateNotificationSettings()">
+            <span>Sound Alerts</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="notificationSettings.popupAlerts"
+              (change)="updateNotificationSettings()">
+            <span>Popup Alerts</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="notificationSettings.emailNotifications"
+              (change)="updateNotificationSettings()">
+            <span>Email Notifications (Coming Soon)</span>
+          </label>
+        </div>
+
+        <hr>
+
+        <h4>Alert Limits</h4>
+
+        <div class="form-group">
+          <label>
+            Alert Cooldown (minutes)
+            <span class="help-text">Minimum time between same alert triggers</span>
+          </label>
+          <input
+            type="number"
+            [(ngModel)]="notificationSettings.alertCooldown"
+            (change)="updateNotificationSettings()"
+            min="1"
+            max="60"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>
+            Max Alerts Per Hour
+            <span class="help-text">Maximum number of alerts that can trigger per hour</span>
+          </label>
+          <input
+            type="number"
+            [(ngModel)]="notificationSettings.maxAlertsPerHour"
+            (change)="updateNotificationSettings()"
+            min="1"
+            max="100"
+            class="form-control">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

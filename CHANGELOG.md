@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2025-10-04
+
+### Added
+- **Price Alerts UI**: Comprehensive alert management interface
+  - Alert creation form with multiple alert types (Price Above/Below, Cross Above/Below, Percentage Change)
+  - Alert list with active/triggered/inactive status indicators
+  - Quick create buttons for popular symbols
+  - Alert editing and deletion functionality
+  - Real-time current price display for reference
+  - Alert history view with last 50 triggered alerts
+  - Notification settings panel (browser, sound, popup, email)
+  - Alert cooldown and rate limiting configuration
+  - Active/History/Create/Settings tabbed interface
+  - Empty states with helpful guidance
+  - Responsive design for mobile/desktop
+  - Color-coded alert cards (active=green, triggered=orange, inactive=gray)
+  - Alert statistics dashboard (active count, triggered count, history count)
+
+### Changed
+- Updated TASKS.md to mark Task 4.2 (Price Alerts) as complete
+- Overall progress: 12 tasks completed (Phase 1: 5, Phase 2: 5, Phase 4: 2)
+- Phase 4 progress: 29% (2/7 tasks)
+- Next priority: Task 4.3 (Indicator Alerts)
+
+### Technical
+- Created AlertsComponent with full CRUD operations
+- Integrated with AlertService for backend functionality
+- Support for 8 alert types (Price, RSI, Volume)
+- localStorage persistence
+- Browser notification integration
+
+
+
 ## [0.7.1] - 2025-10-04
 
 ### Verified
