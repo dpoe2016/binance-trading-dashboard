@@ -26,6 +26,10 @@
 
     <button class="btn-refresh" (click)="loadChartData()">Aktualisieren</button>
 
+    <button class="btn-order" (click)="toggleOrderPanel()" [class.active]="showOrderPanel">
+      {{ showOrderPanel ? '✕ Close' : '📝 Place Order' }}
+    </button>
+
     <div class="live-indicator" *ngIf="isLiveUpdating">
       <span class="live-dot"></span>
       <span>Live</span>
@@ -63,5 +67,12 @@
     </div>
   </div>
 
-  <div class="chart-container" #chartContainer [class.with-rsi]="selectedStrategy && hasRSIIndicator()"></div>
+  <div class="chart-content-wrapper">
+    <div class="chart-container" #chartContainer [class.with-rsi]="selectedStrategy && hasRSIIndicator()" [class.with-order-panel]="showOrderPanel"></div>
+
+    <!-- Order Placement Panel -->
+    <div class="order-panel" *ngIf="showOrderPanel">
+      <app-order-placement></app-order-placement>
+    </div>
+  </div>
 </div>

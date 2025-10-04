@@ -1,0 +1,273 @@
+<div class="email-config-container">
+  <div class="email-config-header">
+    <h2>Email Notification Settings</h2>
+    <p>Configure IMAP/SMTP settings to receive email alerts</p>
+  </div>
+
+  <form [formGroup]="emailForm" class="email-config-form">
+    <!-- Enable/Disable -->
+    <div class="form-section">
+      <div class="form-group-inline">
+        <label class="toggle-label">
+          <input type="checkbox" formControlName="enabled" class="toggle-input">
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Enable Email Notifications</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- SMTP Configuration -->
+    <div class="form-section">
+      <h3>SMTP Configuration</h3>
+
+      <!-- Preset Selection -->
+      <div class="form-group">
+        <label>Email Provider Preset</label>
+        <select (change)="onPresetChange($event)" class="form-control">
+          <option *ngFor="let preset of smtpPresets" [value]="preset.name">
+            {{ preset.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex: 3;">
+          <label>SMTP Host *</label>
+          <input type="text" formControlName="smtpHost" class="form-control"
+                 placeholder="smtp.example.com">
+          <div class="error-message" *ngIf="f['smtpHost'].touched && f['smtpHost'].invalid">
+            SMTP host is required
+          </div>
+        </div>
+
+        <div class="form-group" style="flex: 1;">
+          <label>Port *</label>
+          <input type="number" formControlName="smtpPort" class="form-control"
+                 placeholder="587">
+          <div class="error-message" *ngIf="f['smtpPort'].touched && f['smtpPort'].invalid">
+            Valid port required
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group-inline">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="smtpSecure">
+          <span>Use TLS/SSL (Enable for port 465)</span>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>SMTP Username/Email *</label>
+          <input type="email" formControlName="smtpUser" class="form-control"
+                 placeholder="your-email@example.com">
+          <div class="error-message" *ngIf="f['smtpUser'].touched && f['smtpUser'].invalid">
+            Valid email required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>SMTP Password *</label>
+          <div class="password-input-group">
+            <input [type]="showPassword ? 'text' : 'password'"
+                   formControlName="smtpPassword"
+                   class="form-control"
+                   placeholder="Enter password or app password">
+            <button type="button" (click)="togglePassword()" class="password-toggle">
+              {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+            </button>
+          </div>
+          <div class="error-message" *ngIf="f['smtpPassword'].touched && f['smtpPassword'].invalid">
+            Password is required
+          </div>
+          <small class="help-text">For Gmail, use an App Password instead of your regular password</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Settings -->
+    <div class="form-section">
+      <h3>Email Settings</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>From Email *</label>
+          <input type="email" formControlName="fromEmail" class="form-control"
+                 placeholder="noreply@example.com">
+          <div class="error-message" *ngIf="f['fromEmail'].touched && f['fromEmail'].invalid">
+            Valid email required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>From Name *</label>
+          <input type="text" formControlName="fromName" class="form-control"
+                 placeholder="AlgoTrader Pro">
+          <div class="error-message" *ngIf="f['fromName'].touched && f['fromName'].invalid">
+            From name is required
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Recipient Email *</label>
+        <input type="email" formControlName="toEmail" class="form-control"
+               placeholder="your-email@example.com">
+        <div class="error-message" *ngIf="f['toEmail'].touched && f['toEmail'].invalid">
+          Valid recipient email required
+        </div>
+      </div>
+    </div>
+
+    <!-- Frequency Controls -->
+    <div class="form-section">
+      <h3>Email Frequency Controls</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Minimum Interval (minutes) *</label>
+          <input type="number" formControlName="minInterval" class="form-control"
+                 min="1" placeholder="5">
+          <small class="help-text">Minimum time between emails</small>
+        </div>
+
+        <div class="form-group">
+          <label>Max Emails Per Hour *</label>
+          <input type="number" formControlName="maxEmailsPerHour" class="form-control"
+                 min="1" placeholder="10">
+        </div>
+
+        <div class="form-group">
+          <label>Max Emails Per Day *</label>
+          <input type="number" formControlName="maxEmailsPerDay" class="form-control"
+                 min="1" placeholder="50">
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Types -->
+    <div class="form-section" formGroupName="alertTypes">
+      <h3>Alert Types to Email</h3>
+
+      <div class="alert-types-grid">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="priceAlerts">
+          <span>Price Alerts</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="indicatorAlerts">
+          <span>Indicator Alerts</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="volatilityAlerts">
+          <span>Volatility Alerts</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="orderFilled">
+          <span>Order Filled</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="positionClosed">
+          <span>Position Closed</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="riskWarnings">
+          <span>Risk Warnings</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Advanced Options -->
+    <div class="form-section">
+      <h3>Advanced Options</h3>
+
+      <div class="form-group-inline">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="useHtml">
+          <span>Send HTML formatted emails</span>
+        </label>
+      </div>
+
+      <div class="form-group-inline">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="includeLogo">
+          <span>Include logo in emails</span>
+        </label>
+      </div>
+
+      <div class="form-group-inline">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="includeChartLink">
+          <span>Include chart link in emails</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button type="button" (click)="testEmail()" [disabled]="isTesting || emailForm.invalid"
+              class="btn btn-secondary">
+        {{ isTesting ? 'Sending Test...' : 'Send Test Email' }}
+      </button>
+
+      <button type="button" (click)="saveConfig()" [disabled]="isSaving || emailForm.invalid"
+              class="btn btn-primary">
+        {{ isSaving ? 'Saving...' : 'Save Configuration' }}
+      </button>
+    </div>
+
+    <!-- Test Result -->
+    <div *ngIf="testResult" class="alert"
+         [class.alert-success]="testResult.success"
+         [class.alert-error]="!testResult.success">
+      {{ testResult.message }}
+    </div>
+  </form>
+
+  <!-- Email Statistics -->
+  <div class="email-stats" *ngIf="emailStats">
+    <h3>Email Statistics</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Emails Last Hour</div>
+        <div class="stat-value">{{ emailStats.lastHour }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Emails Today</div>
+        <div class="stat-value">{{ emailStats.today }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Email</div>
+        <div class="stat-value">{{ emailStats.lastEmailTime ? (emailStats.lastEmailTime | date:'short') : 'Never' }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Queue Size</div>
+        <div class="stat-value">{{ emailStats.queueSize }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email History -->
+  <div class="email-history" *ngIf="emailHistory.length > 0">
+    <h3>Recent Emails</h3>
+    <div class="history-list">
+      <div *ngFor="let email of emailHistory" class="history-item"
+           [class.sent]="email.sent" [class.failed]="!email.sent">
+        <div class="history-header">
+          <span class="history-subject">{{ email.subject }}</span>
+          <span class="history-status">{{ email.sent ? '✓ Sent' : '✗ Failed' }}</span>
+        </div>
+        <div class="history-meta">
+          <span>{{ email.timestamp | date:'short' }}</span>
+          <span *ngIf="email.error" class="history-error">{{ email.error }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

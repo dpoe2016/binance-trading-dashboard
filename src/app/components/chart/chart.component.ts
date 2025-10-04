@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { createChart, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, LineSeries, LineData, HistogramSeries, HistogramData, createSeriesMarkers } from 'lightweight-charts';
 
 import { BinanceService } from '../../services/binance.service';
@@ -8,11 +8,12 @@ import { StrategyService } from '../../services/strategy.service';
 import { SettingsService } from '../../services/settings.service';
 import { TradingStrategy, Candle } from '../../models/trading.model';
 import { Subscription } from 'rxjs';
+import { OrderPlacementComponent } from '../order-placement/order-placement.component';
 
 @Component({
   selector: 'app-chart',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, OrderPlacementComponent],
   templateUrl: './chart.component.html',
   styleUrls: ['./chart.component.scss']
 })
@@ -53,6 +54,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   selectedStrategy: string | null = null;
   strategies: TradingStrategy[] = [];
   isLiveUpdating: boolean = false;
+  showOrderPanel: boolean = false;
 
   private currentCandles: Candle[] = [];
 
@@ -335,6 +337,10 @@ export class ChartComponent implements OnInit, OnDestroy {
         this.strategies = strategies;
       })
     );
+  }
+
+  toggleOrderPanel(): void {
+    this.showOrderPanel = !this.showOrderPanel;
   }
 
   onStrategyChange(): void {

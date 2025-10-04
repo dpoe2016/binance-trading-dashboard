@@ -45,7 +45,8 @@
   }
 }
 
-.btn-refresh {
+.btn-refresh,
+.btn-order {
   padding: 8px 16px;
   background-color: var(--success);
   color: white;
@@ -170,5 +171,74 @@
         }
       }
     }
+  }
+}
+
+// Order panel button styles
+.btn-order {
+  background-color: var(--accent-primary);
+
+  &.active {
+    background-color: var(--danger);
+  }
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// Chart content wrapper for layout
+.chart-content-wrapper {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+// Order panel styles
+.order-panel {
+  width: 400px;
+  min-width: 400px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  overflow-y: auto;
+  height: 100%;
+
+  ::ng-deep .order-placement-container {
+    height: 100%;
+    padding: 0;
+  }
+
+  ::ng-deep .order-form-card {
+    height: 100%;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+  }
+}
+
+// Adjust chart container when order panel is open
+.chart-container {
+  flex: 1;
+
+  &.with-order-panel {
+    width: calc(100% - 420px);
+  }
+}
+
+// Mobile responsive
+@media (max-width: 1200px) {
+  .chart-content-wrapper {
+    flex-direction: column;
+  }
+
+  .order-panel {
+    width: 100%;
+    max-height: 500px;
+  }
+
+  .chart-container.with-order-panel {
+    width: 100%;
   }
 }

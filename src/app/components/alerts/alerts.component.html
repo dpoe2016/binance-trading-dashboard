@@ -324,8 +324,11 @@
               type="checkbox"
               [(ngModel)]="notificationSettings.emailNotifications"
               (change)="updateNotificationSettings()">
-            <span>Email Notifications (Coming Soon)</span>
+            <span>Email Notifications</span>
           </label>
+          <a routerLink="/settings/email" class="config-link" style="margin-left: 30px; color: #2196F3; text-decoration: none; font-size: 14px;">
+            ⚙️ Configure Email Settings
+          </a>
         </div>
 
         <hr>

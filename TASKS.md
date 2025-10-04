@@ -46,16 +46,17 @@
 - **Estimated Time:** 6 hours
 - **Dependencies:** None
 
-### Task 1.4: ATR (Average True Range)
+### Task 1.4: ATR (Average True Range) ✅
 - [x] Create ATR calculation method
 - [x] Display in separate pane
 - [x] Add period configuration (default 14)
-- [ ] Add ATR-based stop-loss calculator
-- [ ] Add volatility alerts
+- [x] Add ATR-based stop-loss calculator
+- [x] Add volatility alerts
 - [x] Add to strategy parameters
 - **Priority:** Medium
 - **Estimated Time:** 4 hours
 - **Dependencies:** None
+- **Status:** ✅ COMPLETED (2025-10-04)
 
 ### Task 1.5: Volume Indicator ✅
 - [x] Add volume bars to chart
@@ -268,15 +269,18 @@
 - **Dependencies:** Task 4.1
 - **Status:** ✅ COMPLETED (Pre-existing + enhancements 2025-10-04)
 
-### Task 4.5: Email Notifications
-- [ ] Set up email service (SendGrid/AWS SES)
-- [ ] Create email templates
-- [ ] Add email configuration UI
-- [ ] Add email frequency controls
-- [ ] Add email testing
+### Task 4.5: Email Notifications ✅
+- [x] Set up email service (Custom SMTP/IMAP)
+- [x] Create email templates
+- [x] Add email configuration UI
+- [x] Add email frequency controls
+- [x] Add email testing
+- [x] Integrate with alert service
+- [x] Add backend API documentation
 - **Priority:** Medium
 - **Estimated Time:** 8 hours
 - **Dependencies:** Task 4.1
+- **Status:** ✅ COMPLETED (2025-10-04)
 
 ### Task 4.6: Webhook Integration
 - [ ] Create webhook service
@@ -971,7 +975,7 @@
 - [x] Phase 1: 100% (5/5 tasks) - MACD ✅, Bollinger Bands ✅, Stochastic ✅, ATR ✅, Volume ✅
 - [x] Phase 2: 100% (5/5 tasks) - Order Management ✅, Position Management ✅, Risk Management ✅, Trailing Stop-Loss ✅, Paper Trading Enhancement ✅
 - [ ] Phase 3: 17% (1/6 tasks) - Multi-Timeframe Backtesting ✅
-- [ ] Phase 4: 57% (4/7 tasks) - Alert System Core ✅, Price Alerts ✅, Indicator Alerts ✅, Browser Notifications ✅
+- [ ] Phase 4: 71% (5/7 tasks) - Alert System Core ✅, Price Alerts ✅, Indicator Alerts ✅, Browser Notifications ✅, Email Notifications ✅
 - [ ] Phase 5: 0% (0/7 tasks)
 - [ ] Phase 6: 0% (0/4 tasks)
 - [ ] Phase 7: 0% (0/3 tasks)

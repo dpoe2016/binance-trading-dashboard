@@ -3,6 +3,8 @@ import { BehaviorSubject, Observable, of, interval, combineLatest } from 'rxjs';
 import { map, filter, distinctUntilChanged } from 'rxjs/operators';
 import { Candle } from '../models/trading.model';
 import { BinanceService } from './binance.service';
+import { EmailService } from './email.service';
+import { EmailTemplateService } from './email-template.service';
 
 export interface Alert {
   id: string;
@@ -38,7 +40,10 @@ export enum AlertType {
   BOLLINGER_BREAKOUT_UPPER = 'BOLLINGER_BREAKOUT_UPPER',
   BOLLINGER_BREAKOUT_LOWER = 'BOLLINGER_BREAKOUT_LOWER',
   VOLUME_SPIKE = 'VOLUME_SPIKE',
-  SUPPORT_RESISTANCE = 'SUPPORT_RESISTANCE'
+  SUPPORT_RESISTANCE = 'SUPPORT_RESISTANCE',
+  ATR_HIGH = 'ATR_HIGH',
+  ATR_LOW = 'ATR_LOW',
+  VOLATILITY_SPIKE = 'VOLATILITY_SPIKE'
 }
 
 export interface AlertCondition {
@@ -102,7 +107,11 @@ export class AlertService {
     lastUpdate: Date;
   }>();
 
-  constructor(private binanceService: BinanceService) {
+  constructor(
+    private binanceService: BinanceService,
+    private emailService: EmailService,
+    private emailTemplateService: EmailTemplateService
+  ) {
     this.loadAlerts();
     this.loadNotificationSettings();
     this.initializeAlertEvaluation();
@@ -392,6 +401,15 @@ export class AlertService {
       case AlertType.BOLLINGER_BREAKOUT_LOWER:
         return this.evaluateBollingerBreakout(candles, 'lower');
 
+      case AlertType.ATR_HIGH:
+        return this.evaluateATRHigh(candles, value, alert.condition.period || 14);
+
+      case AlertType.ATR_LOW:
+        return this.evaluateATRLow(candles, value, alert.condition.period || 14);
+
+      case AlertType.VOLATILITY_SPIKE:
+        return this.evaluateVolatilitySpike(candles, value, alert.condition.period || 14);
+
       default:
         return false;
     }
@@ -538,6 +556,88 @@ export class AlertService {
   }
 
   /**
+   * Evaluate ATR High alert (volatility is above threshold)
+   */
+  private evaluateATRHigh(candles: Candle[], threshold: number, period: number = 14): boolean {
+    if (candles.length < period + 1) return false;
+
+    const atrValues = this.calculateATR(candles, period);
+    if (atrValues.length === 0) return false;
+
+    const currentATR = atrValues[atrValues.length - 1];
+    return currentATR > threshold;
+  }
+
+  /**
+   * Evaluate ATR Low alert (volatility is below threshold)
+   */
+  private evaluateATRLow(candles: Candle[], threshold: number, period: number = 14): boolean {
+    if (candles.length < period + 1) return false;
+
+    const atrValues = this.calculateATR(candles, period);
+    if (atrValues.length === 0) return false;
+
+    const currentATR = atrValues[atrValues.length - 1];
+    return currentATR < threshold;
+  }
+
+  /**
+   * Evaluate volatility spike alert (ATR suddenly increases significantly)
+   */
+  private evaluateVolatilitySpike(candles: Candle[], multiplier: number, period: number = 14): boolean {
+    if (candles.length < period + 10) return false; // Need extra data for average
+
+    const atrValues = this.calculateATR(candles, period);
+    if (atrValues.length < 10) return false;
+
+    const currentATR = atrValues[atrValues.length - 1];
+    const recentATRs = atrValues.slice(-10, -1); // Last 9 ATR values (excluding current)
+    const avgATR = recentATRs.reduce((sum, atr) => sum + atr, 0) / recentATRs.length;
+
+    return currentATR >= avgATR * multiplier;
+  }
+
+  /**
+   * Calculate ATR (Average True Range)
+   */
+  private calculateATR(candles: Candle[], period: number = 14): number[] {
+    if (candles.length < period + 1) return [];
+
+    const trueRanges: number[] = [];
+
+    // Calculate True Range for each period
+    for (let i = 1; i < candles.length; i++) {
+      const current = candles[i];
+      const previous = candles[i - 1];
+
+      const highLow = current.high - current.low;
+      const highClose = Math.abs(current.high - previous.close);
+      const lowClose = Math.abs(current.low - previous.close);
+
+      const trueRange = Math.max(highLow, highClose, lowClose);
+      trueRanges.push(trueRange);
+    }
+
+    const atrValues: number[] = [];
+
+    // Calculate initial SMA for first ATR
+    if (trueRanges.length >= period) {
+      const initialSum = trueRanges.slice(0, period).reduce((sum, tr) => sum + tr, 0);
+      atrValues.push(initialSum / period);
+    }
+
+    // Calculate subsequent ATR values using smoothed moving average
+    for (let i = period; i < trueRanges.length; i++) {
+      const prevATR = atrValues[atrValues.length - 1];
+      const currentTR = trueRanges[i];
+      const smoothedATR = (prevATR * (period - 1) + currentTR) / period;
+      atrValues.push(smoothedATR);
+    }
+
+    return atrValues;
+  }
+
+  /**
    * Trigger an alert
    */
   private triggerAlert(alert: Alert, currentPrice: number): void {
@@ -614,6 +714,12 @@ export class AlertService {
         return `${symbol} broke below lower Bollinger Band (price: ${currentPrice.toFixed(4)})`;
       case AlertType.VOLUME_SPIKE:
         return `${symbol} volume spike detected (${value}x average)`;
+      case AlertType.ATR_HIGH:
+        return `${symbol} volatility is high - ATR above ${value.toFixed(6)} (price: ${currentPrice.toFixed(4)})`;
+      case AlertType.ATR_LOW:
+        return `${symbol} volatility is low - ATR below ${value.toFixed(6)} (price: ${currentPrice.toFixed(4)})`;
+      case AlertType.VOLATILITY_SPIKE:
+        return `${symbol} volatility spike detected - ATR increased by ${value}x (price: ${currentPrice.toFixed(4)})`;
       default:
         return `${name} alert triggered for ${symbol}`;
     }
@@ -646,6 +752,11 @@ export class AlertService {
       };
     }
 
+    // Email notification
+    if (settings.emailNotifications) {
+      this.sendEmailNotification(alert, currentPrice, message);
+    }
+
     // Sound alert
     if (settings.soundAlerts) {
       this.playAlertSound();
@@ -657,6 +768,152 @@ export class AlertService {
     }
 
     alert.notificationSent = true;
+  }
+
+  /**
+   * Send email notification for alert
+   */
+  private async sendEmailNotification(alert: Alert, currentPrice: number, message: string): Promise<void> {
+    try {
+      const alertTypeMap: { [key in AlertType]?: string } = {
+        [AlertType.PRICE_ABOVE]: 'price',
+        [AlertType.PRICE_BELOW]: 'price',
+        [AlertType.PRICE_CROSS_ABOVE]: 'price',
+        [AlertType.PRICE_CROSS_BELOW]: 'price',
+        [AlertType.PERCENTAGE_CHANGE]: 'price',
+        [AlertType.RSI_ABOVE]: 'indicator',
+        [AlertType.RSI_BELOW]: 'indicator',
+        [AlertType.RSI_CROSS_ABOVE]: 'indicator',
+        [AlertType.RSI_CROSS_BELOW]: 'indicator',
+        [AlertType.MACD_CROSS_ABOVE]: 'indicator',
+        [AlertType.MACD_CROSS_BELOW]: 'indicator',
+        [AlertType.SMA_CROSS_ABOVE]: 'indicator',
+        [AlertType.SMA_CROSS_BELOW]: 'indicator',
+        [AlertType.BOLLINGER_BREAKOUT_UPPER]: 'indicator',
+        [AlertType.BOLLINGER_BREAKOUT_LOWER]: 'indicator',
+        [AlertType.VOLUME_SPIKE]: 'indicator',
+        [AlertType.ATR_HIGH]: 'volatility',
+        [AlertType.ATR_LOW]: 'volatility',
+        [AlertType.VOLATILITY_SPIKE]: 'volatility'
+      };
+
+      const emailAlertType = alertTypeMap[alert.type] || 'price';
+
+      // Get appropriate email template based on alert type
+      let emailTemplate;
+
+      if (emailAlertType === 'price') {
+        const condition = this.getAlertConditionText(alert);
+        emailTemplate = this.emailTemplateService.getPriceAlertTemplate(
+          alert.symbol,
+          currentPrice,
+          condition,
+          alert.value
+        );
+      } else if (emailAlertType === 'indicator') {
+        const indicatorName = this.getIndicatorName(alert.type);
+        const condition = this.getAlertConditionText(alert);
+        emailTemplate = this.emailTemplateService.getIndicatorAlertTemplate(
+          alert.symbol,
+          indicatorName,
+          condition,
+          alert.value
+        );
+      } else if (emailAlertType === 'volatility') {
+        emailTemplate = this.emailTemplateService.getVolatilityAlertTemplate(
+          alert.symbol,
+          currentPrice,
+          alert.value
+        );
+      } else {
+        // Fallback to generic alert email
+        await this.emailService.sendAlertEmail(emailAlertType, message, {
+          symbol: alert.symbol,
+          price: currentPrice,
+          alertName: alert.name
+        });
+        return;
+      }
+
+      // Send email with template
+      await this.emailService.sendEmail(
+        emailTemplate.subject,
+        emailTemplate.body,
+        emailTemplate.html
+      );
+
+      console.log(`📧 Email notification sent for alert: ${alert.name}`);
+    } catch (error) {
+      console.error('Failed to send email notification:', error);
+    }
+  }
+
+  /**
+   * Get alert condition text
+   */
+  private getAlertConditionText(alert: Alert): string {
+    switch (alert.type) {
+      case AlertType.PRICE_ABOVE:
+        return 'Price Above';
+      case AlertType.PRICE_BELOW:
+        return 'Price Below';
+      case AlertType.PRICE_CROSS_ABOVE:
+        return 'Crossed Above';
+      case AlertType.PRICE_CROSS_BELOW:
+        return 'Crossed Below';
+      case AlertType.PERCENTAGE_CHANGE:
+        return 'Percentage Change';
+      case AlertType.RSI_ABOVE:
+        return 'RSI Above';
+      case AlertType.RSI_BELOW:
+        return 'RSI Below';
+      case AlertType.RSI_CROSS_ABOVE:
+        return 'RSI Crossed Above';
+      case AlertType.RSI_CROSS_BELOW:
+        return 'RSI Crossed Below';
+      case AlertType.MACD_CROSS_ABOVE:
+        return 'MACD Bullish Crossover';
+      case AlertType.MACD_CROSS_BELOW:
+        return 'MACD Bearish Crossover';
+      case AlertType.SMA_CROSS_ABOVE:
+        return 'Price Crossed Above SMA';
+      case AlertType.SMA_CROSS_BELOW:
+        return 'Price Crossed Below SMA';
+      case AlertType.BOLLINGER_BREAKOUT_UPPER:
+        return 'Upper Bollinger Breakout';
+      case AlertType.BOLLINGER_BREAKOUT_LOWER:
+        return 'Lower Bollinger Breakout';
+      case AlertType.VOLUME_SPIKE:
+        return 'Volume Spike';
+      default:
+        return 'Alert Triggered';
+    }
+  }
+
+  /**
+   * Get indicator name from alert type
+   */
+  private getIndicatorName(type: AlertType): string {
+    switch (type) {
+      case AlertType.RSI_ABOVE:
+      case AlertType.RSI_BELOW:
+      case AlertType.RSI_CROSS_ABOVE:
+      case AlertType.RSI_CROSS_BELOW:
+        return 'RSI';
+      case AlertType.MACD_CROSS_ABOVE:
+      case AlertType.MACD_CROSS_BELOW:
+        return 'MACD';
+      case AlertType.SMA_CROSS_ABOVE:
+      case AlertType.SMA_CROSS_BELOW:
+        return 'SMA';
+      case AlertType.BOLLINGER_BREAKOUT_UPPER:
+      case AlertType.BOLLINGER_BREAKOUT_LOWER:
+        return 'Bollinger Bands';
+      case AlertType.VOLUME_SPIKE:
+        return 'Volume';
+      default:
+        return 'Indicator';
+    }
   }
 
   /**
