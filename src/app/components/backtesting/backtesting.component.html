@@ -51,11 +51,143 @@
       [disabled]="!selectedStrategy || isRunning">
       {{ isRunning ? 'Running...' : 'Compare All Timeframes' }}
     </button>
+
+    <button
+      class="btn-optimize"
+      (click)="toggleOptimization()"
+      [disabled]="!selectedStrategy">
+      {{ showOptimization ? '✕ Close Optimizer' : '🔧 Optimize Parameters' }}
+    </button>
   </div>
 
   <div *ngIf="isLoading" class="loading">
     <div class="spinner"></div>
     <p>Loading historical data and running backtest...</p>
+  </div>
+
+  <!-- Parameter Optimization -->
+  <div *ngIf="showOptimization && !isLoading" class="optimization-panel">
+    <h2>Parameter Optimization</h2>
+    <p class="optimization-description">
+      Use grid search to find the best parameters for your strategy by testing all combinations within the specified ranges.
+    </p>
+
+    <div class="optimization-config">
+      <div class="control-group">
+        <label>Optimization Metric</label>
+        <select [(ngModel)]="selectedOptimizationMetric">
+          <option *ngFor="let metric of optimizationMetrics" [value]="metric">
+            {{ getOptimizationMetricLabel(metric) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="parameter-ranges">
+        <h3>Parameter Ranges</h3>
+
+        <div *ngFor="let range of parameterRanges; let i = index" class="parameter-range">
+          <div class="range-row">
+            <div class="control-group">
+              <label>Parameter</label>
+              <input type="text" [(ngModel)]="range.name" />
+            </div>
+            <div class="control-group">
+              <label>Min</label>
+              <input type="number" [(ngModel)]="range.min" step="0.1" />
+            </div>
+            <div class="control-group">
+              <label>Max</label>
+              <input type="number" [(ngModel)]="range.max" step="0.1" />
+            </div>
+            <div class="control-group">
+              <label>Step</label>
+              <input type="number" [(ngModel)]="range.step" step="0.1" />
+            </div>
+            <div class="control-group">
+              <label>Type</label>
+              <select [(ngModel)]="range.type">
+                <option value="integer">Integer</option>
+                <option value="decimal">Decimal</option>
+              </select>
+            </div>
+            <button class="btn-remove" (click)="removeParameterRange(i)">✕</button>
+          </div>
+        </div>
+
+        <button class="btn-add-range" (click)="addParameterRange()">
+          ➕ Add Parameter Range
+        </button>
+      </div>
+
+      <div class="optimization-actions">
+        <button
+          class="btn-optimize"
+          (click)="runOptimization()"
+          [disabled]="isRunning || parameterRanges.length === 0">
+          {{ isRunning ? 'Optimizing...' : '🚀 Run Optimization' }}
+        </button>
+        <button
+          *ngIf="isRunning"
+          class="btn-cancel"
+          (click)="cancelOptimization()">
+          Cancel
+        </button>
+      </div>
+
+      <div *ngIf="optimizationProgress && optimizationProgress.status === 'running'" class="optimization-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="optimizationProgress.percentage"></div>
+        </div>
+        <p>Testing {{ optimizationProgress.current }} / {{ optimizationProgress.total }} combinations ({{ optimizationProgress.percentage.toFixed(1) }}%)</p>
+      </div>
+    </div>
+
+    <!-- Optimization Results -->
+    <div *ngIf="optimizationResults.length > 0" class="optimization-results">
+      <div class="results-header">
+        <h3>Optimization Results ({{ optimizationResults.length }} combinations tested)</h3>
+        <button class="btn-apply" (click)="applyBestParameters()">
+          ✓ Apply Best Parameters to Strategy
+        </button>
+      </div>
+
+      <div class="results-table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Score</th>
+              <th>Total Return</th>
+              <th>Win Rate</th>
+              <th>Sharpe</th>
+              <th>Profit Factor</th>
+              <th>Max DD</th>
+              <th>Parameters</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let result of optimizationResults.slice(0, 20); let i = index"
+                [class.best-result]="i === 0">
+              <td>{{ i + 1 }}</td>
+              <td>{{ formatOptimizationScore(result.score, selectedOptimizationMetric) }}</td>
+              <td [class.positive]="result.results.totalProfit > 0">
+                {{ formatCurrency(result.results.totalProfit) }}<br>
+                <small>{{ formatPercent(result.results.totalProfitPercent) }}</small>
+              </td>
+              <td>{{ formatPercent(result.results.winRate) }}</td>
+              <td>{{ formatNumber(result.results.sharpeRatio) }}</td>
+              <td>{{ formatNumber(result.results.profitFactor) }}</td>
+              <td class="negative">{{ formatPercent(result.results.maxDrawdownPercent) }}</td>
+              <td class="parameters-cell">
+                <span *ngFor="let param of result.parameters | keyvalue" class="param-tag">
+                  {{ getParameterName(param.key) }}: {{ param.value }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- Multi-Timeframe Comparison Results -->

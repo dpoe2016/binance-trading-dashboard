@@ -7,6 +7,7 @@ import { createChart, IChartApi, CandlestickSeries, LineSeries, LineData, Candle
 import { BacktestingService, BacktestResults, BacktestTrade, BacktestSignal } from '../../services/backtesting.service';
 import { StrategyService } from '../../services/strategy.service';
 import { BinanceService } from '../../services/binance.service';
+import { OptimizationService, ParameterRange, OptimizationConfig, OptimizationMetric, OptimizationResult, OptimizationProgress } from '../../services/optimization.service';
 import { TradingStrategy, Candle } from '../../models/trading.model';
 
 @Component({
@@ -52,10 +53,19 @@ export class BacktestingComponent implements OnInit, OnDestroy {
     { label: '1d', value: '1d' }
   ];
 
+  // Optimization
+  showOptimization: boolean = false;
+  optimizationResults: OptimizationResult[] = [];
+  optimizationProgress: OptimizationProgress | null = null;
+  optimizationMetrics = Object.values(OptimizationMetric);
+  selectedOptimizationMetric: OptimizationMetric = OptimizationMetric.COMPOSITE_SCORE;
+  parameterRanges: ParameterRange[] = [];
+
   constructor(
     private backtestingService: BacktestingService,
     private strategyService: StrategyService,
-    private binanceService: BinanceService
+    private binanceService: BinanceService,
+    private optimizationService: OptimizationService
   ) {}
 
   ngOnInit(): void {
@@ -454,5 +464,188 @@ export class BacktestingComponent implements OnInit, OnDestroy {
     a.download = `backtest-${this.selectedSymbol}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // Optimization Methods
+
+  toggleOptimization(): void {
+    this.showOptimization = !this.showOptimization;
+
+    if (this.showOptimization && this.parameterRanges.length === 0) {
+      this.initializeParameterRanges();
+    }
+  }
+
+  initializeParameterRanges(): void {
+    const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+    if (!strategy) return;
+
+    this.parameterRanges = [];
+
+    // Add common parameter ranges based on strategy parameters
+    if (strategy.parameters.useRSI) {
+      this.parameterRanges.push(
+        { name: 'rsiPeriod', min: 7, max: 21, step: 2, type: 'integer' },
+        { name: 'rsiOverbought', min: 65, max: 80, step: 5, type: 'integer' },
+        { name: 'rsiOversold', min: 20, max: 35, step: 5, type: 'integer' }
+      );
+    }
+
+    if (strategy.parameters.useSMA) {
+      this.parameterRanges.push(
+        { name: 'smaFastPeriod', min: 5, max: 20, step: 5, type: 'integer' },
+        { name: 'smaSlowPeriod', min: 20, max: 50, step: 10, type: 'integer' }
+      );
+    }
+
+    // Risk parameters (common for all strategies)
+    this.parameterRanges.push(
+      { name: 'stopLossPercent', min: 1, max: 5, step: 1, type: 'decimal' },
+      { name: 'takeProfitPercent', min: 2, max: 10, step: 2, type: 'decimal' }
+    );
+  }
+
+  addParameterRange(): void {
+    this.parameterRanges.push({
+      name: 'customParam',
+      min: 0,
+      max: 100,
+      step: 1,
+      type: 'integer'
+    });
+  }
+
+  removeParameterRange(index: number): void {
+    this.parameterRanges.splice(index, 1);
+  }
+
+  async runOptimization(): Promise<void> {
+    if (!this.selectedStrategy) {
+      alert('Please select a strategy');
+      return;
+    }
+
+    if (this.parameterRanges.length === 0) {
+      alert('Please add at least one parameter range');
+      return;
+    }
+
+    const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+    if (!strategy) return;
+
+    // Estimate optimization time
+    const estimate = this.optimizationService.estimateOptimizationTime(this.parameterRanges);
+
+    const confirmMsg = `This optimization will test ${estimate.combinations} parameter combinations.\n` +
+                      `Estimated time: ~${Math.ceil(estimate.estimatedSeconds)}s\n\n` +
+                      `Continue?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    this.isRunning = true;
+    this.isLoading = true;
+    this.optimizationResults = [];
+
+    // Subscribe to progress
+    const progressSub = this.optimizationService.getProgress().subscribe(progress => {
+      this.optimizationProgress = progress;
+    });
+
+    this.subscriptions.push(progressSub);
+
+    try {
+      const config: OptimizationConfig = {
+        strategyId: strategy.id,
+        symbol: this.selectedSymbol,
+        timeframe: this.selectedInterval,
+        initialCapital: this.initialCapital,
+        dataPoints: 500,
+        parameters: this.parameterRanges,
+        optimizationMetric: this.selectedOptimizationMetric
+      };
+
+      this.optimizationResults = await this.optimizationService.runGridSearch(config, strategy);
+
+      console.log(`✅ Optimization complete. Found ${this.optimizationResults.length} results`);
+      alert(`Optimization complete! Best score: ${this.optimizationResults[0]?.score.toFixed(4)}`);
+
+    } catch (error) {
+      console.error('Optimization error:', error);
+      alert('Error running optimization. Check console for details.');
+    } finally {
+      this.isRunning = false;
+      this.isLoading = false;
+    }
+  }
+
+  cancelOptimization(): void {
+    this.optimizationService.cancelOptimization();
+  }
+
+  applyBestParameters(): void {
+    if (this.optimizationResults.length === 0) return;
+
+    const best = this.optimizationResults[0];
+    const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+
+    if (!strategy) return;
+
+    // Apply best parameters to strategy
+    const updatedParams = { ...strategy.parameters };
+    for (const [key, value] of Object.entries(best.parameters)) {
+      updatedParams[key] = value;
+    }
+
+    // Update strategy
+    this.strategyService.updateStrategy(strategy.id, { parameters: updatedParams });
+
+    alert('Best parameters applied to strategy!');
+  }
+
+  getOptimizationMetricLabel(metric: OptimizationMetric): string {
+    const labels: { [key in OptimizationMetric]: string } = {
+      [OptimizationMetric.TOTAL_PROFIT]: 'Total Profit ($)',
+      [OptimizationMetric.TOTAL_PROFIT_PERCENT]: 'Total Profit (%)',
+      [OptimizationMetric.SHARPE_RATIO]: 'Sharpe Ratio',
+      [OptimizationMetric.PROFIT_FACTOR]: 'Profit Factor',
+      [OptimizationMetric.WIN_RATE]: 'Win Rate (%)',
+      [OptimizationMetric.MAX_DRAWDOWN]: 'Max Drawdown (%)',
+      [OptimizationMetric.COMPOSITE_SCORE]: 'Composite Score'
+    };
+    return labels[metric];
+  }
+
+  formatOptimizationScore(score: number, metric: OptimizationMetric): string {
+    if (metric === OptimizationMetric.TOTAL_PROFIT) {
+      return `$${score.toFixed(2)}`;
+    } else if (metric === OptimizationMetric.TOTAL_PROFIT_PERCENT ||
+               metric === OptimizationMetric.WIN_RATE ||
+               metric === OptimizationMetric.MAX_DRAWDOWN) {
+      return `${score.toFixed(2)}%`;
+    } else {
+      return score.toFixed(4);
+    }
+  }
+
+  getParameterName(name: string): string {
+    const names: { [key: string]: string } = {
+      'rsiPeriod': 'RSI Period',
+      'rsiOverbought': 'RSI Overbought',
+      'rsiOversold': 'RSI Oversold',
+      'smaPeriod': 'SMA Period',
+      'smaFastPeriod': 'SMA Fast',
+      'smaSlowPeriod': 'SMA Slow',
+      'stopLossPercent': 'Stop Loss %',
+      'takeProfitPercent': 'Take Profit %',
+      'positionSize': 'Position Size',
+      'macdFastPeriod': 'MACD Fast',
+      'macdSlowPeriod': 'MACD Slow',
+      'macdSignalPeriod': 'MACD Signal',
+      'bollingerPeriod': 'Bollinger Period',
+      'bollingerStdDev': 'Bollinger Std Dev',
+      'atrPeriod': 'ATR Period',
+      'atrMultiplier': 'ATR Multiplier'
+    };
+    return names[name] || name;
   }
 }

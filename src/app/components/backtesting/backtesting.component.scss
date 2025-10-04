@@ -451,6 +451,130 @@
   }
 }
 
+.btn-optimize {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  &:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+}
+
+.optimization-panel {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 30px;
+
+  h2 { margin: 0 0 10px 0; color: var(--text-primary); font-size: 24px; }
+  .optimization-description { color: var(--text-tertiary); margin-bottom: 30px; }
+
+  .optimization-config {
+    .control-group { margin-bottom: 20px; }
+
+    .parameter-ranges {
+      margin: 30px 0;
+      h3 { margin: 0 0 20px 0; color: var(--text-primary); font-size: 18px; }
+
+      .parameter-range {
+        margin-bottom: 15px;
+        .range-row {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr auto;
+          gap: 15px;
+          align-items: end;
+
+          .control-group { margin: 0; }
+          .btn-remove { background: var(--danger); color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+        }
+      }
+
+      .btn-add-range { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+    }
+
+    .optimization-actions {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+
+      .btn-cancel { background: var(--danger); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+    }
+
+    .optimization-progress {
+      margin-top: 20px;
+
+      .progress-bar {
+        width: 100%;
+        height: 30px;
+        background: var(--bg-tertiary);
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 10px;
+
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+          transition: width 0.3s;
+        }
+      }
+
+      p { margin: 0; color: var(--text-secondary); text-align: center; }
+    }
+  }
+
+  .optimization-results {
+    margin-top: 30px;
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+
+      h3 { margin: 0; color: var(--text-primary); }
+      .btn-apply { background: var(--success); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 500; &:hover { background: #16a34a; } }
+    }
+
+    .results-table-container {
+      overflow-x: auto;
+
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        overflow: hidden;
+
+        thead {
+          background: var(--bg-tertiary);
+          th { padding: 15px; text-align: left; color: var(--text-tertiary); font-weight: 600; font-size: 13px; }
+        }
+
+        tbody {
+          tr {
+            border-bottom: 1px solid var(--border-primary);
+            &.best-result { background: rgba(34, 197, 94, 0.1); font-weight: 600; }
+            &:hover { background: var(--bg-tertiary); }
+          }
+
+          td {
+            padding: 15px;
+            color: var(--text-primary);
+
+            &.parameters-cell {
+              .param-tag {
+                display: inline-block;
+                background: var(--accent-primary);
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                margin: 2px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .metrics-grid {
     grid-template-columns: 1fr !important;
@@ -464,7 +588,8 @@
     }
 
     .btn-run,
-    .btn-compare {
+    .btn-compare,
+    .btn-optimize {
       width: 100%;
     }
   }
@@ -476,6 +601,15 @@
         align-items: flex-start;
         gap: 12px;
       }
+    }
+  }
+
+  .optimization-panel {
+    padding: 20px;
+
+    .parameter-ranges .parameter-range .range-row {
+      grid-template-columns: 1fr;
+      .btn-remove { width: 100%; margin-top: 10px; }
     }
   }
 }
