@@ -106,12 +106,13 @@ export class ChartComponent implements OnInit, OnDestroy {
   private initChart(): void {
     const container = this.chartContainer.nativeElement;
 
-    // Calculate initial height
-    const containerHeight = container.clientHeight || 400;
+    // Calculate initial height and width based on viewport
+    const containerHeight = this.getResponsiveHeight();
+    const containerWidth = this.getResponsiveWidth();
 
     // Create chart with proper configuration
     this.chart = createChart(container, {
-      width: this.chartWrapper.nativeElement.clientWidth - 40,
+      width: containerWidth,
       height: containerHeight,
       layout: {
         background: { type: 'solid' as any, color: '#ffffff' },
@@ -146,7 +147,7 @@ export class ChartComponent implements OnInit, OnDestroy {
             return `${hours}:${minutes}`;
           }
         },
-        rightOffset: 10, // Add a small offset to prevent price scale overlap
+        rightOffset: this.isMobile() ? 5 : 10, // Smaller offset on mobile
       },
       localization: {
         locale: navigator.language,
@@ -157,6 +158,18 @@ export class ChartComponent implements OnInit, OnDestroy {
           const minutes = date.getMinutes().toString().padStart(2, '0');
           return `${hours}:${minutes}`;
         },
+      },
+      // Mobile-specific options
+      handleScroll: {
+        mouseWheel: !this.isMobile(), // Disable mouse wheel on mobile
+        pressedMouseMove: !this.isMobile(),
+        horzTouchDrag: this.isMobile(), // Enable touch drag on mobile
+        vertTouchDrag: this.isMobile(),
+      },
+      handleScale: {
+        axisPressedMouseMove: !this.isMobile(),
+        mouseWheel: !this.isMobile(),
+        pinch: this.isMobile(), // Enable pinch zoom on mobile
       },
     });
 
@@ -175,11 +188,43 @@ export class ChartComponent implements OnInit, OnDestroy {
       for (let entry of entries) {
         if (entry.target === container && this.chart) {
           const { height } = entry.contentRect;
-          this.chart.applyOptions({ width: this.chartWrapper.nativeElement.clientWidth - 40, height });
+          const width = this.getResponsiveWidth();
+          this.chart.applyOptions({ width, height });
         }
       }
     });
     this.chartResizeObserver.observe(container);
+  }
+
+  private isMobile(): boolean {
+    return window.innerWidth <= 768;
+  }
+
+  private getResponsiveWidth(): number {
+    const wrapperWidth = this.chartWrapper.nativeElement.clientWidth;
+    // Less padding on mobile
+    const padding = this.isMobile() ? 16 : 40;
+    return wrapperWidth - padding;
+  }
+
+  private getResponsiveHeight(): number {
+    const container = this.chartContainer.nativeElement;
+    const containerHeight = container.clientHeight;
+
+    if (containerHeight > 0) {
+      return containerHeight;
+    }
+
+    // Default heights based on viewport size
+    if (window.innerWidth <= 480) {
+      return 250; // Small mobile
+    } else if (window.innerWidth <= 768) {
+      return 300; // Mobile
+    } else if (window.innerWidth <= 1024) {
+      return 400; // Tablet
+    } else {
+      return 500; // Desktop
+    }
   }
 
 

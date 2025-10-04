@@ -66,7 +66,7 @@
     </div>
 
     <!-- Open Orders Table -->
-    <div class="table-container" *ngIf="!isLoading && selectedTab === 'open' && openOrders.length > 0">
+    <div class="table-container table-responsive" *ngIf="!isLoading && selectedTab === 'open' && openOrders.length > 0">
       <table class="orders-table">
         <thead>
           <tr>
@@ -133,7 +133,7 @@
     </div>
 
     <!-- Order History Table -->
-    <div class="table-container" *ngIf="!isLoading && selectedTab === 'history' && orderHistory.length > 0">
+    <div class="table-container table-responsive" *ngIf="!isLoading && selectedTab === 'history' && orderHistory.length > 0">
       <table class="orders-table">
         <thead>
           <tr>

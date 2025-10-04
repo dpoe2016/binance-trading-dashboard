@@ -49,7 +49,7 @@
     <!-- Account Balances -->
     <div class="section">
       <h2>Kontostände</h2>
-      <div class="table-container">
+      <div class="table-container table-responsive">
         <table>
           <thead>
             <tr>
@@ -83,7 +83,7 @@
         <h2>Positionen</h2>
         <span class="toggle-icon">{{ isPositionsCollapsed ? '▶' : '▼' }}</span>
       </div>
-      <div class="table-container" *ngIf="!isPositionsCollapsed">
+      <div class="table-container table-responsive" *ngIf="!isPositionsCollapsed">
         <table>
           <thead>
             <tr>
@@ -123,7 +123,7 @@
         <h2>Offene Orders</h2>
         <span class="toggle-icon">{{ isOpenOrdersCollapsed ? '▶' : '▼' }}</span>
       </div>
-      <div class="table-container" *ngIf="!isOpenOrdersCollapsed">
+      <div class="table-container table-responsive" *ngIf="!isOpenOrdersCollapsed">
         <table>
           <thead>
             <tr>
@@ -162,7 +162,7 @@
     <!-- Active Strategies -->
     <div class="section">
       <h2>Handelsstrategien</h2>
-      <div class="table-container">
+      <div class="table-container table-responsive">
         <table>
           <thead>
             <tr>
@@ -272,7 +272,7 @@
     <!-- Recent Signals -->
     <div class="section">
       <h2>Letzte Signale</h2>
-      <div class="table-container">
+      <div class="table-container table-responsive">
         <table>
           <thead>
             <tr>

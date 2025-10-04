@@ -43,7 +43,8 @@
       <div class="empty-subtitle">Open a position to start trading</div>
     </div>
 
-    <table *ngIf="positions.length > 0" class="positions-table">
+    <div class="table-responsive" *ngIf="positions.length > 0">
+      <table class="positions-table">
       <thead>
         <tr>
           <th>Symbol</th>
@@ -92,7 +93,8 @@
           </td>
         </tr>
       </tbody>
-    </table>
+      </table>
+    </div>
   </div>
 
   <!-- Position Details Modal -->

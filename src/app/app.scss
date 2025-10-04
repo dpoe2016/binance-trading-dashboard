@@ -135,3 +135,187 @@
   padding: 20px;
   transition: background-color 0.3s ease;
 }
+
+// Mobile Menu Toggle Button
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 25px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+
+  .hamburger-line {
+    width: 100%;
+    height: 3px;
+    background-color: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  &.active {
+    .hamburger-line:nth-child(1) {
+      transform: rotate(45deg) translate(6px, 6px);
+    }
+
+    .hamburger-line:nth-child(2) {
+      opacity: 0;
+    }
+
+    .hamburger-line:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+  }
+}
+
+// Mobile Menu Overlay
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+}
+
+// Mobile Controls Container
+.mobile-controls {
+  display: none;
+}
+
+// Responsive Design - Tablet
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 1rem;
+
+    .nav-links {
+      gap: 1rem;
+
+      a {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+      }
+    }
+  }
+
+  .main-content {
+    padding: 15px;
+  }
+}
+
+// Responsive Design - Mobile
+@media (max-width: 768px) {
+  .navbar {
+    position: relative;
+
+    .nav-brand h1 {
+      font-size: 1.2rem;
+    }
+
+    .nav-brand .version {
+      font-size: 0.75rem;
+      padding: 2px 6px;
+    }
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .nav-links {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    flex-direction: column;
+    gap: 0;
+    padding: 80px 0 20px 0;
+    transition: right 0.3s ease;
+    z-index: 999;
+    overflow-y: auto;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
+
+    &.mobile-open {
+      right: 0;
+    }
+
+    a {
+      width: 100%;
+      padding: 1rem 2rem;
+      border-radius: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+      &.active {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-left: 4px solid white;
+      }
+    }
+
+    .mobile-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.5rem 2rem;
+      margin-top: auto;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+
+      .trading-mode-selector,
+      .theme-selector {
+        width: 100%;
+      }
+
+      .trading-mode-selector {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+
+        select {
+          width: 100%;
+        }
+      }
+
+      .theme-toggle-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+      }
+    }
+
+    // Hide desktop controls on mobile
+    > .trading-mode-selector,
+    > .theme-selector {
+      display: none;
+    }
+  }
+
+  .mobile-menu-overlay {
+    display: block;
+  }
+
+  .main-content {
+    padding: 10px;
+  }
+}
+
+// Responsive Design - Small Mobile
+@media (max-width: 480px) {
+  .navbar .nav-brand h1 {
+    font-size: 1rem;
+  }
+
+  .navbar .nav-brand .version {
+    display: none; // Hide version on very small screens
+  }
+
+  .main-content {
+    padding: 8px;
+  }
+}

@@ -242,3 +242,147 @@
     width: 100%;
   }
 }
+
+// Tablet responsive
+@media (max-width: 1024px) {
+  .chart-wrapper {
+    padding: 15px;
+    height: auto;
+    min-height: 500px;
+  }
+
+  .chart-controls {
+    gap: 15px;
+  }
+
+  .strategy-info {
+    flex-wrap: wrap;
+    gap: 10px;
+
+    .indicator-legend,
+    .signal-legend {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .signal-legend {
+      border-left: none;
+      padding-left: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.3);
+      padding-top: 8px;
+      width: 100%;
+    }
+  }
+
+  .order-panel {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .chart-wrapper {
+    padding: 10px;
+    height: auto;
+    min-height: 400px;
+  }
+
+  .chart-controls {
+    gap: 10px;
+  }
+
+  .control-group {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 5px;
+
+    label {
+      font-size: 0.875rem;
+    }
+
+    select {
+      width: 100%;
+      font-size: 0.875rem;
+    }
+  }
+
+  .btn-refresh,
+  .btn-order {
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.875rem;
+  }
+
+  .live-indicator {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .strategy-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+
+    .info-badge {
+      width: 100%;
+    }
+
+    .indicator-legend,
+    .signal-legend {
+      width: 100%;
+      gap: 8px;
+    }
+
+    .signal-legend {
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+  }
+
+  .chart-container {
+    min-height: 300px;
+  }
+
+  .order-panel {
+    max-height: 400px;
+  }
+}
+
+// Small mobile responsive
+@media (max-width: 480px) {
+  .chart-wrapper {
+    padding: 8px;
+  }
+
+  .chart-controls {
+    gap: 8px;
+  }
+
+  .control-group {
+    select {
+      font-size: 16px; // Prevents iOS zoom
+    }
+  }
+
+  .strategy-info {
+    padding: 10px;
+    font-size: 0.8rem;
+
+    .info-badge {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+
+    .indicator-legend {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+
+  .chart-container {
+    min-height: 250px;
+  }
+}

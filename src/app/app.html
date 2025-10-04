@@ -4,29 +4,43 @@
       <h1>⚡ Algo-Trader PRO</h1>
       <span class="version">v{{ version }}</span>
     </div>
-    <div class="nav-links">
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      <a routerLink="/chart" routerLinkActive="active">Charts</a>
-      <a routerLink="/strategies" routerLinkActive="active">Strategien</a>
-      <a routerLink="/backtesting" routerLinkActive="active">Backtesting</a>
-      <a routerLink="/alerts" routerLinkActive="active">Alerts</a>
-      <a routerLink="/positions" routerLinkActive="active">Positions</a>
-      <a routerLink="/settings/email" routerLinkActive="active">Settings</a>
-      <div class="trading-mode-selector">
-        <label for="tradingMode">Modus:</label>
-        <select id="tradingMode" [(ngModel)]="selectedTradingMode" (change)="onTradingModeChange()">
-          <option value="testnet">Testnet</option>
-          <option value="live">Live</option>
-          <option value="demo">Demo</option>
-        </select>
-      </div>
-      <div class="theme-selector">
-        <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="'Switch to ' + (currentTheme === 'light' ? 'dark' : 'light') + ' theme'">
-          <span class="theme-icon">{{ currentTheme === 'light' ? '🌙' : '☀️' }}</span>
-        </button>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" (click)="toggleMobileMenu()" [class.active]="mobileMenuOpen">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+
+    <div class="nav-links" [class.mobile-open]="mobileMenuOpen">
+      <a routerLink="/dashboard" routerLinkActive="active" (click)="closeMobileMenu()">Dashboard</a>
+      <a routerLink="/chart" routerLinkActive="active" (click)="closeMobileMenu()">Charts</a>
+      <a routerLink="/strategies" routerLinkActive="active" (click)="closeMobileMenu()">Strategien</a>
+      <a routerLink="/backtesting" routerLinkActive="active" (click)="closeMobileMenu()">Backtesting</a>
+      <a routerLink="/alerts" routerLinkActive="active" (click)="closeMobileMenu()">Alerts</a>
+      <a routerLink="/positions" routerLinkActive="active" (click)="closeMobileMenu()">Positions</a>
+      <a routerLink="/settings/email" routerLinkActive="active" (click)="closeMobileMenu()">Settings</a>
+
+      <div class="mobile-controls">
+        <div class="trading-mode-selector">
+          <label for="tradingMode">Modus:</label>
+          <select id="tradingMode" [(ngModel)]="selectedTradingMode" (change)="onTradingModeChange()">
+            <option value="testnet">Testnet</option>
+            <option value="live">Live</option>
+            <option value="demo">Demo</option>
+          </select>
+        </div>
+        <div class="theme-selector">
+          <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="'Switch to ' + (currentTheme === 'light' ? 'dark' : 'light') + ' theme'">
+            <span class="theme-icon">{{ currentTheme === 'light' ? '🌙' : '☀️' }}</span>
+          </button>
+        </div>
       </div>
     </div>
   </nav>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu-overlay" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
 
   <main class="main-content">
     <router-outlet />

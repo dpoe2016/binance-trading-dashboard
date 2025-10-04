@@ -17,6 +17,7 @@ export class App implements OnInit {
 
   selectedTradingMode: 'testnet' | 'live' | 'demo';
   currentTheme: ActiveTheme = 'dark';
+  mobileMenuOpen = false;
 
   constructor(
     private settingsService: SettingsService,
@@ -45,5 +46,13 @@ export class App implements OnInit {
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen = false;
   }
 }

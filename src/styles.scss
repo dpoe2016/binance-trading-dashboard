@@ -66,3 +66,94 @@ a {
   text-decoration: none;
   color: inherit;
 }
+
+/* Mobile Responsive Utilities */
+.mobile-only {
+  display: none !important;
+}
+
+.desktop-only {
+  display: block !important;
+}
+
+/* Responsive Tables */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+
+  table {
+    min-width: 600px;
+  }
+}
+
+/* Responsive Grid */
+.responsive-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Mobile Breakpoints */
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Make all tables scrollable on mobile */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+
+    thead, tbody, tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+  }
+
+  /* Reduce font sizes on mobile */
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  /* Touch-friendly buttons */
+  button, .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Larger form inputs for touch */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+
+  .responsive-grid {
+    grid-template-columns: 1fr;
+  }
+}
