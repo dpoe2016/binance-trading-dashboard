@@ -1,7 +1,293 @@
 <div class="position-management-container">
-  <h2>Position Management</h2>
+  <div class="page-header">
+    <h2>📊 Position Management</h2>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="refreshPositions()">
+        🔄 Refresh
+      </button>
+      <button class="btn btn-primary" (click)="openRiskRewardCalculator()">
+        📐 Risk/Reward Calculator
+      </button>
+    </div>
+  </div>
 
-  <div class="positions-list">
-    <p>Position management component - UI coming soon</p>
+  <!-- Position Summary -->
+  <div class="summary-cards">
+    <div class="summary-card">
+      <div class="card-label">Total Positions</div>
+      <div class="card-value">{{ positionSummary.totalPositions }}</div>
+    </div>
+    <div class="summary-card" [class.positive]="positionSummary.totalUnrealizedPnL > 0" [class.negative]="positionSummary.totalUnrealizedPnL < 0">
+      <div class="card-label">Unrealized P&L</div>
+      <div class="card-value">{{ positionSummary.totalUnrealizedPnL | currency:'USD':'symbol':'1.2-2' }}</div>
+      <div class="card-subtitle">{{ calculatePnLPercent() }}%</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Position Value</div>
+      <div class="card-value">{{ positionSummary.totalPositionValue | currency:'USD':'symbol':'1.2-2' }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Margin Used</div>
+      <div class="card-value">{{ positionSummary.totalMarginUsed | currency:'USD':'symbol':'1.2-2' }}</div>
+      <div class="card-subtitle">{{ totalBalance > 0 ? (positionSummary.totalMarginUsed / totalBalance * 100).toFixed(1) : 0 }}% of balance</div>
+    </div>
+  </div>
+
+  <!-- Positions Table -->
+  <div class="positions-card">
+    <h3>Active Positions</h3>
+
+    <div *ngIf="positions.length === 0" class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-message">No active positions</div>
+      <div class="empty-subtitle">Open a position to start trading</div>
+    </div>
+
+    <table *ngIf="positions.length > 0" class="positions-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Side</th>
+          <th>Size</th>
+          <th>Entry Price</th>
+          <th>Mark Price</th>
+          <th>Unrealized P&L</th>
+          <th>P&L %</th>
+          <th>Value</th>
+          <th>Margin</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let position of positions">
+          <td class="symbol-cell">
+            <strong>{{ position.symbol }}</strong>
+          </td>
+          <td>
+            <span class="badge" [class.badge-long]="position.side === 'LONG'" [class.badge-short]="position.side === 'SHORT'">
+              {{ position.side }}
+            </span>
+          </td>
+          <td>{{ position.size | number:'1.4-4' }}</td>
+          <td>{{ position.entryPrice | currency:'USD':'symbol':'1.2-8' }}</td>
+          <td>{{ position.markPrice | currency:'USD':'symbol':'1.2-8' }}</td>
+          <td [class]="position.pnlColor">
+            <strong>{{ position.unrealizedPnL | currency:'USD':'symbol':'1.2-2' }}</strong>
+          </td>
+          <td [class]="position.pnlPercentColor">
+            <strong>{{ position.unrealizedPnLPercent | number:'1.2-2' }}%</strong>
+          </td>
+          <td>{{ position.positionValue | currency:'USD':'symbol':'1.2-2' }}</td>
+          <td>{{ position.marginUsed | currency:'USD':'symbol':'1.2-2' }}</td>
+          <td class="actions-cell">
+            <button class="btn btn-sm btn-primary" (click)="viewPositionDetails(position)">
+              Details
+            </button>
+            <button class="btn btn-sm btn-warning" (click)="openCloseModal(position, 50)">
+              Close 50%
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="openCloseModal(position, 100)">
+              Close All
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Position Details Modal -->
+  <div class="modal-overlay" *ngIf="selectedPosition && !showCloseModal" (click)="closeDetails()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Position Details - {{ selectedPosition.symbol }}</h3>
+        <button type="button" class="close-btn" (click)="closeDetails()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="details-grid">
+          <div class="detail-row">
+            <span class="label">Symbol:</span>
+            <span class="value"><strong>{{ selectedPosition.symbol }}</strong></span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Side:</span>
+            <span class="value">
+              <span class="badge" [class.badge-long]="selectedPosition.side === 'LONG'" [class.badge-short]="selectedPosition.side === 'SHORT'">
+                {{ selectedPosition.side }}
+              </span>
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Position Size:</span>
+            <span class="value">{{ selectedPosition.size | number:'1.4-4' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Average Entry Price:</span>
+            <span class="value">{{ selectedPosition.averageEntryPrice | currency:'USD':'symbol':'1.2-8' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Current Price:</span>
+            <span class="value">{{ selectedPosition.currentPrice | currency:'USD':'symbol':'1.2-8' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Liquidation Price:</span>
+            <span class="value warning">{{ selectedPosition.liquidationPrice | currency:'USD':'symbol':'1.2-8' }}</span>
+          </div>
+          <div class="divider"></div>
+          <div class="detail-row">
+            <span class="label">Unrealized P&L:</span>
+            <span class="value" [class.positive]="selectedPosition.unrealizedPnL > 0" [class.negative]="selectedPosition.unrealizedPnL < 0">
+              <strong>{{ selectedPosition.unrealizedPnL | currency:'USD':'symbol':'1.2-2' }}</strong>
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="label">P&L Percentage:</span>
+            <span class="value" [class.positive]="selectedPosition.unrealizedPnLPercent > 0" [class.negative]="selectedPosition.unrealizedPnLPercent < 0">
+              <strong>{{ selectedPosition.unrealizedPnLPercent | number:'1.2-2' }}%</strong>
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Position Value:</span>
+            <span class="value">{{ selectedPosition.positionValue | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Margin Used:</span>
+            <span class="value">{{ selectedPosition.marginUsed | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Days Held:</span>
+            <span class="value">{{ selectedPosition.daysHeld }} days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetails()">
+          Close
+        </button>
+        <button type="button" class="btn btn-danger" (click)="openCloseModal(selectedPosition, 100)">
+          Close Position
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Close Position Modal -->
+  <div class="modal-overlay" *ngIf="showCloseModal" (click)="cancelClose()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Close Position</h3>
+        <button type="button" class="close-btn" (click)="cancelClose()">&times;</button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedPosition">
+        <div class="close-summary">
+          <p>Are you sure you want to close <strong>{{ closePercentage }}%</strong> of your position in <strong>{{ selectedPosition.symbol }}</strong>?</p>
+
+          <div class="close-details">
+            <div class="detail-row">
+              <span>Position Size:</span>
+              <span>{{ selectedPosition.size | number:'1.4-4' }}</span>
+            </div>
+            <div class="detail-row">
+              <span>Close Amount:</span>
+              <span><strong>{{ (selectedPosition.size * closePercentage / 100) | number:'1.4-4' }}</strong></span>
+            </div>
+            <div class="detail-row">
+              <span>Estimated P&L:</span>
+              <span [class.positive]="selectedPosition.unrealizedPnL > 0" [class.negative]="selectedPosition.unrealizedPnL < 0">
+                <strong>{{ (selectedPosition.unrealizedPnL * closePercentage / 100) | currency:'USD':'symbol':'1.2-2' }}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div class="close-percentage-selector">
+            <label>Close Percentage:</label>
+            <input type="range" [(ngModel)]="closePercentage" min="1" max="100" step="1" class="percentage-slider">
+            <div class="percentage-display">{{ closePercentage }}%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelClose()">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" (click)="confirmClose()" [disabled]="isClosingPosition">
+          <span *ngIf="!isClosingPosition">Confirm Close</span>
+          <span *ngIf="isClosingPosition">Closing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk/Reward Calculator Modal -->
+  <div class="modal-overlay" *ngIf="showRiskRewardCalculator" (click)="closeRiskRewardCalculator()">
+    <div class="modal-dialog calculator-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📐 Risk/Reward Calculator</h3>
+        <button type="button" class="close-btn" (click)="closeRiskRewardCalculator()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="calculator-form">
+          <div class="form-group">
+            <label>Entry Price</label>
+            <input type="number" [(ngModel)]="rrCalculator.entryPrice" step="0.01" class="form-control" placeholder="Enter entry price">
+          </div>
+
+          <div class="form-group">
+            <label>Stop Loss</label>
+            <input type="number" [(ngModel)]="rrCalculator.stopLoss" step="0.01" class="form-control" placeholder="Enter stop loss">
+          </div>
+
+          <div class="form-group">
+            <label>Take Profit</label>
+            <input type="number" [(ngModel)]="rrCalculator.takeProfit" step="0.01" class="form-control" placeholder="Enter take profit">
+          </div>
+
+          <div class="form-group">
+            <label>Position Size</label>
+            <input type="number" [(ngModel)]="rrCalculator.positionSize" step="0.0001" class="form-control" placeholder="Enter position size">
+          </div>
+
+          <button class="btn btn-primary btn-block" (click)="calculateRR()">
+            Calculate
+          </button>
+
+          <div class="calculator-results" *ngIf="rrResult">
+            <h4>Results</h4>
+            <div class="result-grid">
+              <div class="result-row">
+                <span>Risk Amount:</span>
+                <span class="negative">{{ rrResult.riskAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="result-row">
+                <span>Reward Amount:</span>
+                <span class="positive">{{ rrResult.rewardAmount | currency:'USD':'symbol':'1.2-2' }}</span>
+              </div>
+              <div class="result-row highlight">
+                <span>Risk/Reward Ratio:</span>
+                <span><strong>1:{{ rrResult.riskRewardRatio | number:'1.2-2' }}</strong></span>
+              </div>
+              <div class="result-row">
+                <span>Risk %:</span>
+                <span>{{ (Math.abs(rrCalculator.entryPrice - rrCalculator.stopLoss) / rrCalculator.entryPrice * 100) | number:'1.2-2' }}%</span>
+              </div>
+              <div class="result-row">
+                <span>Reward %:</span>
+                <span>{{ (Math.abs(rrCalculator.takeProfit - rrCalculator.entryPrice) / rrCalculator.entryPrice * 100) | number:'1.2-2' }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeRiskRewardCalculator()">
+          Close
+        </button>
+      </div>
+    </div>
   </div>
 </div>

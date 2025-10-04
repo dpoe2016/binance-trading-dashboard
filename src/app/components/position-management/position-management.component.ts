@@ -72,6 +72,16 @@ export class PositionManagementComponent implements OnInit, OnDestroy {
   };
   riskReward: RiskReward | null = null;
 
+  // For template
+  rrCalculator = {
+    entryPrice: 0,
+    stopLoss: 0,
+    takeProfit: 0,
+    positionSize: 0
+  };
+  rrResult: RiskReward | null = null;
+  Math = Math;
+
   // Account balance
   accountBalance: AccountBalance[] = [];
   totalBalance = 0;
@@ -200,9 +210,9 @@ export class PositionManagementComponent implements OnInit, OnDestroy {
   /**
    * Open close position modal
    */
-  openCloseModal(position: PositionDisplay): void {
+  openCloseModal(position: PositionDisplay, percentage: number = 100): void {
     this.selectedPosition = position;
-    this.closePercentage = 100;
+    this.closePercentage = percentage;
     this.showCloseModal = true;
   }
 
@@ -438,5 +448,71 @@ export class PositionManagementComponent implements OnInit, OnDestroy {
     this.loadPositionSummary();
     this.loadAccountBalance();
     this.showNotification('Data refreshed successfully', 'success');
+  }
+
+  /**
+   * Refresh positions
+   */
+  refreshPositions(): void {
+    this.refreshData();
+  }
+
+  /**
+   * Calculate PnL percentage
+   */
+  calculatePnLPercent(): string {
+    if (this.positionSummary.totalPositionValue === 0) return '0.00';
+    const pnlPercent = (this.positionSummary.totalUnrealizedPnL / this.positionSummary.totalPositionValue) * 100;
+    return pnlPercent.toFixed(2);
+  }
+
+  /**
+   * View position details
+   */
+  viewPositionDetails(position: PositionDisplay): void {
+    this.selectedPosition = position;
+    this.showCloseModal = false;
+  }
+
+  /**
+   * Close details modal
+   */
+  closeDetails(): void {
+    this.selectedPosition = null;
+  }
+
+  /**
+   * Cancel close position
+   */
+  cancelClose(): void {
+    this.showCloseModal = false;
+    this.closePercentage = 100;
+  }
+
+  /**
+   * Confirm close position
+   */
+  confirmClose(): void {
+    this.closePosition();
+  }
+
+  /**
+   * Calculate risk/reward (for template)
+   */
+  calculateRR(): void {
+    if (this.rrCalculator.entryPrice <= 0 ||
+        this.rrCalculator.stopLoss <= 0 ||
+        this.rrCalculator.takeProfit <= 0 ||
+        this.rrCalculator.positionSize <= 0) {
+      this.showNotification('Please enter valid values for all fields', 'error');
+      return;
+    }
+
+    this.rrResult = this.positionService.calculateRiskReward(
+      this.rrCalculator.entryPrice,
+      this.rrCalculator.stopLoss,
+      this.rrCalculator.takeProfit,
+      this.rrCalculator.positionSize
+    );
   }
 }
