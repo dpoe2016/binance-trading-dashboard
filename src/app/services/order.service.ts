@@ -14,6 +14,7 @@ import {
   OrderFillNotification
 } from '../models/trading.model';
 import { BinanceService } from './binance.service';
+import { PaperTradingService } from './paper-trading.service';
 
 @Injectable({
   providedIn: 'root'
@@ -22,18 +23,50 @@ export class OrderService {
   private ordersSubject = new BehaviorSubject<Order[]>([]);
   private orderHistorySubject = new BehaviorSubject<Order[]>([]);
   private notificationsSubject = new BehaviorSubject<OrderFillNotification[]>([]);
+  private paperTradingModeSubject = new BehaviorSubject<boolean>(false);
 
   public orders$ = this.ordersSubject.asObservable();
   public orderHistory$ = this.orderHistorySubject.asObservable();
   public notifications$ = this.notificationsSubject.asObservable();
+  public paperTradingMode$ = this.paperTradingModeSubject.asObservable();
 
   // Track orders being monitored for status updates
   private monitoredOrders = new Set<number>();
+  private nextOrderId = 1000000; // For paper trading orders
 
-  constructor(private binanceService: BinanceService) {
+  constructor(
+    private binanceService: BinanceService,
+    private paperTradingService: PaperTradingService
+  ) {
     this.loadOpenOrders();
     this.loadOrderHistory();
     this.startOrderMonitoring();
+    this.loadPaperTradingMode();
+  }
+
+  /**
+   * Load paper trading mode from localStorage
+   */
+  private loadPaperTradingMode(): void {
+    const savedMode = localStorage.getItem('paperTradingMode');
+    if (savedMode !== null) {
+      this.paperTradingModeSubject.next(savedMode === 'true');
+    }
+  }
+
+  /**
+   * Set paper trading mode
+   */
+  setPaperTradingMode(enabled: boolean): void {
+    this.paperTradingModeSubject.next(enabled);
+    localStorage.setItem('paperTradingMode', enabled.toString());
+  }
+
+  /**
+   * Get paper trading mode
+   */
+  getPaperTradingMode(): boolean {
+    return this.paperTradingModeSubject.value;
   }
 
   /**
@@ -105,11 +138,22 @@ export class OrderService {
   }
 
   /**
-   * Place a new order
+   * Place a new order (routes to paper trading or live trading)
    */
   placeOrder(orderRequest: CreateOrderRequest): Observable<Order> {
     console.log('Placing order:', orderRequest);
 
+    if (this.getPaperTradingMode()) {
+      return this.placePaperTradingOrder(orderRequest);
+    } else {
+      return this.placeLiveOrder(orderRequest);
+    }
+  }
+
+  /**
+   * Place a live order
+   */
+  private placeLiveOrder(orderRequest: CreateOrderRequest): Observable<Order> {
     return this.binanceService.createOrder(orderRequest).pipe(
       map((response: any) => {
         const order: Order = {
@@ -137,6 +181,75 @@ export class OrderService {
         return throwError(() => new Error(`Failed to place order: ${error.message}`));
       })
     );
+  }
+
+  /**
+   * Place a paper trading order with realistic simulations
+   */
+  private placePaperTradingOrder(orderRequest: CreateOrderRequest): Observable<Order> {
+    return new Observable(observer => {
+      // Get current market price (from BinanceService or use order price)
+      const marketPrice = orderRequest.price ? parseFloat(orderRequest.price) : 50000;
+
+      // Process order with realistic simulations
+      this.paperTradingService.processRealisticOrder(
+        orderRequest,
+        marketPrice,
+        1000000 // Daily volume estimate
+      ).then(result => {
+        const orderId = this.nextOrderId++;
+        const now = Date.now();
+
+        // Determine order status based on partial fill
+        let status: OrderStatus;
+        if (result.executedQuantity === parseFloat(orderRequest.quantity)) {
+          status = OrderStatus.FILLED;
+        } else if (result.executedQuantity > 0) {
+          status = OrderStatus.PARTIALLY_FILLED;
+        } else {
+          status = OrderStatus.NEW;
+        }
+
+        const order: Order = {
+          symbol: orderRequest.symbol,
+          orderId: orderId,
+          clientOrderId: `paper_${orderId}`,
+          price: result.executionPrice.toFixed(8),
+          origQty: orderRequest.quantity,
+          executedQty: result.executedQuantity.toFixed(8),
+          status: status,
+          type: orderRequest.type,
+          side: orderRequest.side,
+          time: now,
+          updateTime: now,
+          timeInForce: orderRequest.timeInForce || TimeInForce.GTC,
+          stopPrice: orderRequest.stopPrice,
+          fills: result.fills,
+          commission: result.totalFees.toFixed(8),
+          commissionAsset: 'USDT'
+        };
+
+        this.addOrderToList(order);
+
+        // Log simulation details
+        console.log('📝 Paper Trading Order Executed:', {
+          orderId: order.orderId,
+          symbol: order.symbol,
+          side: order.side,
+          quantity: order.executedQty,
+          executionPrice: order.price,
+          slippage: result.slippage.toFixed(2),
+          marketImpact: result.marketImpact.toFixed(2),
+          fees: result.totalFees.toFixed(8)
+        });
+
+        observer.next(order);
+        observer.complete();
+      }).catch(error => {
+        console.error('Error placing paper trading order:', error);
+        observer.error(new Error(`Failed to place paper trading order: ${error.message}`));
+      });
+    });
   }
 
   /**

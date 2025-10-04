@@ -1,0 +1,345 @@
+<div class="paper-trading-config">
+  <div class="config-header">
+    <h2>Paper Trading Configuration</h2>
+    <p class="subtitle">Configure realistic trading simulations for paper trading</p>
+
+    <!-- Realism Score -->
+    <div class="realism-score">
+      <div class="score-circle" [style.border-color]="getRealismColor()">
+        <div class="score-value" [style.color]="getRealismColor()">{{ getRealismScore() }}</div>
+        <div class="score-label">Realism</div>
+      </div>
+      <div class="score-description">{{ getImpactDescription() }}</div>
+    </div>
+  </div>
+
+  <!-- Success Message -->
+  <div class="success-message" *ngIf="showSuccessMessage">
+    ✓ Configuration saved successfully!
+  </div>
+
+  <!-- Tabs -->
+  <div class="config-tabs">
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'slippage'"
+      (click)="setActiveTab('slippage')">
+      Slippage
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'fees'"
+      (click)="setActiveTab('fees')">
+      Fees
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'fills'"
+      (click)="setActiveTab('fills')">
+      Partial Fills
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'latency'"
+      (click)="setActiveTab('latency')">
+      Latency
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'impact'"
+      (click)="setActiveTab('impact')">
+      Market Impact
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    <!-- Slippage Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'slippage'">
+      <h3>Slippage Simulation</h3>
+      <p class="description">
+        Slippage is the difference between expected and actual execution price.
+        Larger orders and more volatile markets experience more slippage.
+      </p>
+
+      <div class="form-group">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="config.enableSlippage"
+            class="toggle-input">
+          <span class="toggle-switch"></span>
+          Enable Slippage Simulation
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableSlippage">
+        <label>Slippage Model</label>
+        <select [(ngModel)]="config.slippageModel" class="form-control">
+          <option *ngFor="let model of slippageModels" [value]="model.value">
+            {{ model.label }}
+          </option>
+        </select>
+        <small class="help-text">
+          <span *ngIf="config.slippageModel === 'fixed'">
+            Fixed slippage applies a constant percentage regardless of order size
+          </span>
+          <span *ngIf="config.slippageModel === 'volume-based'">
+            Larger orders experience proportionally higher slippage
+          </span>
+          <span *ngIf="config.slippageModel === 'volatility-based'">
+            Slippage varies based on market volatility conditions
+          </span>
+        </small>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableSlippage">
+        <label>
+          Base Slippage: {{ config.slippagePercent }}%
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          [(ngModel)]="config.slippagePercent"
+          class="slider">
+        <div class="slider-labels">
+          <span>0%</span>
+          <span>0.5%</span>
+          <span>1%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fees Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'fees'">
+      <h3>Trading Fees</h3>
+      <p class="description">
+        Most exchanges charge fees on trades. Maker fees apply to limit orders
+        that add liquidity. Taker fees apply to market orders that remove liquidity.
+      </p>
+
+      <div class="form-group">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="config.enableFees"
+            class="toggle-input">
+          <span class="toggle-switch"></span>
+          Enable Fee Calculation
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableFees">
+        <label>
+          Maker Fee: {{ config.makerFeePercent }}%
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="0.5"
+          step="0.01"
+          [(ngModel)]="config.makerFeePercent"
+          class="slider">
+        <div class="slider-labels">
+          <span>0%</span>
+          <span>0.25%</span>
+          <span>0.5%</span>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableFees">
+        <label>
+          Taker Fee: {{ config.takerFeePercent }}%
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="0.5"
+          step="0.01"
+          [(ngModel)]="config.takerFeePercent"
+          class="slider">
+        <div class="slider-labels">
+          <span>0%</span>
+          <span>0.25%</span>
+          <span>0.5%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Partial Fills Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'fills'">
+      <h3>Partial Fill Simulation</h3>
+      <p class="description">
+        Limit orders may not fill completely in one go. This simulates
+        realistic order book matching where orders are filled in parts.
+      </p>
+
+      <div class="form-group">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="config.enablePartialFills"
+            class="toggle-input">
+          <span class="toggle-switch"></span>
+          Enable Partial Fills
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="config.enablePartialFills">
+        <label>
+          Partial Fill Probability: {{ (config.partialFillProbability * 100).toFixed(0) }}%
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.05"
+          [(ngModel)]="config.partialFillProbability"
+          class="slider">
+        <div class="slider-labels">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="config.enablePartialFills">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="config.enableOrderBookSimulation"
+            class="toggle-input">
+          <span class="toggle-switch"></span>
+          Enable Order Book Simulation
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableOrderBookSimulation && config.enablePartialFills">
+        <label>
+          Order Book Depth: {{ config.orderBookDepth }} levels
+        </label>
+        <input
+          type="range"
+          min="5"
+          max="50"
+          step="5"
+          [(ngModel)]="config.orderBookDepth"
+          class="slider">
+        <div class="slider-labels">
+          <span>5</span>
+          <span>25</span>
+          <span>50</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Latency Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'latency'">
+      <h3>Network Latency</h3>
+      <p class="description">
+        Real trading involves network delays between order submission and execution.
+        This simulates realistic processing times.
+      </p>
+
+      <div class="form-group">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="config.enableLatency"
+            class="toggle-input">
+          <span class="toggle-switch"></span>
+          Enable Latency Simulation
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableLatency">
+        <label>
+          Minimum Latency: {{ config.minLatencyMs }}ms
+        </label>
+        <input
+          type="range"
+          min="10"
+          max="500"
+          step="10"
+          [(ngModel)]="config.minLatencyMs"
+          class="slider">
+        <div class="slider-labels">
+          <span>10ms</span>
+          <span>250ms</span>
+          <span>500ms</span>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableLatency">
+        <label>
+          Maximum Latency: {{ config.maxLatencyMs }}ms
+        </label>
+        <input
+          type="range"
+          min="50"
+          max="2000"
+          step="50"
+          [(ngModel)]="config.maxLatencyMs"
+          class="slider">
+        <div class="slider-labels">
+          <span>50ms</span>
+          <span>1000ms</span>
+          <span>2000ms</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market Impact Tab -->
+    <div class="tab-pane" *ngIf="activeTab === 'impact'">
+      <h3>Market Impact</h3>
+      <p class="description">
+        Large orders can move the market price against you. This simulates
+        the price impact of your order size relative to market volume.
+      </p>
+
+      <div class="form-group">
+        <label class="toggle-label">
+          <input
+            type="checkbox"
+            [(ngModel)]="config.enableMarketImpact"
+            class="toggle-input">
+          <span class="toggle-switch"></span>
+          Enable Market Impact
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="config.enableMarketImpact">
+        <label>
+          Impact Factor: {{ config.marketImpactFactor }}%
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="0.2"
+          step="0.01"
+          [(ngModel)]="config.marketImpactFactor"
+          class="slider">
+        <div class="slider-labels">
+          <span>0%</span>
+          <span>0.1%</span>
+          <span>0.2%</span>
+        </div>
+        <small class="help-text">
+          Higher values mean larger orders have more price impact
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="config-actions">
+    <button class="btn btn-secondary" (click)="resetToDefaults()">
+      Reset to Defaults
+    </button>
+    <button class="btn btn-primary" (click)="saveConfig()">
+      Save Configuration
+    </button>
+  </div>
+</div>
