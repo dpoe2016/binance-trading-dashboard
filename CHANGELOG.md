@@ -7,6 +7,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Dark Mode Colors**: Adjusted dark theme to use dark gray instead of pure black
+  - Background primary: #1a1a1a → #2a2d35 (dark gray)
+  - Background secondary: #242424 → #1e2128 (darker gray)
+  - Background tertiary: #2d2d2d → #363a45 (medium gray)
+  - Better readability and reduced eye strain
+- **All Component Backgrounds**: Fixed white backgrounds across all pages
+  - ✅ Chart component: Full theme support with CSS variables
+  - ✅ Strategy Manager: All white backgrounds replaced
+  - ✅ Backtesting component: Complete theme integration
+  - ✅ Dashboard component: Comprehensive theme support
+  - All components now properly respect dark/light theme
+- **Table Theming**: Fixed all table backgrounds to respect theme colors
+  - Table headers now use --bg-tertiary
+  - Table rows now use --bg-primary
+  - Table hover state uses --bg-hover
+  - All text colors use theme variables
+  - Borders use --border-primary and --border-secondary
+- **Input & Select Elements**: All form elements now themed
+  - Inputs use --bg-primary background
+  - Selects use --bg-secondary background
+  - All borders use --border-primary
+  - Text colors use --text-primary
+  - Smooth transitions on theme changes (0.3s ease)
+
+## [0.7.5] - 2025-10-04
+
+### Added
+- **Dark/Light Theme System**: Complete theme switching functionality
+  - ThemeService with BehaviorSubject for reactive theme updates
+  - Three theme modes: light, dark, and auto (system preference)
+  - Comprehensive color palettes for both themes
+  - 16 CSS custom properties for consistent theming
+  - Theme toggle button in navigation bar (☀️/🌙 icon)
+  - localStorage persistence for theme preference
+  - System theme preference detection (prefers-color-scheme)
+  - Smooth transitions (0.3s ease) for theme changes
+  - Real-time theme change listener for system preference updates
+
+### Changed
+- Updated global styles with CSS variables (src/styles.scss)
+  - All colors now use CSS custom properties
+  - Background colors: --bg-primary, --bg-secondary, --bg-tertiary, --bg-hover
+  - Text colors: --text-primary, --text-secondary, --text-tertiary
+  - Border colors: --border-primary, --border-secondary
+  - Accent colors: --accent-primary, --accent-secondary
+  - Status colors: --success, --danger, --warning, --info
+  - Trading colors: --buy-green, --sell-red
+  - Chart colors: --chart-grid, --chart-text
+- Updated app component with theme integration
+- Enhanced navigation bar with theme toggle button
+- Updated TASKS.md to mark Task 8.1 as complete
+- Overall progress: 15 tasks completed (Phase 1: 5, Phase 2: 5, Phase 4: 4, Phase 8: 1)
+- Phase 8 progress: 20% (1/5 tasks)
+
+### Technical
+- Default theme: Dark (matches most trading platforms)
+- Theme service auto-initializes on app start
+- Observable pattern for theme change subscriptions
+- Fallback to dark theme if localStorage unavailable
+
+
+
+## [0.7.4] - 2025-10-04
+
+### Added
+- **Browser Notification Click Handling**: Enhanced notification interactivity
+  - Clicking notification now focuses the browser window
+  - Automatically navigates to /alerts page when notification clicked
+  - Notification auto-closes after click
+  - Added `requireInteraction` and `silent` notification options
+  - Silent mode respects sound alert settings
+
+### Changed
+- Enhanced browser notification configuration with interaction options
+- Updated angular.json budget limits to realistic values
+  - Initial bundle: 500kB→1MB (warning), 1MB→2MB (error)
+  - Component styles: 4kB→10kB (warning), 8kB→15kB (error)
+- Updated TASKS.md to mark Task 4.4 as complete
+- Overall progress: 14 tasks completed (Phase 1: 5, Phase 2: 5, Phase 4: 4)
+- Phase 4 progress: 57% (4/7 tasks)
+- Next priority: Task 4.5 (Email Notifications)
+
+### Fixed
+- Build errors from SCSS budget limits (alerts, risk-management, order-placement components)
+- Build now succeeds with only CommonJS warning (crypto-js unavoidable)
+
+
+
+## [0.7.3] - 2025-10-04
+
+### Added
+- **Indicator Alerts**: Complete technical indicator alert system
+  - RSI threshold alerts (above/below)
+  - RSI crossover alerts (cross above/below threshold)
+  - MACD crossover alerts (bullish/bearish crossovers)
+  - SMA crossover alerts (price crossing above/below SMA)
+  - Bollinger Band breakout alerts (upper/lower band breakouts)
+  - Volume spike alerts (already existed from 0.7.1)
+  - Comprehensive indicator evaluation engine
+  - Real-time indicator calculations (RSI, MACD, SMA, Bollinger Bands)
+  - Alert message generation for all indicator types
+
+### Changed
+- Updated alert.service.ts with 6 new evaluation methods
+- Added MACD calculation (EMA-based with signal line)
+- Added SMA array calculation for crossover detection
+- Added Bollinger Bands calculation (20-period, 2 std dev)
+- Enhanced alert UI with organized optgroups for indicator types
+- Updated TASKS.md to mark Task 4.3 as complete
+- Overall progress: 13 tasks completed (Phase 1: 5, Phase 2: 5, Phase 4: 3)
+- Phase 4 progress: 43% (3/7 tasks)
+- Next priority: Task 4.4 (Browser Notifications)
+
+### Technical
+- RSI crossover detection with 2-period comparison
+- MACD crossover detection comparing MACD line vs signal line
+- SMA crossover detection comparing price vs SMA value
+- Bollinger Band breakout detection with band penetration logic
+- All calculations reuse existing candle data
+- Minimum data requirements enforced (e.g., 35 candles for MACD)
+
+
+
 ## [0.7.2] - 2025-10-04
 
 ### Added

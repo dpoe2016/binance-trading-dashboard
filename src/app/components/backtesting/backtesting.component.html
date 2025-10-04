@@ -44,11 +44,73 @@
       [disabled]="!selectedStrategy || isRunning">
       {{ isRunning ? 'Running...' : 'Run Backtest' }}
     </button>
+
+    <button
+      class="btn-compare"
+      (click)="runMultiTimeframeBacktest()"
+      [disabled]="!selectedStrategy || isRunning">
+      {{ isRunning ? 'Running...' : 'Compare All Timeframes' }}
+    </button>
   </div>
 
   <div *ngIf="isLoading" class="loading">
     <div class="spinner"></div>
     <p>Loading historical data and running backtest...</p>
+  </div>
+
+  <!-- Multi-Timeframe Comparison Results -->
+  <div *ngIf="multiTimeframeResults && multiTimeframeResults.length > 0 && !isLoading" class="comparison-results">
+    <h2>Timeframe Comparison Results</h2>
+
+    <div *ngIf="bestTimeframe" class="best-timeframe-card">
+      <h3>🏆 Best Performing Timeframe</h3>
+      <div class="best-tf-info">
+        <span class="timeframe">{{ bestTimeframe.timeframe }}</span>
+        <span class="profit" [class.positive]="bestTimeframe.totalProfit > 0">
+          {{ formatCurrency(bestTimeframe.totalProfit) }} ({{ formatPercent(bestTimeframe.totalProfitPercent) }})
+        </span>
+        <span class="win-rate">Win Rate: {{ formatPercent(bestTimeframe.winRate) }}</span>
+        <span class="sharpe">Sharpe: {{ formatNumber(bestTimeframe.sharpeRatio) }}</span>
+      </div>
+    </div>
+
+    <div class="comparison-table-container">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Timeframe</th>
+            <th>Total Return</th>
+            <th>Win Rate</th>
+            <th>Profit Factor</th>
+            <th>Sharpe Ratio</th>
+            <th>Max Drawdown</th>
+            <th>Total Trades</th>
+            <th>Avg Trade</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let result of multiTimeframeResults" [class.best-row]="result.timeframe === bestTimeframe?.timeframe">
+            <td class="timeframe-cell">{{ result.timeframe }}</td>
+            <td [class.positive]="result.totalProfit > 0" [class.negative]="result.totalProfit < 0">
+              {{ formatCurrency(result.totalProfit) }}<br>
+              <small>{{ formatPercent(result.totalProfitPercent) }}</small>
+            </td>
+            <td>{{ formatPercent(result.winRate) }}</td>
+            <td [class.good]="result.profitFactor > 1.5" [class.poor]="result.profitFactor < 1">
+              {{ formatNumber(result.profitFactor) }}
+            </td>
+            <td [class.good]="result.sharpeRatio > 1" [class.poor]="result.sharpeRatio < 0">
+              {{ formatNumber(result.sharpeRatio) }}
+            </td>
+            <td class="negative">{{ formatPercent(result.maxDrawdownPercent) }}</td>
+            <td>{{ result.totalTrades }}</td>
+            <td [class.positive]="result.averageProfit > 0" [class.negative]="result.averageProfit < 0">
+              {{ formatCurrency(result.averageProfit) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div *ngIf="results && !isLoading" class="results">

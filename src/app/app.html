@@ -17,6 +17,11 @@
           <option value="demo">Demo</option>
         </select>
       </div>
+      <div class="theme-selector">
+        <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="'Switch to ' + (currentTheme === 'light' ? 'dark' : 'light') + ' theme'">
+          <span class="theme-icon">{{ currentTheme === 'light' ? '🌙' : '☀️' }}</span>
+        </button>
+      </div>
     </div>
   </nav>
 

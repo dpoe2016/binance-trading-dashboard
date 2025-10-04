@@ -1,4 +1,34 @@
-/* Global styles */
+/* Global styles with theme support */
+
+/* CSS Variables - will be set by ThemeService */
+:root {
+  /* Default to dark theme */
+  --bg-primary: #2a2d35;
+  --bg-secondary: #1e2128;
+  --bg-tertiary: #363a45;
+  --bg-hover: #3a3e4a;
+
+  --text-primary: #e8e9ed;
+  --text-secondary: #b8bcc8;
+  --text-tertiary: #8b8f9c;
+
+  --border-primary: #404452;
+  --border-secondary: #4f5463;
+
+  --accent-primary: #60a5fa;
+  --accent-secondary: #3b82f6;
+
+  --success: #22c55e;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --info: #60a5fa;
+
+  --buy-green: #22c55e;
+  --sell-red: #f87171;
+
+  --chart-grid: #404452;
+  --chart-text: #8b8f9c;
+}
 
 * {
   margin: 0;
@@ -10,8 +40,9 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f7fa;
-  color: #333;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 button {
@@ -26,6 +57,9 @@ button {
 
 input, select, textarea {
   font-family: inherit;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-primary);
 }
 
 a {

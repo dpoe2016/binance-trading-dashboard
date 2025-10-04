@@ -40,6 +40,8 @@ export class ChartComponent implements OnInit, OnDestroy {
   private stochDSeries?: any;
   private atrSeries?: any;
   private volumeSeries?: any;
+  private volumeMASeries?: any;
+  private vwapSeries?: any;
   private seriesMarkers?: any; // v5 marker primitive
   private signalMarkers: Array<{time: number, position: string, type: string, price: number}> = [];
   private chartResizeObserver?: ResizeObserver;
@@ -766,6 +768,48 @@ export class ChartComponent implements OnInit, OnDestroy {
         this.volumeSeries.setData(volumeData);
         console.log('📊 Volume data set');
       }
+
+      // Add Volume Moving Average
+      const volumeMAData = this.calculateVolumeMA(this.currentCandles, 20);
+      if (!this.volumeMASeries && this.chart && volumeMAData.length > 0) {
+        this.volumeMASeries = this.chart.addSeries(LineSeries, {
+          color: '#FF6B35',
+          lineWidth: 2,
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: false,
+        }, 7); // Same pane as volume (pane 7)
+        console.log('📊 Volume MA series added to chart');
+      }
+
+      // Set data for Volume MA series
+      if (this.volumeMASeries && volumeMAData.length > 0) {
+        this.volumeMASeries.setData(volumeMAData);
+        console.log('📊 Volume MA data set');
+      }
+
+      // Add VWAP to main price chart
+      const vwapData = this.calculateVWAP(this.currentCandles);
+      if (!this.vwapSeries && this.chart && vwapData.length > 0) {
+        this.vwapSeries = this.chart.addSeries(LineSeries, {
+          color: '#9C27B0',
+          lineWidth: 2,
+          priceScaleId: 'right',
+          lastValueVisible: true,
+          priceLineVisible: true,
+        }, 0); // Main price pane (pane 0)
+        console.log('📊 VWAP series added to chart');
+      }
+
+      // Set data for VWAP series
+      if (this.vwapSeries && vwapData.length > 0) {
+        this.vwapSeries.setData(vwapData);
+        console.log('📊 VWAP data set');
+      }
+
+      // Calculate and log Volume Profile for analysis (not visualized on chart yet)
+      const volumeProfile = this.calculateVolumeProfile(this.currentCandles, 20);
+      console.log('📊 Volume Profile analysis:', volumeProfile);
     } else {
       console.log('📊 Volume not enabled in strategy parameters:', strategy.parameters);
     }
@@ -1563,5 +1607,146 @@ export class ChartComponent implements OnInit, OnDestroy {
     });
 
     return volumeData;
+  }
+
+  /**
+   * Calculate Volume Moving Average
+   * @param candles - Array of candlestick data
+   * @param period - Period for moving average (default 20)
+   * @returns Array of volume MA line data
+   */
+  private calculateVolumeMA(candles: Candle[], period: number = 20): LineData[] {
+    const volumeMA: LineData[] = [];
+
+    if (candles.length < period) {
+      return volumeMA;
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+      const sum = slice.reduce((acc, candle) => acc + candle.volume, 0);
+      const ma = sum / period;
+
+      volumeMA.push({
+        time: Math.floor(candles[i].time / 1000) as any,
+        value: ma
+      });
+    }
+
+    console.log('📊 Volume MA calculated:', {
+      dataPoints: volumeMA.length,
+      period,
+      lastMA: volumeMA[volumeMA.length - 1]?.value.toFixed(2)
+    });
+
+    return volumeMA;
+  }
+
+  /**
+   * Calculate Volume Weighted Average Price (VWAP)
+   * @param candles - Array of candlestick data
+   * @returns Array of VWAP line data
+   */
+  private calculateVWAP(candles: Candle[]): LineData[] {
+    const vwap: LineData[] = [];
+    let cumulativeVolumePrice = 0;
+    let cumulativeVolume = 0;
+
+    for (let i = 0; i < candles.length; i++) {
+      const candle = candles[i];
+      const typicalPrice = (candle.high + candle.low + candle.close) / 3;
+      const volumePrice = typicalPrice * candle.volume;
+
+      cumulativeVolumePrice += volumePrice;
+      cumulativeVolume += candle.volume;
+
+      const vwapValue = cumulativeVolume > 0 ? cumulativeVolumePrice / cumulativeVolume : typicalPrice;
+
+      vwap.push({
+        time: Math.floor(candle.time / 1000) as any,
+        value: vwapValue
+      });
+    }
+
+    console.log('📊 VWAP calculated:', {
+      dataPoints: vwap.length,
+      lastVWAP: vwap[vwap.length - 1]?.value.toFixed(4)
+    });
+
+    return vwap;
+  }
+
+  /**
+   * Calculate Volume Profile (simplified - volume by price level)
+   * @param candles - Array of candlestick data
+   * @param priceSteps - Number of price levels to create (default 20)
+   * @returns Object with price levels and corresponding volumes
+   */
+  private calculateVolumeProfile(candles: Candle[], priceSteps: number = 20): {
+    levels: { price: number; volume: number; percentage: number }[]
+  } {
+    if (candles.length === 0) {
+      return { levels: [] };
+    }
+
+    // Find price range
+    const prices = candles.flatMap(c => [c.high, c.low, c.open, c.close]);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice;
+    const stepSize = priceRange / priceSteps;
+
+    // Create price buckets
+    const buckets = new Map<number, number>();
+    for (let i = 0; i < priceSteps; i++) {
+      const bucketPrice = minPrice + (i * stepSize);
+      buckets.set(bucketPrice, 0);
+    }
+
+    // Distribute volume across price levels
+    for (const candle of candles) {
+      const typicalPrice = (candle.high + candle.low + candle.close) / 3;
+
+      // Find closest bucket
+      let closestBucket = minPrice;
+      let minDistance = Math.abs(typicalPrice - minPrice);
+
+      for (const [bucketPrice] of buckets) {
+        const distance = Math.abs(typicalPrice - bucketPrice);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestBucket = bucketPrice;
+        }
+      }
+
+      // Add volume to bucket
+      const currentVolume = buckets.get(closestBucket) || 0;
+      buckets.set(closestBucket, currentVolume + candle.volume);
+    }
+
+    // Calculate total volume for percentage calculation
+    const totalVolume = Array.from(buckets.values()).reduce((sum, vol) => sum + vol, 0);
+
+    // Convert to array and sort by price
+    const levels = Array.from(buckets.entries())
+      .map(([price, volume]) => ({
+        price,
+        volume,
+        percentage: totalVolume > 0 ? (volume / totalVolume) * 100 : 0
+      }))
+      .sort((a, b) => a.price - b.price)
+      .filter(level => level.volume > 0); // Only include levels with volume
+
+    console.log('📊 Volume Profile calculated:', {
+      levels: levels.length,
+      priceRange: priceRange.toFixed(4),
+      totalVolume: totalVolume.toFixed(2),
+      maxVolumeLevel: levels.reduce((max, level) =>
+        level.volume > max.volume ? level : max,
+        { price: 0, volume: 0, percentage: 0 }
+      )
+    });
+
+    return { levels };
   }
 }

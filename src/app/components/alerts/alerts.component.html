@@ -219,9 +219,23 @@
               <option [value]="AlertType.PRICE_CROSS_BELOW">Price Cross Below</option>
               <option [value]="AlertType.PERCENTAGE_CHANGE">Percentage Change</option>
             </optgroup>
-            <optgroup label="Indicator Alerts">
-              <option [value]="AlertType.RSI_ABOVE">RSI Above</option>
-              <option [value]="AlertType.RSI_BELOW">RSI Below</option>
+            <optgroup label="RSI Alerts">
+              <option [value]="AlertType.RSI_ABOVE">RSI Above Threshold</option>
+              <option [value]="AlertType.RSI_BELOW">RSI Below Threshold</option>
+              <option [value]="AlertType.RSI_CROSS_ABOVE">RSI Cross Above</option>
+              <option [value]="AlertType.RSI_CROSS_BELOW">RSI Cross Below</option>
+            </optgroup>
+            <optgroup label="MACD Alerts">
+              <option [value]="AlertType.MACD_CROSS_ABOVE">MACD Cross Above Signal</option>
+              <option [value]="AlertType.MACD_CROSS_BELOW">MACD Cross Below Signal</option>
+            </optgroup>
+            <optgroup label="SMA Alerts">
+              <option [value]="AlertType.SMA_CROSS_ABOVE">Price Cross Above SMA</option>
+              <option [value]="AlertType.SMA_CROSS_BELOW">Price Cross Below SMA</option>
+            </optgroup>
+            <optgroup label="Bollinger Bands Alerts">
+              <option [value]="AlertType.BOLLINGER_BREAKOUT_UPPER">Upper Band Breakout</option>
+              <option [value]="AlertType.BOLLINGER_BREAKOUT_LOWER">Lower Band Breakout</option>
             </optgroup>
             <optgroup label="Volume Alerts">
               <option [value]="AlertType.VOLUME_SPIKE">Volume Spike</option>

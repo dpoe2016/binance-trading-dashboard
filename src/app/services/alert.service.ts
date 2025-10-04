@@ -368,7 +368,30 @@ export class AlertService {
       case AlertType.VOLUME_SPIKE:
         return this.evaluateVolumeSpike(candles, value);
 
-      // Add more alert types as needed
+      case AlertType.RSI_CROSS_ABOVE:
+        return this.evaluateRSICross(candles, 'above', value);
+
+      case AlertType.RSI_CROSS_BELOW:
+        return this.evaluateRSICross(candles, 'below', value);
+
+      case AlertType.MACD_CROSS_ABOVE:
+        return this.evaluateMACDCross(candles, 'above');
+
+      case AlertType.MACD_CROSS_BELOW:
+        return this.evaluateMACDCross(candles, 'below');
+
+      case AlertType.SMA_CROSS_ABOVE:
+        return this.evaluateSMACross(candles, value, 'above');
+
+      case AlertType.SMA_CROSS_BELOW:
+        return this.evaluateSMACross(candles, value, 'below');
+
+      case AlertType.BOLLINGER_BREAKOUT_UPPER:
+        return this.evaluateBollingerBreakout(candles, 'upper');
+
+      case AlertType.BOLLINGER_BREAKOUT_LOWER:
+        return this.evaluateBollingerBreakout(candles, 'lower');
+
       default:
         return false;
     }
@@ -429,6 +452,92 @@ export class AlertService {
   }
 
   /**
+   * Evaluate RSI crossover condition
+   */
+  private evaluateRSICross(candles: Candle[], direction: 'above' | 'below', threshold: number): boolean {
+    if (candles.length < 16) return false;
+
+    const rsi = this.calculateRSI(candles, 14);
+    if (rsi.length < 2) return false;
+
+    const currentRSI = rsi[rsi.length - 1];
+    const previousRSI = rsi[rsi.length - 2];
+
+    if (direction === 'above') {
+      return previousRSI <= threshold && currentRSI > threshold;
+    } else {
+      return previousRSI >= threshold && currentRSI < threshold;
+    }
+  }
+
+  /**
+   * Evaluate MACD crossover
+   */
+  private evaluateMACDCross(candles: Candle[], direction: 'above' | 'below'): boolean {
+    if (candles.length < 35) return false; // Need at least 26 + 9 candles for MACD
+
+    const macdData = this.calculateMACD(candles);
+    if (macdData.length < 2) return false;
+
+    const current = macdData[macdData.length - 1];
+    const previous = macdData[macdData.length - 2];
+
+    if (direction === 'above') {
+      // MACD crosses above signal line (bullish)
+      return previous.macd <= previous.signal && current.macd > current.signal;
+    } else {
+      // MACD crosses below signal line (bearish)
+      return previous.macd >= previous.signal && current.macd < current.signal;
+    }
+  }
+
+  /**
+   * Evaluate SMA crossover (price vs SMA)
+   */
+  private evaluateSMACross(candles: Candle[], smaPeriod: number, direction: 'above' | 'below'): boolean {
+    if (candles.length < smaPeriod + 1) return false;
+
+    const smaValues = this.calculateSMAArray(candles, smaPeriod);
+    if (smaValues.length < 2) return false;
+
+    const currentPrice = candles[candles.length - 1].close;
+    const previousPrice = candles[candles.length - 2].close;
+    const currentSMA = smaValues[smaValues.length - 1];
+    const previousSMA = smaValues[smaValues.length - 2];
+
+    if (direction === 'above') {
+      // Price crosses above SMA (bullish)
+      return previousPrice <= previousSMA && currentPrice > currentSMA;
+    } else {
+      // Price crosses below SMA (bearish)
+      return previousPrice >= previousSMA && currentPrice < currentSMA;
+    }
+  }
+
+  /**
+   * Evaluate Bollinger Band breakout
+   */
+  private evaluateBollingerBreakout(candles: Candle[], band: 'upper' | 'lower'): boolean {
+    if (candles.length < 21) return false;
+
+    const bbData = this.calculateBollingerBands(candles, 20, 2);
+    if (bbData.length < 2) return false;
+
+    const current = bbData[bbData.length - 1];
+    const previous = bbData[bbData.length - 2];
+    const currentPrice = candles[candles.length - 1].close;
+    const previousPrice = candles[candles.length - 2].close;
+
+    if (band === 'upper') {
+      // Price breaks out above upper band
+      return previousPrice <= previous.upper && currentPrice > current.upper;
+    } else {
+      // Price breaks out below lower band
+      return previousPrice >= previous.lower && currentPrice < current.lower;
+    }
+  }
+
+  /**
    * Trigger an alert
    */
   private triggerAlert(alert: Alert, currentPrice: number): void {
@@ -483,6 +592,26 @@ export class AlertService {
         return `${symbol} crossed below ${value} (current: ${currentPrice.toFixed(4)})`;
       case AlertType.PERCENTAGE_CHANGE:
         return `${symbol} moved ${value}% (price: ${currentPrice.toFixed(4)})`;
+      case AlertType.RSI_ABOVE:
+        return `${symbol} RSI above ${value}`;
+      case AlertType.RSI_BELOW:
+        return `${symbol} RSI below ${value}`;
+      case AlertType.RSI_CROSS_ABOVE:
+        return `${symbol} RSI crossed above ${value}`;
+      case AlertType.RSI_CROSS_BELOW:
+        return `${symbol} RSI crossed below ${value}`;
+      case AlertType.MACD_CROSS_ABOVE:
+        return `${symbol} MACD bullish crossover (price: ${currentPrice.toFixed(4)})`;
+      case AlertType.MACD_CROSS_BELOW:
+        return `${symbol} MACD bearish crossover (price: ${currentPrice.toFixed(4)})`;
+      case AlertType.SMA_CROSS_ABOVE:
+        return `${symbol} price crossed above SMA(${value}) (current: ${currentPrice.toFixed(4)})`;
+      case AlertType.SMA_CROSS_BELOW:
+        return `${symbol} price crossed below SMA(${value}) (current: ${currentPrice.toFixed(4)})`;
+      case AlertType.BOLLINGER_BREAKOUT_UPPER:
+        return `${symbol} broke above upper Bollinger Band (price: ${currentPrice.toFixed(4)})`;
+      case AlertType.BOLLINGER_BREAKOUT_LOWER:
+        return `${symbol} broke below lower Bollinger Band (price: ${currentPrice.toFixed(4)})`;
       case AlertType.VOLUME_SPIKE:
         return `${symbol} volume spike detected (${value}x average)`;
       default:
@@ -498,11 +627,23 @@ export class AlertService {
 
     // Browser notification
     if (settings.browserNotifications && 'Notification' in window && Notification.permission === 'granted') {
-      new Notification(`🔔 Alert: ${alert.symbol}`, {
+      const notification = new Notification(`🔔 Alert: ${alert.symbol}`, {
         body: message,
         icon: '/favicon.ico',
-        tag: alert.id
+        tag: alert.id,
+        requireInteraction: false,
+        silent: !settings.soundAlerts
       });
+
+      // Handle notification click - focus window and navigate to alerts
+      notification.onclick = () => {
+        window.focus();
+        // Try to navigate to alerts page if routing is available
+        if (window.location.pathname !== '/alerts') {
+          window.location.href = '/alerts';
+        }
+        notification.close();
+      };
     }
 
     // Sound alert
@@ -590,6 +731,122 @@ export class AlertService {
     }
 
     return rsi;
+  }
+
+  /**
+   * Calculate MACD (Moving Average Convergence Divergence)
+   */
+  private calculateMACD(candles: Candle[], fastPeriod: number = 12, slowPeriod: number = 26, signalPeriod: number = 9): Array<{macd: number, signal: number, histogram: number}> {
+    if (candles.length < slowPeriod) {
+      return [];
+    }
+
+    const closes = candles.map(c => c.close);
+
+    // Calculate EMAs using proper EMA calculation
+    const calculateEMAArray = (data: number[], period: number): number[] => {
+      const ema: number[] = [];
+      const multiplier = 2 / (period + 1);
+
+      // First EMA is SMA
+      let sum = 0;
+      for (let i = 0; i < period; i++) {
+        sum += data[i];
+      }
+      ema.push(sum / period);
+
+      // Calculate remaining EMAs
+      for (let i = period; i < data.length; i++) {
+        const currentEMA = (data[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1];
+        ema.push(currentEMA);
+      }
+
+      return ema;
+    };
+
+    // Calculate fast and slow EMAs
+    const fastEMA = calculateEMAArray(closes, fastPeriod);
+    const slowEMA = calculateEMAArray(closes, slowPeriod);
+
+    // Calculate MACD line (fast EMA - slow EMA)
+    const macdValues: number[] = [];
+    for (let i = 0; i < slowEMA.length; i++) {
+      const fastIndex = i + (slowPeriod - fastPeriod);
+      if (fastIndex >= 0 && fastIndex < fastEMA.length) {
+        macdValues.push(fastEMA[fastIndex] - slowEMA[i]);
+      }
+    }
+
+    // Calculate signal line (EMA of MACD line)
+    const signalEMA = calculateEMAArray(macdValues, signalPeriod);
+
+    // Build output array
+    const result: Array<{macd: number, signal: number, histogram: number}> = [];
+    for (let i = 0; i < signalEMA.length; i++) {
+      const macdValue = macdValues[i + (signalPeriod - 1)];
+      const signalValue = signalEMA[i];
+      const histogramValue = macdValue - signalValue;
+
+      result.push({
+        macd: macdValue,
+        signal: signalValue,
+        histogram: histogramValue
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Calculate SMA array (returns array of SMA values for each candle)
+   */
+  private calculateSMAArray(candles: Candle[], period: number): number[] {
+    const result: number[] = [];
+
+    if (candles.length < period) {
+      return result;
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+      const sum = slice.reduce((acc, c) => acc + c.close, 0);
+      const sma = sum / period;
+      result.push(sma);
+    }
+
+    return result;
+  }
+
+  /**
+   * Calculate Bollinger Bands
+   */
+  private calculateBollingerBands(candles: Candle[], period: number = 20, stdDev: number = 2): Array<{upper: number, middle: number, lower: number}> {
+    const result: Array<{upper: number, middle: number, lower: number}> = [];
+
+    if (candles.length < period) {
+      return result;
+    }
+
+    for (let i = period - 1; i < candles.length; i++) {
+      const slice = candles.slice(i - period + 1, i + 1);
+
+      // Calculate SMA (middle band)
+      const sum = slice.reduce((acc, c) => acc + c.close, 0);
+      const sma = sum / period;
+
+      // Calculate standard deviation
+      const squaredDiffs = slice.map(c => Math.pow(c.close - sma, 2));
+      const variance = squaredDiffs.reduce((acc, val) => acc + val, 0) / period;
+      const standardDeviation = Math.sqrt(variance);
+
+      // Calculate bands
+      const upper = sma + (stdDev * standardDeviation);
+      const lower = sma - (stdDev * standardDeviation);
+
+      result.push({ upper, middle: sma, lower });
+    }
+
+    return result;
   }
 
   /**

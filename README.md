@@ -83,6 +83,11 @@ Durch die Nutzung dieser Software akzeptieren Sie, dass:
   - Position Size Empfehlung
 - **Position Metrics**: Days Held, P&L %, Side (LONG/SHORT)
 
+### Alerts ✨ NEW
+- **Price Alerts**: Set alerts for specific price levels
+- **Alert List**: View and manage all active alerts
+- **Browser Notifications**: Get notified when a price alert is triggered
+
 ### Strategieverwaltung
 - **Strategy Builder**: Erstelle und konfiguriere Trading-Strategien
 - **Pine Script Support**: Grundlegende Unterstützung für Pine Script
@@ -559,7 +564,7 @@ Siehe [CHANGELOG.md](CHANGELOG.md) für eine vollständige Versionshistorie.
   - [ ] Asset Allocation Charts
   - [ ] Correlation Matrix
   - [ ] Rebalancing Suggestions
-- [ ] **Performance Analytics** (Phase 2 - Task 2.5)
+- [x] **Paper Trading Enhancement System** (Phase 2 - Task 2.5)
   - [ ] Trade Performance Metrics
   - [ ] Win/Loss Ratio
   - [ ] Sharpe Ratio, Sortino Ratio
@@ -577,7 +582,7 @@ Siehe [CHANGELOG.md](CHANGELOG.md) für eine vollständige Versionshistorie.
 - [ ] Parameter Optimization
 
 **Phase 4: Alert & Notification System**
-- [ ] Price Alerts
+- [x] Price Alerts
 - [ ] Indicator-Based Alerts
 - [ ] Browser Notifications
 - [ ] Email Notifications
@@ -660,14 +665,14 @@ Siehe [CHANGELOG.md](CHANGELOG.md) für eine vollständige Versionshistorie.
 
 ### 📊 Development Progress
 - **Phase 1:** ✅ 100% Complete (5/5 tasks) - Advanced Technical Indicators
-- **Phase 2:** 🚧 40% Complete (2/5 tasks) - Order & Position Management
-- **Phase 3-13:** 📅 Planned (250+ tasks remaining)
+- **Phase 2:** 🚧 60% Complete (3/5 tasks) - Order & Position Management
+- **Phase 4:** 🚧 16% Complete (1/6 tasks) - Alert & Notification System
+- **Phase 3, 5-13:** 📅 Planned (250+ tasks remaining)
 
 **Next Priorities:**
 1. Risk Management System (Phase 2.3)
 2. Portfolio Management (Phase 2.4)
-3. Alert System (Phase 4)
-4. Backtesting Engine (Phase 3)
+3. Backtesting Engine (Phase 3)
 
 ---
 

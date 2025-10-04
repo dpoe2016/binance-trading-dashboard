@@ -23,7 +23,7 @@
 
   h1 {
     margin: 0;
-    color: #333;
+    color: var(--text-primary);
     font-size: 1.5rem;
   }
 }
@@ -35,20 +35,22 @@
 
   .search-input {
     padding: 10px 40px 10px 15px;
-    border: 2px solid #e5e7eb;
+    border: 2px solid var(--border-primary);
     border-radius: 8px;
     font-size: 0.95rem;
     width: 250px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     transition: all 0.3s ease;
 
     &:focus {
       outline: none;
-      border-color: #3b82f6;
+      border-color: var(--accent-primary);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     &::placeholder {
-      color: #9ca3af;
+      color: var(--text-tertiary);
     }
   }
 
@@ -57,27 +59,29 @@
     right: 12px;
     font-size: 1.2rem;
     pointer-events: none;
-    color: #6b7280;
+    color: var(--text-tertiary);
   }
 }
 
 .btn-refresh {
   padding: 10px 20px;
-  background-color: #4CAF50;
+  background-color: var(--success);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: #45a049;
+    opacity: 0.9;
+    transform: translateY(-1px);
   }
 }
 
 .btn-reset {
   padding: 10px 16px;
-  background-color: #6b7280;
+  background-color: var(--text-tertiary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -86,7 +90,7 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: #4b5563;
+    opacity: 0.9;
     transform: rotate(90deg);
   }
 }
@@ -138,15 +142,16 @@
 }
 
 .section {
-  background: white;
+  background: var(--bg-primary);
   padding: 15px;
   border-radius: 6px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   h2 {
     margin: 0 0 12px 0;
-    color: #333;
+    color: var(--text-primary);
     font-size: 1.1rem;
   }
 
@@ -160,11 +165,11 @@
 
     &:hover {
       h2 {
-        color: #667eea;
+        color: var(--accent-primary);
       }
 
       .toggle-icon {
-        color: #667eea;
+        color: var(--accent-primary);
       }
     }
 
@@ -175,7 +180,7 @@
 
     .toggle-icon {
       font-size: 1rem;
-      color: #666;
+      color: var(--text-secondary);
       transition: color 0.2s ease;
     }
   }
@@ -185,8 +190,10 @@
   overflow-x: auto;
   overflow-y: auto;
   max-height: 300px;
-  border: 1px solid #eee;
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
+  background-color: var(--bg-primary);
+  transition: border-color 0.3s ease, background-color 0.3s ease;
 
   /* Smooth scrolling */
   scroll-behavior: smooth;
@@ -198,16 +205,16 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--bg-tertiary);
     border-radius: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #888;
+    background: var(--border-secondary);
     border-radius: 3px;
 
     &:hover {
-      background: #555;
+      background: var(--text-tertiary);
     }
   }
 }
@@ -217,7 +224,7 @@ table {
   border-collapse: collapse;
 
   thead {
-    background-color: #f5f5f5;
+    background-color: var(--bg-tertiary);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -227,50 +234,50 @@ table {
       text-align: right;
       font-weight: 600;
       font-size: 0.85rem;
-      color: #666;
-      border-bottom: 2px solid #ddd;
-      background-color: #f5f5f5;
+      color: var(--text-secondary);
+      border-bottom: 2px solid var(--border-primary);
+      background-color: var(--bg-tertiary);
     }
   }
 
   tbody {
     tr {
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--border-primary);
 
       &:hover {
-        background-color: #f9f9f9;
+        background-color: var(--bg-hover);
       }
     }
 
     td {
       padding: 8px;
       font-size: 0.875rem;
-      color: #333;
+      color: var(--text-primary);
       text-align: right;
 
       &.positive {
-        color: #22c55e;
+        color: var(--buy-green);
         font-weight: 600;
       }
 
       &.negative {
-        color: #ef4444;
+        color: var(--sell-red);
         font-weight: 600;
       }
 
       &.buy {
-        color: #22c55e;
+        color: var(--buy-green);
         font-weight: 600;
       }
 
       &.sell {
-        color: #ef4444;
+        color: var(--sell-red);
         font-weight: 600;
       }
 
       &.no-data {
         text-align: center;
-        color: #999;
+        color: var(--text-tertiary);
         padding: 20px;
         font-style: italic;
         font-size: 0.85rem;
@@ -281,29 +288,31 @@ table {
 
 .btn-cancel {
   padding: 5px 10px;
-  background-color: #ef4444;
+  background-color: var(--danger);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    background-color: #dc2626;
+    opacity: 0.9;
   }
 }
 
 .btn-toggle {
   padding: 5px 10px;
-  background-color: #3b82f6;
+  background-color: var(--accent-primary);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    background-color: #2563eb;
+    opacity: 0.9;
   }
 }
 
@@ -314,13 +323,13 @@ table {
   font-weight: 600;
 
   &.active {
-    background-color: #dcfce7;
-    color: #166534;
+    background-color: rgba(34, 197, 94, 0.2);
+    color: var(--success);
   }
 
   &.inactive {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
   }
 }
 
@@ -329,14 +338,16 @@ table {
 .edit-select {
   width: 100%;
   padding: 5px 6px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   font-size: 0.8rem;
   font-family: inherit;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
+    border-color: var(--accent-primary);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
   }
 }
@@ -354,72 +365,77 @@ table {
 
 .btn-edit {
   padding: 5px 10px;
-  background-color: #3b82f6;
+  background-color: var(--accent-primary);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    background-color: #2563eb;
+    opacity: 0.9;
   }
 }
 
 .btn-delete {
   padding: 5px 10px;
-  background-color: #ef4444;
+  background-color: var(--danger);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    background-color: #dc2626;
+    opacity: 0.9;
   }
 }
 
 .btn-save {
   padding: 5px 10px;
-  background-color: #22c55e;
+  background-color: var(--success);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    background-color: #16a34a;
+    opacity: 0.9;
   }
 }
 
 .btn-cancel-edit {
   padding: 5px 10px;
-  background-color: #6b7280;
+  background-color: var(--text-tertiary);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  transition: opacity 0.2s ease;
 
   &:hover {
-    background-color: #4b5563;
+    opacity: 0.9;
   }
 }
 
 .strategy-signals {
   margin-top: 10px;
   padding: 10px;
-  background-color: #f9fafb;
+  background-color: var(--bg-tertiary);
   border-radius: 4px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   h4 {
     margin-top: 0;
     margin-bottom: 8px;
     font-size: 0.9rem;
-    color: #333;
+    color: var(--text-primary);
   }
 
   table {
@@ -427,15 +443,15 @@ table {
     border-collapse: collapse;
 
     thead {
-      background-color: #f0f0f0;
+      background-color: var(--bg-hover);
 
       th {
         padding: 6px;
         text-align: left;
         font-weight: 600;
         font-size: 0.75rem;
-        color: #555;
-        border-bottom: 1px solid #ddd;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-primary);
       }
     }
 
@@ -443,16 +459,16 @@ table {
       td {
         padding: 6px;
         font-size: 0.75rem;
-        color: #333;
+        color: var(--text-primary);
         text-align: left;
 
         &.buy {
-          color: #22c55e;
+          color: var(--buy-green);
           font-weight: 600;
         }
 
         &.sell {
-          color: #ef4444;
+          color: var(--sell-red);
           font-weight: 600;
         }
       }

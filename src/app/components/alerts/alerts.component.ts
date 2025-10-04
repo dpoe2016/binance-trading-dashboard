@@ -64,6 +64,14 @@ export class AlertsComponent implements OnInit, OnDestroy {
     { value: AlertType.PERCENTAGE_CHANGE, label: 'Percentage Change', requiresValue: true, requiresSecondary: false },
     { value: AlertType.RSI_ABOVE, label: 'RSI Above', requiresValue: true, requiresSecondary: false },
     { value: AlertType.RSI_BELOW, label: 'RSI Below', requiresValue: true, requiresSecondary: false },
+    { value: AlertType.RSI_CROSS_ABOVE, label: 'RSI Cross Above', requiresValue: true, requiresSecondary: false },
+    { value: AlertType.RSI_CROSS_BELOW, label: 'RSI Cross Below', requiresValue: true, requiresSecondary: false },
+    { value: AlertType.MACD_CROSS_ABOVE, label: 'MACD Cross Above Signal', requiresValue: false, requiresSecondary: false },
+    { value: AlertType.MACD_CROSS_BELOW, label: 'MACD Cross Below Signal', requiresValue: false, requiresSecondary: false },
+    { value: AlertType.SMA_CROSS_ABOVE, label: 'Price Cross Above SMA', requiresValue: true, requiresSecondary: false },
+    { value: AlertType.SMA_CROSS_BELOW, label: 'Price Cross Below SMA', requiresValue: true, requiresSecondary: false },
+    { value: AlertType.BOLLINGER_BREAKOUT_UPPER, label: 'Bollinger Upper Band Breakout', requiresValue: false, requiresSecondary: false },
+    { value: AlertType.BOLLINGER_BREAKOUT_LOWER, label: 'Bollinger Lower Band Breakout', requiresValue: false, requiresSecondary: false },
     { value: AlertType.VOLUME_SPIKE, label: 'Volume Spike', requiresValue: true, requiresSecondary: false }
   ];
 
