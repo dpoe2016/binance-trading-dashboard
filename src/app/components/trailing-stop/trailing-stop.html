@@ -1,0 +1,133 @@
+<div class="trailing-stop-container">
+  <div class="page-header">
+    <h2>🎯 Trailing Stop-Loss</h2>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        ➕ Create Trailing Stop
+      </button>
+    </div>
+  </div>
+
+  <!-- Active Trailing Stops -->
+  <div class="trailing-stops-card">
+    <h3>Active Trailing Stops ({{ trailingStops.length }})</h3>
+
+    <div *ngIf="trailingStops.length === 0" class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-message">No active trailing stops</div>
+    </div>
+
+    <table *ngIf="trailingStops.length > 0" class="trailing-stops-table">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Side</th>
+          <th>Type</th>
+          <th>Trail Amount</th>
+          <th>Stop Price</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ts of trailingStops">
+          <td><strong>{{ ts.symbol }}</strong></td>
+          <td><span class="badge" [class.badge-long]="ts.positionSide === 'LONG'" [class.badge-short]="ts.positionSide === 'SHORT'">{{ ts.positionSide }}</span></td>
+          <td>{{ formatType(ts.type) }}</td>
+          <td>{{ formatTrailAmount(ts) }}</td>
+          <td>{{ ts.stopPrice | currency:'USD':'symbol':'1.2-8' }}</td>
+          <td>{{ ts.quantity | number:'1.4-4' }}</td>
+          <td><span class="status-badge" [style.background-color]="getStatusColor(ts)">{{ getStatusText(ts) }}</span></td>
+          <td>{{ ts.createdAt | date:'short' }}</td>
+          <td><button class="btn btn-sm btn-danger" (click)="cancelTrailingStop(ts.id)" [disabled]="ts.isTriggered">Cancel</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Alerts Panel -->
+  <div class="alerts-panel" *ngIf="alerts.length > 0">
+    <div class="alerts-header">
+      <h3>📢 Recent Alerts</h3>
+      <button class="btn btn-sm btn-outline" (click)="clearAllAlerts()">Clear All</button>
+    </div>
+    <div class="alerts-list">
+      <div *ngFor="let alert of alerts" class="alert-item" [ngClass]="getAlertColorClass(alert.type)">
+        <div class="alert-icon">{{ getAlertIcon(alert.type) }}</div>
+        <div class="alert-content">
+          <div class="alert-message">{{ alert.message }}</div>
+          <div class="alert-time">{{ alert.timestamp | date:'short' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Modal -->
+  <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Create Trailing Stop</h3>
+        <button type="button" class="close-btn" (click)="closeCreateModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Symbol</label>
+          <select [(ngModel)]="createForm.symbol" class="form-control">
+            <option *ngFor="let symbol of symbols" [value]="symbol">{{ symbol }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Position Side</label>
+          <select [(ngModel)]="createForm.positionSide" class="form-control">
+            <option value="LONG">LONG</option>
+            <option value="SHORT">SHORT</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Type</label>
+          <select [(ngModel)]="createForm.type" class="form-control">
+            <option [value]="TrailingStopType.PERCENTAGE">Percentage</option>
+            <option [value]="TrailingStopType.FIXED_AMOUNT">Fixed Amount (USD)</option>
+            <option [value]="TrailingStopType.ATR_BASED">ATR Based</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Trail Amount</label>
+          <input type="number" [(ngModel)]="createForm.trailAmount" min="0.1" step="0.1" class="form-control">
+          <small *ngIf="createForm.type === TrailingStopType.PERCENTAGE">Percentage to trail (e.g., 2 for 2%)</small>
+          <small *ngIf="createForm.type === TrailingStopType.FIXED_AMOUNT">Fixed amount in USD</small>
+          <small *ngIf="createForm.type === TrailingStopType.ATR_BASED">ATR multiplier (e.g., 1.5 for 1.5x ATR)</small>
+        </div>
+
+        <div class="form-group">
+          <label>Quantity</label>
+          <div class="quantity-input-group">
+            <input type="number" [(ngModel)]="createForm.quantity" min="0" step="0.0001" class="form-control">
+            <button class="btn btn-sm btn-outline" (click)="setQuantityFromPosition()">From Position</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Activation Price (Optional)</label>
+          <input type="number" [(ngModel)]="createForm.activationPrice" step="0.01" class="form-control" placeholder="Leave empty for immediate activation">
+        </div>
+
+        <div class="form-group" *ngIf="createForm.type === TrailingStopType.ATR_BASED">
+          <label>ATR Period</label>
+          <input type="number" [(ngModel)]="createForm.atrPeriod" min="1" step="1" class="form-control">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="createTrailingStop()">Create Trailing Stop</button>
+      </div>
+    </div>
+  </div>
+</div>
