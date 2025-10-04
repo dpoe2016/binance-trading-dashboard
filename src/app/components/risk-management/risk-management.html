@@ -1,0 +1,306 @@
+<div class="risk-management-container">
+  <div class="page-header">
+    <h2>🛡️ Risk Management</h2>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="loadRiskData()">
+        🔄 Refresh
+      </button>
+      <button class="btn btn-primary" (click)="openSettings()">
+        ⚙️ Settings
+      </button>
+      <button class="btn btn-danger" (click)="emergencyStopAll()">
+        🚨 Emergency Stop All
+      </button>
+    </div>
+  </div>
+
+  <!-- Risk Score Dashboard -->
+  <div class="risk-score-section">
+    <div class="risk-score-card">
+      <div class="risk-score-label">Portfolio Risk Score</div>
+      <div class="risk-score-value" [style.color]="getRiskScoreColor(riskMetrics.riskScore)">
+        {{ riskMetrics.riskScore | number:'1.0-0' }}/100
+      </div>
+      <div class="risk-score-text" [style.color]="getRiskScoreColor(riskMetrics.riskScore)">
+        {{ getRiskScoreText(riskMetrics.riskScore) }}
+      </div>
+      <div class="risk-score-bar">
+        <div class="risk-score-fill"
+             [style.width.%]="riskMetrics.riskScore"
+             [style.background-color]="getRiskScoreColor(riskMetrics.riskScore)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Metrics Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon">📊</div>
+      <div class="metric-content">
+        <div class="metric-label">Current Drawdown</div>
+        <div class="metric-value" [class.negative]="riskMetrics.currentDrawdown > 0">
+          {{ riskMetrics.currentDrawdown | number:'1.2-2' }}%
+        </div>
+        <div class="metric-limit">Limit: {{ riskParameters.maxDrawdown }}%</div>
+      </div>
+      <div class="metric-status"
+           [class.danger]="riskMetrics.currentDrawdown > riskParameters.maxDrawdown"
+           [class.warning]="riskMetrics.currentDrawdown > riskParameters.maxDrawdown * 0.8"
+           [class.safe]="riskMetrics.currentDrawdown <= riskParameters.maxDrawdown * 0.8">
+        {{ riskMetrics.currentDrawdown > riskParameters.maxDrawdown ? '⚠️' : '✅' }}
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon">💰</div>
+      <div class="metric-content">
+        <div class="metric-label">Daily P&L</div>
+        <div class="metric-value" [class.positive]="riskMetrics.dailyPnL > 0" [class.negative]="riskMetrics.dailyPnL < 0">
+          {{ formatPercentage((riskMetrics.dailyPnL / accountBalance) * 100) }}
+        </div>
+        <div class="metric-amount">${{ formatCurrency(riskMetrics.dailyPnL) }}</div>
+      </div>
+      <div class="metric-status"
+           [class.danger]="riskMetrics.dailyPnL < -(riskParameters.maxDailyLoss / 100 * accountBalance)"
+           [class.safe]="riskMetrics.dailyPnL >= -(riskParameters.maxDailyLoss / 100 * accountBalance)">
+        {{ riskMetrics.dailyPnL < -(riskParameters.maxDailyLoss / 100 * accountBalance) ? '⚠️' : '✅' }}
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon">📈</div>
+      <div class="metric-content">
+        <div class="metric-label">Open Positions</div>
+        <div class="metric-value">{{ riskMetrics.totalPositions }}</div>
+        <div class="metric-limit">Limit: {{ riskParameters.maxOpenPositions }}</div>
+      </div>
+      <div class="metric-status"
+           [class.danger]="riskMetrics.totalPositions >= riskParameters.maxOpenPositions"
+           [class.warning]="riskMetrics.totalPositions >= riskParameters.maxOpenPositions * 0.8"
+           [class.safe]="riskMetrics.totalPositions < riskParameters.maxOpenPositions * 0.8">
+        {{ riskMetrics.totalPositions >= riskParameters.maxOpenPositions ? '⚠️' : '✅' }}
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon">💵</div>
+      <div class="metric-content">
+        <div class="metric-label">Total Exposure</div>
+        <div class="metric-value">${{ formatCurrency(riskMetrics.totalExposure) }}</div>
+        <div class="metric-subtitle">{{ ((riskMetrics.totalExposure / accountBalance) * 100) | number:'1.1-1' }}% of balance</div>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon">⚖️</div>
+      <div class="metric-content">
+        <div class="metric-label">Leverage Used</div>
+        <div class="metric-value">{{ riskMetrics.leverageUsed | number:'1.2-2' }}x</div>
+        <div class="metric-limit">Max: {{ riskParameters.maxLeverage }}x</div>
+      </div>
+      <div class="metric-status"
+           [class.danger]="riskMetrics.leverageUsed > riskParameters.maxLeverage"
+           [class.warning]="riskMetrics.leverageUsed > riskParameters.maxLeverage * 0.8"
+           [class.safe]="riskMetrics.leverageUsed <= riskParameters.maxLeverage * 0.8">
+        {{ riskMetrics.leverageUsed > riskParameters.maxLeverage ? '⚠️' : '✅' }}
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon">📊</div>
+      <div class="metric-content">
+        <div class="metric-label">Margin Utilization</div>
+        <div class="metric-value">{{ riskMetrics.marginUtilization | number:'1.2-2' }}%</div>
+        <div class="metric-subtitle">of available margin</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Alerts Panel -->
+  <div class="alerts-section" *ngIf="riskAlerts.length > 0 || riskMetrics.violatedRules.length > 0 || riskMetrics.warnings.length > 0">
+    <div class="alerts-header">
+      <h3>⚠️ Active Alerts & Violations</h3>
+      <div class="alerts-actions">
+        <button class="btn btn-sm btn-outline" (click)="toggleAlertsPanel()">
+          {{ showAlertsPanel ? 'Hide' : 'Show' }}
+        </button>
+        <button class="btn btn-sm btn-outline" (click)="clearAllAlerts()" *ngIf="riskAlerts.length > 0">
+          Clear All
+        </button>
+      </div>
+    </div>
+
+    <div class="alerts-content" *ngIf="showAlertsPanel">
+      <!-- Violated Rules -->
+      <div class="violation-list" *ngIf="riskMetrics.violatedRules.length > 0">
+        <h4>🚨 Rule Violations</h4>
+        <div class="alert-item alert-critical" *ngFor="let violation of riskMetrics.violatedRules">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-message">{{ violation }}</div>
+        </div>
+      </div>
+
+      <!-- Warnings -->
+      <div class="warning-list" *ngIf="riskMetrics.warnings.length > 0">
+        <h4>⚠️ Warnings</h4>
+        <div class="alert-item alert-warning" *ngFor="let warning of riskMetrics.warnings">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-message">{{ warning }}</div>
+        </div>
+      </div>
+
+      <!-- Risk Alerts -->
+      <div class="risk-alert-list" *ngIf="riskAlerts.length > 0">
+        <h4>📢 Risk Alerts</h4>
+        <div class="alert-item"
+             *ngFor="let alert of riskAlerts"
+             [ngClass]="getAlertColorClass(alert.type)">
+          <div class="alert-icon">{{ getAlertIcon(alert.type) }}</div>
+          <div class="alert-content">
+            <div class="alert-message">{{ alert.message }}</div>
+            <div class="alert-time">{{ alert.timestamp | date:'short' }}</div>
+          </div>
+          <button class="btn-dismiss" (click)="dismissAlert(alert.id)">&times;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Safe Trading Status -->
+  <div class="safe-trading-card" *ngIf="riskMetrics.violatedRules.length === 0 && riskAlerts.length === 0">
+    <div class="safe-icon">✅</div>
+    <div class="safe-message">
+      <h3>All Systems Normal</h3>
+      <p>No risk violations detected. Portfolio is within safe parameters.</p>
+    </div>
+  </div>
+
+  <!-- Risk Settings Modal -->
+  <div class="modal-overlay" *ngIf="showSettingsModal" (click)="closeSettings()">
+    <div class="modal-dialog settings-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>⚙️ Risk Management Settings</h3>
+        <button type="button" class="close-btn" (click)="closeSettings()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="settings-form">
+          <div class="form-section">
+            <h4>Position Limits</h4>
+
+            <div class="form-group">
+              <label>Max Position Size (%)</label>
+              <input type="number" [(ngModel)]="riskParameters.maxPositionSize" min="1" max="100" step="1" class="form-control">
+              <small>Maximum percentage of account per position</small>
+            </div>
+
+            <div class="form-group">
+              <label>Max Open Positions</label>
+              <input type="number" [(ngModel)]="riskParameters.maxOpenPositions" min="1" max="20" step="1" class="form-control">
+              <small>Maximum number of concurrent positions</small>
+            </div>
+
+            <div class="form-group">
+              <label>Max Position Hold Time (days)</label>
+              <input type="number" [(ngModel)]="riskParameters.maxPositionHoldTime" min="0" max="365" step="1" class="form-control">
+              <small>0 = no limit</small>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>Risk Limits</h4>
+
+            <div class="form-group">
+              <label>Risk Per Trade (%)</label>
+              <input type="number" [(ngModel)]="riskParameters.riskPerTrade" min="0.1" max="10" step="0.1" class="form-control">
+              <small>Percentage of account to risk per trade</small>
+            </div>
+
+            <div class="form-group">
+              <label>Max Daily Loss (%)</label>
+              <input type="number" [(ngModel)]="riskParameters.maxDailyLoss" min="1" max="20" step="0.5" class="form-control">
+              <small>Maximum acceptable daily loss</small>
+            </div>
+
+            <div class="form-group">
+              <label>Max Drawdown (%)</label>
+              <input type="number" [(ngModel)]="riskParameters.maxDrawdown" min="5" max="50" step="1" class="form-control">
+              <small>Maximum acceptable account drawdown</small>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>Leverage & Margin</h4>
+
+            <div class="form-group">
+              <label>Max Leverage</label>
+              <input type="number" [(ngModel)]="riskParameters.maxLeverage" min="1" max="100" step="1" class="form-control">
+              <small>Maximum leverage allowed</small>
+            </div>
+
+            <div class="form-group">
+              <label>Max Correlation</label>
+              <input type="number" [(ngModel)]="riskParameters.maxCorrelation" min="0" max="1" step="0.1" class="form-control">
+              <small>Maximum correlation between positions (0-1)</small>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h4>Trading Rules</h4>
+
+            <div class="form-group checkbox-group">
+              <label>
+                <input type="checkbox" [(ngModel)]="riskParameters.stopLossRequired">
+                Require Stop Loss for all positions
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="resetToDefaults()">
+          Reset to Defaults
+        </button>
+        <button type="button" class="btn btn-outline" (click)="closeSettings()">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" (click)="saveRiskParameters()">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Emergency Stop Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="isEmergencyStopConfirm" (click)="cancelEmergencyStop()">
+    <div class="modal-dialog emergency-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header emergency-header">
+        <h3>🚨 Emergency Stop All Positions</h3>
+        <button type="button" class="close-btn" (click)="cancelEmergencyStop()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="emergency-warning">
+          <div class="warning-icon">⚠️</div>
+          <div class="warning-content">
+            <h4>WARNING: This will close ALL open positions immediately!</h4>
+            <p>This action cannot be undone. All {{ riskMetrics.totalPositions }} positions will be closed at market price.</p>
+            <p><strong>Total Exposure:</strong> ${{ formatCurrency(riskMetrics.totalExposure) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="cancelEmergencyStop()">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" (click)="confirmEmergencyStop()" [disabled]="isStoppingAll">
+          <span *ngIf="!isStoppingAll">🚨 Confirm Emergency Stop</span>
+          <span *ngIf="isStoppingAll">Closing positions...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
