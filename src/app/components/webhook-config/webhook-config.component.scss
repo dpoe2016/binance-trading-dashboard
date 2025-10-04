@@ -1,0 +1,291 @@
+.webhook-config {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .header {
+    margin-bottom: 30px;
+    h1 { margin: 0; color: var(--text-primary); font-size: 28px; font-weight: 600; }
+    p { color: var(--text-tertiary); margin: 8px 0 0 0; font-size: 16px; }
+  }
+
+  .actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+
+  .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    font-size: 14px;
+
+    &.btn-primary { background: var(--accent-primary); color: var(--text-primary); &:hover { background: var(--accent-secondary); } }
+    &.btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-primary); &:hover { background: var(--bg-tertiary); } }
+  }
+
+  .webhook-form-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .form-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .webhook-form {
+      position: relative;
+      background: var(--bg-primary);
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+
+      h2 { margin: 0 0 25px 0; color: var(--text-primary); font-size: 24px; }
+
+      .form-group {
+        margin-bottom: 20px;
+
+        label {
+          display: block;
+          color: var(--text-secondary);
+          margin-bottom: 8px;
+          font-weight: 500;
+          font-size: 14px;
+          .help-text { font-weight: 400; color: var(--text-tertiary); font-size: 12px; margin-left: 8px; }
+        }
+
+        .form-control {
+          width: 100%;
+          padding: 12px 16px;
+          background: var(--bg-tertiary);
+          border: 1px solid var(--border-primary);
+          border-radius: 8px;
+          color: var(--text-primary);
+          font-size: 14px;
+          &:focus { outline: none; border-color: var(--accent-primary); }
+        }
+
+        textarea.form-control { resize: vertical; font-family: 'Courier New', monospace; }
+
+        .error { color: var(--danger); font-size: 12px; margin-top: 4px; }
+
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          color: var(--text-secondary);
+          font-weight: 400;
+          input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        }
+      }
+
+      .events-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+
+        .checkbox-item {
+          .checkbox-label { font-size: 13px; }
+        }
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+      }
+    }
+  }
+
+  .webhooks-list {
+    h2 { margin: 0 0 20px 0; color: var(--text-primary); font-size: 20px; }
+
+    .webhook-cards {
+      display: grid;
+      gap: 20px;
+
+      .webhook-card {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 20px;
+        border-left: 4px solid var(--accent-primary);
+        transition: all 0.3s;
+
+        &.disabled { opacity: 0.6; border-left-color: var(--border-secondary); }
+
+        .webhook-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 15px;
+
+          .webhook-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            .platform-icon { font-size: 24px; }
+            .webhook-name { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+            .status-badge {
+              padding: 4px 10px;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: 600;
+              &.badge-success { background: var(--success); color: var(--text-primary); }
+              &.badge-inactive { background: var(--bg-tertiary); color: var(--text-tertiary); }
+            }
+          }
+
+          .webhook-actions {
+            display: flex;
+            gap: 8px;
+
+            .btn-icon {
+              background: var(--bg-tertiary);
+              border: none;
+              padding: 8px 12px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 16px;
+              transition: all 0.3s;
+              &:hover { background: var(--bg-hover); }
+              &.delete:hover { background: var(--danger); }
+              &:disabled { opacity: 0.5; cursor: not-allowed; }
+            }
+          }
+        }
+
+        .webhook-details {
+          display: grid;
+          gap: 8px;
+          margin-bottom: 15px;
+
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            .label { color: var(--text-tertiary); font-size: 13px; }
+            .value { color: var(--text-primary); font-weight: 500; font-size: 14px; }
+            .value.url { font-family: 'Courier New', monospace; font-size: 12px; word-break: break-all; }
+            &.error .value { color: var(--danger); }
+          }
+        }
+
+        .webhook-events {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+
+          .event-tag {
+            padding: 4px 10px;
+            background: var(--accent-primary);
+            border: 1px solid var(--accent-primary);
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--text-primary);
+          }
+        }
+      }
+    }
+  }
+
+  .webhook-logs {
+    .logs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      h2 { margin: 0; color: var(--text-primary); font-size: 20px; }
+    }
+
+    .logs-table-container {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      overflow: hidden;
+
+      .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+
+        thead {
+          background: var(--bg-tertiary);
+          th { padding: 15px; text-align: left; color: var(--text-tertiary); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        }
+
+        tbody {
+          tr {
+            border-bottom: 1px solid var(--border-primary);
+            transition: background 0.2s;
+            &:hover { background: var(--bg-tertiary); }
+            &.status-failed { background: rgba(239, 68, 68, 0.1); }
+          }
+
+          td {
+            padding: 15px;
+            color: var(--text-primary);
+            font-size: 14px;
+            &.details-cell { font-size: 13px; .error-text { color: var(--danger); } }
+          }
+        }
+      }
+    }
+  }
+
+  .status-success { color: var(--success); }
+  .status-failed { color: var(--danger); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    .empty-icon { font-size: 64px; margin-bottom: 20px; }
+    h3 { color: var(--text-primary); margin: 0 0 10px 0; font-size: 24px; }
+    p { color: var(--text-tertiary); margin: 0 0 30px 0; font-size: 16px; }
+  }
+}
+
+@media (max-width: 768px) {
+  .webhook-config {
+    padding: 15px;
+
+    .webhook-form-container .webhook-form {
+      padding: 20px;
+      .events-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .webhooks-list .webhook-cards .webhook-card {
+      .webhook-header { flex-direction: column; gap: 15px; align-items: flex-start; }
+      .webhook-details .detail-row { flex-direction: column; gap: 4px; }
+    }
+
+    .webhook-logs .logs-table-container { overflow-x: auto; }
+  }
+}

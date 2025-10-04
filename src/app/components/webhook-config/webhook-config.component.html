@@ -1,0 +1,267 @@
+<div class="webhook-config">
+  <div class="header">
+    <h1>Webhook Integration</h1>
+    <p>Configure webhooks to send notifications to Discord, Slack, Telegram, and custom endpoints</p>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" (click)="showAddForm()">
+      ➕ Add Webhook
+    </button>
+    <button class="btn btn-secondary" (click)="toggleLogs()">
+      {{ showLogs ? '📋 Hide Logs' : '📜 View Logs' }}
+    </button>
+  </div>
+
+  <!-- Webhook Form -->
+  <div class="webhook-form-container" *ngIf="showForm">
+    <div class="form-overlay" (click)="cancelForm()"></div>
+    <div class="webhook-form">
+      <h2>{{ editingWebhook ? 'Edit Webhook' : 'Add New Webhook' }}</h2>
+
+      <form [formGroup]="webhookForm" (ngSubmit)="saveWebhook()">
+        <div class="form-group">
+          <label for="name">Webhook Name *</label>
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            placeholder="My Discord Webhook"
+            class="form-control"
+          />
+          <div class="error" *ngIf="webhookForm.get('name')?.invalid && webhookForm.get('name')?.touched">
+            Name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="platform">Platform *</label>
+          <select id="platform" formControlName="platform" class="form-control">
+            <option *ngFor="let platform of platforms" [value]="platform">
+              {{ getPlatformIcon(platform) }} {{ platformLabels[platform] }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="url">Webhook URL *</label>
+          <input
+            id="url"
+            type="url"
+            formControlName="url"
+            [placeholder]="urlPlaceholder"
+            class="form-control"
+          />
+          <div class="error" *ngIf="webhookForm.get('url')?.invalid && webhookForm.get('url')?.touched">
+            Valid HTTPS URL is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Events to Trigger *</label>
+          <div class="events-grid">
+            <div *ngFor="let event of events; let i = index" class="checkbox-item">
+              <label class="checkbox-label">
+                <input type="checkbox" [formControl]="$any(eventsFormArray.at(i))" />
+                {{ eventLabels[event] }}
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="retryAttempts">Retry Attempts</label>
+            <input
+              id="retryAttempts"
+              type="number"
+              formControlName="retryAttempts"
+              min="0"
+              max="10"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="timeout">Timeout (ms)</label>
+            <input
+              id="timeout"
+              type="number"
+              formControlName="timeout"
+              min="1000"
+              max="30000"
+              step="1000"
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="customPayload">
+            Custom Payload (Optional)
+            <span class="help-text">JSON with template variables: event, timestamp, data</span>
+          </label>
+          <textarea
+            id="customPayload"
+            formControlName="customPayload"
+            rows="4"
+            class="form-control"
+            placeholder='{"event": "ALERT", "data": {}}'
+          ></textarea>
+          <small style="display: block; color: var(--text-tertiary); margin-top: 4px;">
+            Use template variables in format: event, timestamp, data (wrapped in double curly braces)
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="enabled" />
+            Enable this webhook
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" (click)="cancelForm()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+            {{ editingWebhook ? 'Update' : 'Create' }} Webhook
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Webhooks List -->
+  <div class="webhooks-list" *ngIf="webhooks.length > 0 && !showLogs">
+    <h2>Configured Webhooks ({{ webhooks.length }})</h2>
+
+    <div class="webhook-cards">
+      <div *ngFor="let webhook of webhooks" class="webhook-card" [class.disabled]="!webhook.enabled">
+        <div class="webhook-header">
+          <div class="webhook-title">
+            <span class="platform-icon">{{ getPlatformIcon(webhook.platform) }}</span>
+            <span class="webhook-name">{{ webhook.name }}</span>
+            <span class="status-badge" [class]="webhook.enabled ? 'badge-success' : 'badge-inactive'">
+              {{ webhook.enabled ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+          <div class="webhook-actions">
+            <button
+              class="btn-icon"
+              (click)="toggleWebhook(webhook)"
+              [title]="webhook.enabled ? 'Disable' : 'Enable'"
+            >
+              {{ webhook.enabled ? '⏸️' : '▶️' }}
+            </button>
+            <button
+              class="btn-icon"
+              (click)="testWebhook(webhook)"
+              [disabled]="testingWebhookId === webhook.id"
+              title="Test Webhook"
+            >
+              {{ testingWebhookId === webhook.id ? '⏳' : '🧪' }}
+            </button>
+            <button class="btn-icon" (click)="editWebhook(webhook)" title="Edit">
+              ✏️
+            </button>
+            <button class="btn-icon delete" (click)="deleteWebhook(webhook)" title="Delete">
+              🗑️
+            </button>
+          </div>
+        </div>
+
+        <div class="webhook-details">
+          <div class="detail-row">
+            <span class="label">Platform:</span>
+            <span class="value">{{ platformLabels[webhook.platform] }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">URL:</span>
+            <span class="value url">{{ webhook.url }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Events:</span>
+            <span class="value">{{ webhook.events.length }} events</span>
+          </div>
+          <div class="detail-row" *ngIf="webhook.lastTriggered">
+            <span class="label">Last Triggered:</span>
+            <span class="value">{{ formatDate(webhook.lastTriggered) }}</span>
+          </div>
+          <div class="detail-row" *ngIf="webhook.lastStatus">
+            <span class="label">Last Status:</span>
+            <span class="value" [class]="getStatusClass(webhook.lastStatus)">
+              {{ getStatusIcon(webhook.lastStatus) }} {{ webhook.lastStatus }}
+            </span>
+          </div>
+          <div class="detail-row error" *ngIf="webhook.lastError">
+            <span class="label">Last Error:</span>
+            <span class="value">{{ webhook.lastError }}</span>
+          </div>
+        </div>
+
+        <div class="webhook-events">
+          <span *ngFor="let event of webhook.events" class="event-tag">
+            {{ eventLabels[event] }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Webhook Logs -->
+  <div class="webhook-logs" *ngIf="showLogs">
+    <div class="logs-header">
+      <h2>Webhook Logs ({{ logs.length }})</h2>
+      <button class="btn btn-secondary" (click)="clearLogs()">
+        🗑️ Clear Logs
+      </button>
+    </div>
+
+    <div class="logs-table-container" *ngIf="logs.length > 0">
+      <table class="logs-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Webhook</th>
+            <th>Event</th>
+            <th>Status</th>
+            <th>Retries</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs" [class]="getStatusClass(log.status)">
+            <td>{{ formatDate(log.timestamp) }}</td>
+            <td>{{ getWebhookName(log.webhookId) }}</td>
+            <td>{{ eventLabels[log.event] }}</td>
+            <td>
+              <span [class]="getStatusClass(log.status)">
+                {{ getStatusIcon(log.status) }} {{ log.status }}
+              </span>
+            </td>
+            <td>{{ log.retryCount }}</td>
+            <td class="details-cell">
+              <div *ngIf="log.statusCode">HTTP {{ log.statusCode }}</div>
+              <div *ngIf="log.error" class="error-text">{{ log.error }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" *ngIf="logs.length === 0">
+      <p>No webhook logs yet. Logs will appear here when webhooks are triggered.</p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="webhooks.length === 0 && !showForm && !showLogs">
+    <div class="empty-icon">🔗</div>
+    <h3>No Webhooks Configured</h3>
+    <p>Add your first webhook to start receiving notifications on Discord, Slack, Telegram, or custom endpoints.</p>
+    <button class="btn btn-primary" (click)="showAddForm()">
+      ➕ Add Your First Webhook
+    </button>
+  </div>
+</div>

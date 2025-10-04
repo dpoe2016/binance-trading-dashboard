@@ -5,6 +5,8 @@ import { Candle } from '../models/trading.model';
 import { BinanceService } from './binance.service';
 import { EmailService } from './email.service';
 import { EmailTemplateService } from './email-template.service';
+import { WebhookService } from './webhook.service';
+import { WebhookEvent } from '../models/webhook-config.model';
 
 export interface Alert {
   id: string;
@@ -110,7 +112,8 @@ export class AlertService {
   constructor(
     private binanceService: BinanceService,
     private emailService: EmailService,
-    private emailTemplateService: EmailTemplateService
+    private emailTemplateService: EmailTemplateService,
+    private webhookService: WebhookService
   ) {
     this.loadAlerts();
     this.loadNotificationSettings();
@@ -757,6 +760,9 @@ export class AlertService {
       this.sendEmailNotification(alert, currentPrice, message);
     }
 
+    // Webhook notification
+    this.sendWebhookNotification(alert, currentPrice, message);
+
     // Sound alert
     if (settings.soundAlerts) {
       this.playAlertSound();
@@ -1133,6 +1139,28 @@ export class AlertService {
   /**
    * Show popup alert
    */
+  /**
+   * Send webhook notification for alert
+   */
+  private async sendWebhookNotification(alert: Alert, currentPrice: number, message: string): Promise<void> {
+    try {
+      const webhookData = {
+        alertId: alert.id,
+        alertName: alert.name,
+        symbol: alert.symbol,
+        type: alert.type,
+        currentPrice,
+        targetValue: alert.value,
+        message,
+        timestamp: new Date().toISOString()
+      };
+
+      await this.webhookService.triggerWebhook(WebhookEvent.ALERT_TRIGGERED, webhookData);
+    } catch (error) {
+      console.error('Error sending webhook notification:', error);
+    }
+  }
+
   private showPopupAlert(alert: Alert, message: string): void {
     // Create a simple popup alert (in a real app, use a proper modal service)
     const popup = document.createElement('div');

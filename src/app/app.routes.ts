@@ -5,6 +5,7 @@ import { StrategyManagerComponent } from './components/strategy-manager/strategy
 import { BacktestingComponent } from './components/backtesting/backtesting.component';
 import { AlertsComponent } from './components/alerts/alerts.component';
 import { EmailConfigComponent } from './components/email-config/email-config.component';
+import { WebhookConfigComponent } from './components/webhook-config/webhook-config.component';
 import { OrderHistoryComponent } from './components/order-history/order-history.component';
 import { PositionManagementComponent } from './components/position-management/position-management.component';
 
@@ -17,5 +18,6 @@ export const routes: Routes = [
   { path: 'alerts', component: AlertsComponent },
   { path: 'orders/history', component: OrderHistoryComponent },
   { path: 'positions', component: PositionManagementComponent },
-  { path: 'settings/email', component: EmailConfigComponent }
+  { path: 'settings/email', component: EmailConfigComponent },
+  { path: 'settings/webhooks', component: WebhookConfigComponent }
 ];
