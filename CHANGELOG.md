@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-10-04
+
+### Added
+- **Position Management UI**: Comprehensive dashboard for tracking positions with P&L metrics, position details modal, partial/full closing (1-100% slider), and Risk/Reward calculator
+- **Risk Management Dashboard**: Real-time risk monitoring with portfolio risk score (0-100), 6 risk metrics cards (drawdown, daily P&L, positions, exposure, leverage, margin), risk alerts & violations system, configurable risk parameters, and emergency stop-all feature
+- **Trailing Stop-Loss System**: Complete implementation with 3 types (Percentage, Fixed Amount, ATR-based), real-time monitoring every 2s, auto-trigger functionality, support for LONG/SHORT positions, optional activation price, and comprehensive alert system
+- **Documentation**: ROADMAP_SUMMARY.md with comprehensive project overview and progress tracking
+
+### Changed
+- Updated README.md with expanded Features section and restructured Roadmap
+- Updated TASKS.md to mark Tasks 2.1, 2.2, 2.3, and 2.4 as completed
+- Phase 2 progress updated to 80% (4/5 tasks complete)
+
+### Technical
+- All TypeScript builds successful
+- Phase 1: 100% Complete (Advanced Technical Indicators)
+- Phase 2: 80% Complete (Order & Position & Risk & Trailing Stop Management)
+
 ## [0.6.1] - 2025-10-03
 
 
