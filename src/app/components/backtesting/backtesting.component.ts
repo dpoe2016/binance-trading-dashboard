@@ -27,6 +27,8 @@ export class BacktestingComponent implements OnInit, OnDestroy {
 
   candles: Candle[] = [];
   results: BacktestResults | null = null;
+  multiTimeframeResults: Array<BacktestResults & { timeframe: string }> = [];
+  bestTimeframe: (BacktestResults & { timeframe: string }) | null = null;
   isRunning: boolean = false;
   isLoading: boolean = false;
 
@@ -305,6 +307,107 @@ export class BacktestingComponent implements OnInit, OnDestroy {
   getTradeColor(trade: BacktestTrade): string {
     if (!trade.profit) return '';
     return trade.profit > 0 ? 'profit' : 'loss';
+  }
+
+  async runMultiTimeframeBacktest(): Promise<void> {
+    if (!this.selectedStrategy) {
+      alert('Please select a strategy');
+      return;
+    }
+
+    const strategy = this.strategies.find(s => s.id === this.selectedStrategy);
+    if (!strategy) return;
+
+    this.isRunning = true;
+    this.isLoading = true;
+    this.multiTimeframeResults = [];
+    this.bestTimeframe = null;
+    this.results = null; // Clear single result view
+
+    try {
+      const timeframesToTest = this.intervals.map(i => i.value);
+      const results: Array<BacktestResults & { timeframe: string }> = [];
+
+      for (const timeframe of timeframesToTest) {
+        console.log(`Running backtest for ${timeframe}...`);
+
+        // Fetch candles for this timeframe
+        const candles = await this.binanceService.getCandles(
+          this.selectedSymbol,
+          timeframe,
+          500 // Get more data for better results
+        );
+
+        if (!candles || candles.length < 50) {
+          console.warn(`Insufficient data for ${timeframe}`);
+          continue;
+        }
+
+        // Run backtest
+        const result = this.backtestingService.runBacktest(
+          strategy,
+          candles,
+          this.initialCapital
+        );
+
+        results.push({
+          ...result,
+          timeframe: timeframe
+        });
+      }
+
+      this.multiTimeframeResults = results.sort((a, b) => b.sharpeRatio - a.sharpeRatio);
+
+      // Determine best timeframe based on multiple factors
+      this.bestTimeframe = this.determineBestTimeframe(this.multiTimeframeResults);
+
+      console.log('Multi-timeframe backtest complete:', this.multiTimeframeResults);
+      console.log('Best timeframe:', this.bestTimeframe);
+
+    } catch (error) {
+      console.error('Multi-timeframe backtest error:', error);
+      alert('Error running multi-timeframe backtest. Check console for details.');
+    } finally {
+      this.isRunning = false;
+      this.isLoading = false;
+    }
+  }
+
+  private determineBestTimeframe(results: Array<BacktestResults & { timeframe: string }>): (BacktestResults & { timeframe: string }) | null {
+    if (results.length === 0) return null;
+
+    // Score each timeframe based on multiple factors
+    const scored = results.map(r => {
+      let score = 0;
+
+      // Profitability (40% weight)
+      if (r.totalProfit > 0) {
+        score += (r.totalProfitPercent / 100) * 40;
+      }
+
+      // Sharpe Ratio (30% weight)
+      score += Math.max(0, r.sharpeRatio) * 30;
+
+      // Win Rate (15% weight)
+      score += (r.winRate / 100) * 15;
+
+      // Profit Factor (15% weight)
+      score += Math.max(0, (r.profitFactor - 1)) * 15;
+
+      // Penalty for high drawdown
+      score -= Math.abs(r.maxDrawdownPercent / 100) * 10;
+
+      // Bonus for having enough trades (statistical significance)
+      if (r.totalTrades >= 20) {
+        score += 5;
+      }
+
+      return { ...r, score };
+    });
+
+    // Sort by score and return the best
+    scored.sort((a, b) => b.score - a.score);
+    return scored[0];
   }
 
   exportResults(): void {
